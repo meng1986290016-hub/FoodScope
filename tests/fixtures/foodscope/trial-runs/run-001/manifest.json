@@ -1,0 +1,21 @@
+{
+  "run_id": "run-001",
+  "source_metrics": [
+    {
+      "access_mode": "direct_metadata",
+      "admitted_count": 1,
+      "ai_tokens": 100,
+      "candidate_count": 2,
+      "commercial_count": 1,
+      "duplicate_event_count": 0,
+      "estimated_cost": 0.01,
+      "fetch_status": "success",
+      "food_relevant_count": 1,
+      "published_at_parse_rate": 1.0,
+      "run_id": "run-001",
+      "source_id": "M001",
+      "sponsored_count": 0,
+      "unique_event_count": 1
+    }
+  ]
+}

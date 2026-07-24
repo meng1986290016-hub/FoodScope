@@ -9,6 +9,7 @@ from src.foodscope.models import (
 )
 from src.foodscope.orchestrator import FoodScopeOrchestrator
 from src.models import Config
+from src.orchestrator import FetchReport, SourceFetchOutcome
 from src.storage.manager import StorageManager
 from tests.foodscope.test_config_models import legacy_config
 from tests.foodscope.test_normalizer import item
@@ -87,6 +88,13 @@ def test_foodscope_run_persists_all_stages_and_isolates_bad_item(
         candidate.metadata["food_source_id"] = "M001"
 
     async def fetch_all_sources(since):
+        orchestrator.last_fetch_report = FetchReport(
+            [
+                SourceFetchOutcome(
+                    "M001", "success", items=raw_items
+                )
+            ]
+        )
         return raw_items
 
     monkeypatch.setattr(
@@ -114,3 +122,9 @@ def test_foodscope_run_persists_all_stages_and_isolates_bad_item(
     )
     assert "Good" in summary["markdown"]
     assert "Bad" not in summary["markdown"]
+    assert len(manifest["source_metrics"]) == 1
+    metric = manifest["source_metrics"][0]
+    assert metric["source_id"] == "M001"
+    assert metric["candidate_count"] == 2
+    assert metric["food_relevant_count"] == 1
+    assert metric["admitted_count"] == 1

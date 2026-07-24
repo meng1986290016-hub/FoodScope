@@ -63,6 +63,7 @@ class FoodRunStore:
                 "errors": [],
                 "isolation": [],
                 "token_usage": {},
+                "source_metrics": [],
                 "deliveries": {},
             },
         )
@@ -220,6 +221,25 @@ class FoodRunStore:
             }
         )
         manifest["updated_at"] = attempted_at
+        self._write_manifest(run_id, manifest)
+
+    def record_source_metrics(
+        self, run_id: str, metrics: list[dict[str, Any]]
+    ) -> None:
+        """Append sanitized source metrics once per run/source pair."""
+        manifest = self.load_manifest(run_id)
+        stored = manifest.setdefault("source_metrics", [])
+        existing = {
+            (metric.get("run_id"), metric.get("source_id"))
+            for metric in stored
+        }
+        for metric in metrics:
+            key = (metric.get("run_id"), metric.get("source_id"))
+            if key in existing:
+                continue
+            stored.append(metric)
+            existing.add(key)
+        manifest["updated_at"] = self._now()
         self._write_manifest(run_id, manifest)
 
     def _run_dir(self, run_id: str) -> Path:

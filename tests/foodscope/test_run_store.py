@@ -106,3 +106,14 @@ def test_failed_delivery_can_retry_same_artifact(tmp_path):
     delivery = store.load_manifest(run_id)["deliveries"]["email"]
     assert delivery["attempts"] == 2
     assert delivery["status"] == "success"
+
+
+def test_source_metrics_are_idempotent_per_run_and_source(tmp_path):
+    store = FoodRunStore(tmp_path)
+    run_id = store.create_run(profile_id="balanced")
+    metric = {"source_id": "M001", "run_id": run_id}
+
+    store.record_source_metrics(run_id, [metric])
+    store.record_source_metrics(run_id, [metric])
+
+    assert store.load_manifest(run_id)["source_metrics"] == [metric]

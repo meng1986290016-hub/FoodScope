@@ -8,6 +8,7 @@ from typing import Optional
 import httpx
 
 from src.ai.client import create_ai_client
+from src.ai.tokens import get_usage_snapshot
 from src.ai.summarizer import (
     DailySummarizer,
     _escape_markdown,
@@ -30,7 +31,18 @@ from .loaders import load_profile, load_source_packs
 from .normalizer import normalize_item
 from .run_store import FoodRunStore, RunStage
 from .selector import FoodProfileSelector, SelectionResult
+from .source_health import SourceRunMetric
 from .sources.registry import FoodSourceRegistry
+
+
+_COMMERCIAL_CATEGORIES = {
+    "product_innovation",
+    "ingredients_technology",
+    "packaging_labeling",
+    "consumer_trends",
+    "retail_foodservice",
+    "company_updates",
+}
 
 
 class FoodScopeOrchestrator(HorizonOrchestrator):
@@ -71,7 +83,10 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self.active_run_id = self.run_store.create_run(
             profile_id=self.profile.id
         )
-        await super().run(force_hours=force_hours)
+        try:
+            await super().run(force_hours=force_hours)
+        finally:
+            self._record_source_metrics()
 
     async def fetch_all_sources(
         self, since
@@ -272,6 +287,138 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 combined.append(alert)
                 item_ids.add(alert.id)
         return combined
+
+    def _record_source_metrics(self) -> None:
+        if (
+            self.active_run_id is None
+            or self.last_fetch_report is None
+        ):
+            return
+        outcomes = {
+            outcome.source_name: outcome
+            for outcome in self.last_fetch_report.outcomes
+            if outcome.source_name in self.source_specs_by_id
+        }
+        if not outcomes:
+            return
+        try:
+            scored = self.run_store.load_stage(
+                self.active_run_id, RunStage.SCORED
+            )
+        except FileNotFoundError:
+            scored = []
+        if not isinstance(scored, list):
+            scored = []
+        admitted = (
+            self.selection_result.items
+            + self.selection_result.risk_alerts
+        )
+        total_candidates = sum(
+            len(outcome.items) for outcome in outcomes.values()
+        )
+        usage = get_usage_snapshot()
+        metrics: list[dict] = []
+        for source_id, outcome in sorted(outcomes.items()):
+            source = self.source_specs_by_id[source_id]
+            source_scored = [
+                item
+                for item in scored
+                if item.food is not None
+                and item.food.source_id == source_id
+            ]
+            relevant = [
+                item
+                for item in source_scored
+                if not item.metadata.get("foodscope_isolated")
+                and item.metadata.get("foodscope_relevant")
+                is not False
+            ]
+            source_admitted = [
+                item
+                for item in admitted
+                if item.food is not None
+                and item.food.source_id == source_id
+            ]
+            event_keys = {
+                item.food.event_key or item.id
+                for item in source_admitted
+                if item.food is not None
+            }
+            duplicate_count = sum(
+                max(
+                    0,
+                    len(item.metadata.get("event_sources", []))
+                    - 1,
+                )
+                for item in source_admitted
+            )
+            candidate_count = len(outcome.items)
+            allocated_tokens = (
+                round(
+                    usage.total_tokens
+                    * candidate_count
+                    / total_candidates
+                )
+                if total_candidates
+                else 0
+            )
+            cost_per_thousand = float(
+                source.options.get(
+                    "estimated_cost_per_1k_tokens", 0.0
+                )
+            )
+            metric = SourceRunMetric(
+                source_id=source_id,
+                run_id=self.active_run_id,
+                fetch_status=outcome.status,
+                published_at_parse_rate=(
+                    0.0 if outcome.status == "failure" else 1.0
+                ),
+                candidate_count=candidate_count,
+                food_relevant_count=len(relevant),
+                admitted_count=len(source_admitted),
+                commercial_count=sum(
+                    item.food is not None
+                    and item.food.category.value
+                    in _COMMERCIAL_CATEGORIES
+                    for item in source_admitted
+                ),
+                duplicate_event_count=duplicate_count,
+                unique_event_count=len(event_keys),
+                sponsored_count=sum(
+                    item.food is not None
+                    and (
+                        item.food.sponsored
+                        or item.food.press_release
+                    )
+                    for item in source_admitted
+                ),
+                access_mode=self._source_access_mode(source),
+                ai_tokens=allocated_tokens,
+                estimated_cost=(
+                    allocated_tokens
+                    / 1000
+                    * cost_per_thousand
+                ),
+            )
+            metrics.append(metric.model_dump(mode="json"))
+        self.run_store.record_source_metrics(
+            self.active_run_id, metrics
+        )
+
+    @staticmethod
+    def _source_access_mode(source) -> str:
+        explicit = source.options.get("access_mode")
+        if explicit:
+            return str(explicit)
+        if source.options.get("retention_mode") == "metadata_only":
+            return "metadata_only"
+        note = str(source.options.get("trial_note", ""))
+        if "付费" in note:
+            return "paywall"
+        if "登录" in note or "注册" in note:
+            return "login_required"
+        return "direct_metadata"
 
     @staticmethod
     def _render_item_line(item: ContentItem) -> str:
