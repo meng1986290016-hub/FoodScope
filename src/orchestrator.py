@@ -208,6 +208,7 @@ class HorizonOrchestrator:
             # 2. Fetch content from all sources
             all_items = await self.fetch_all_sources(since)
             self.console.print(f"📥 Fetched {len(all_items)} items from all sources\n")
+            await self._on_stage("raw", all_items)
 
             if self.last_fetch_report and self.last_fetch_report.all_failed:
                 raise RuntimeError(self.last_fetch_report.failure_message())
@@ -224,8 +225,11 @@ class HorizonOrchestrator:
                     f"→ {len(merged_items)} unique items\n"
                 )
 
-            # 4. Analyze with AI
-            analyzed_items = await self._analyze_content(merged_items)
+            # 4. Normalize extension-specific source contracts, then analyze.
+            normalized_items = await self._normalize_items(merged_items)
+            await self._on_stage("normalized", normalized_items)
+            analyzed_items = await self._analyze_content(normalized_items)
+            await self._on_stage("scored", analyzed_items)
             self.console.print(f"🤖 Analyzed {len(analyzed_items)} items with AI\n")
 
             # 5. Filter, deduplicate, and balance the digest
@@ -240,6 +244,7 @@ class HorizonOrchestrator:
 
             # 5.6 Apply digest limits after any targeted re-analysis changes scores.
             important_items = self.apply_balanced_digest(important_items).items
+            await self._on_stage("filtered", important_items)
 
             # Show per-sub-source selection breakdown
             selected_counts: Dict[str, int] = defaultdict(int)
@@ -252,12 +257,28 @@ class HorizonOrchestrator:
 
             # 6. Search related stories + enrich with background knowledge (2nd AI pass)
             await self._enrich_important_items(important_items)
+            await self._on_stage("enriched", important_items)
 
             # 7. Generate and save daily summaries for each configured language
             today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             for lang in self.config.ai.languages:
-                summarizer = DailySummarizer()
-                summary = await summarizer.generate_summary(important_items, today, len(all_items), language=lang)
+                summarizer = self._create_summarizer()
+                summary = await self._generate_summary(
+                    important_items,
+                    today,
+                    len(all_items),
+                    language=lang,
+                    summarizer=summarizer,
+                )
+                await self._on_stage(
+                    "summary",
+                    {
+                        "language": lang,
+                        "date": today,
+                        "total_fetched": len(all_items),
+                        "markdown": summary,
+                    },
+                )
 
                 # Save to data/summaries/
                 summary_path = self.storage.save_daily_summary(today, summary, language=lang)
@@ -298,23 +319,14 @@ class HorizonOrchestrator:
                 except Exception as e:
                     self.console.print(f"[yellow]⚠️  Failed to copy {lang.upper()} summary to docs/: {e}[/yellow]\n")
 
-                # Send email if configured
-                if self.email_manager and self.config.email and self.config.email.enabled:
-                    self.console.print(f"📧 Sending {lang.upper()} email summary...")
-                    subscribers = self.storage.load_subscribers()
-                    subject = f"Horizon Summary ({lang.upper()}) - {today}"
-                    self.email_manager.send_daily_summary(summary, subject, subscribers)
-
-                # Send webhook notification if configured
-                if self.webhook_notifier:
-                    await self.webhook_notifier.send_daily_summary(
-                        summary=summary,
-                        important_items=important_items,
-                        all_items_count=len(all_items),
-                        date=today,
-                        lang=lang,
-                        summarizer=summarizer,
-                    )
+                await self._deliver_summary(
+                    summary=summary,
+                    important_items=important_items,
+                    all_items_count=len(all_items),
+                    date=today,
+                    lang=lang,
+                    summarizer=summarizer,
+                )
 
             self.console.print("[bold green]✅ Horizon completed successfully![/bold green]")
             usage = get_usage_snapshot()
@@ -343,6 +355,54 @@ class HorizonOrchestrator:
                 )
 
             raise
+
+    async def _normalize_items(
+        self, items: List[ContentItem]
+    ) -> List[ContentItem]:
+        """Return normalized items; extensions can attach domain contracts."""
+        return items
+
+    async def _on_stage(self, stage: str, payload: object) -> None:
+        """Observe a completed pipeline stage without changing base behavior."""
+        return None
+
+    def _create_summarizer(self) -> DailySummarizer:
+        """Construct the renderer shared by summary and webhook delivery."""
+        return DailySummarizer()
+
+    async def _deliver_summary(
+        self,
+        summary: str,
+        important_items: List[ContentItem],
+        all_items_count: int,
+        date: str,
+        lang: str,
+        summarizer: DailySummarizer,
+    ) -> None:
+        """Preserve Horizon email and webhook delivery behavior."""
+        if (
+            self.email_manager
+            and self.config.email
+            and self.config.email.enabled
+        ):
+            self.console.print(
+                f"📧 Sending {lang.upper()} email summary..."
+            )
+            subscribers = self.storage.load_subscribers()
+            subject = f"Horizon Summary ({lang.upper()}) - {date}"
+            self.email_manager.send_daily_summary(
+                summary, subject, subscribers
+            )
+
+        if self.webhook_notifier:
+            await self.webhook_notifier.send_daily_summary(
+                summary=summary,
+                important_items=important_items,
+                all_items_count=all_items_count,
+                date=date,
+                lang=lang,
+                summarizer=summarizer,
+            )
 
     def _determine_time_window(self, force_hours: int = None) -> datetime:
         if force_hours:
@@ -888,6 +948,7 @@ class HorizonOrchestrator:
         date: str,
         total_fetched: int,
         language: str = "en",
+        summarizer: Optional[DailySummarizer] = None,
     ) -> str:
         """Generate daily summary.
 
@@ -902,6 +963,6 @@ class HorizonOrchestrator:
         """
         self.console.print("📝 Generating daily summary...")
 
-        summarizer = DailySummarizer()
+        summarizer = summarizer or self._create_summarizer()
 
         return await summarizer.generate_summary(items, date, total_fetched, language=language)

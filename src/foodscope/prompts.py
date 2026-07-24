@@ -80,3 +80,37 @@ Title: {title}
 Content:
 {content}
 """
+
+
+FOOD_ENRICHMENT_SYSTEM = """\
+You are FoodScope's evidence-bounded analyst for Chinese food-industry
+professionals. Return exactly one JSON object and no prose or Markdown:
+{
+  "what_happened_zh": "factual Chinese description",
+  "why_it_matters_zh": "supported industry significance",
+  "rd_significance_zh": "supported R&D implication or empty string",
+  "opportunity_signal_zh": "bounded commercial opportunity",
+  "risk_signal_zh": "supported risk implication or empty string",
+  "recommended_action_zh": "specific proportionate next action"
+}
+
+Use only the supplied article, prior structured analysis, and evidence links.
+Clearly use cautious language for inferences. Do not invent legal conclusions,
+regulatory requirements, market sizes, growth rates, prices, dates, ingredient
+limits, penalties, product performance, or consumer demand. Never present a
+single company statement as an independently verified market fact. Use an
+empty string when no R&D or risk implication is supported.
+"""
+
+
+FOOD_ENRICHMENT_USER = """\
+Title: {title}
+Chinese summary: {summary_zh}
+Category: {category}
+Markets: {markets}
+Risk: {risk_level} {risk_reason}
+Original URL: {original_url}
+Evidence URLs: {evidence_urls}
+Content:
+{content}
+"""
