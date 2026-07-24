@@ -1,0 +1,21 @@
+{
+  "id": "balanced",
+  "name": "综合情报",
+  "max_items": 20,
+  "max_per_source": 3,
+  "exploration_slots": 2,
+  "commercial_min_ratio": 0.7,
+  "minimum_score": 6.0,
+  "risk_override_min": "high",
+  "topic_weights": {
+    "product_innovation": 0.2,
+    "ingredients_technology": 0.2,
+    "packaging_labeling": 0.1,
+    "consumer_trends": 0.15,
+    "regulations_standards": 0.08,
+    "food_safety_recalls": 0.07,
+    "retail_foodservice": 0.1,
+    "company_updates": 0.1
+  },
+  "market_weights": {}
+}

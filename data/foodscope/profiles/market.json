@@ -1,0 +1,21 @@
+{
+  "id": "market",
+  "name": "市场行情",
+  "max_items": 20,
+  "max_per_source": 3,
+  "exploration_slots": 2,
+  "commercial_min_ratio": 0.0,
+  "minimum_score": 6.0,
+  "risk_override_min": "high",
+  "topic_weights": {
+    "product_innovation": 0.15,
+    "ingredients_technology": 0.08,
+    "packaging_labeling": 0.05,
+    "consumer_trends": 0.25,
+    "regulations_standards": 0.04,
+    "food_safety_recalls": 0.03,
+    "retail_foodservice": 0.2,
+    "company_updates": 0.2
+  },
+  "market_weights": {}
+}
