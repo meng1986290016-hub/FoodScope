@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Git
+.git/
+.github/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Local configuration, data, and runtime secrets
+.env
+data/*
+!data/config.example.json
+!data/presets.json
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Misc
+todo.txt
+*.svg
+*.tsx
+.claude/
