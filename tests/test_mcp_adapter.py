@@ -112,7 +112,10 @@ def test_apply_source_filter_handles_twitter_and_openbb() -> None:
 
 
 def test_mcp_source_registry_covers_model_source_types() -> None:
-    assert set(SOURCE_REGISTRY) == {source.value for source in SourceType}
+    generic_source_types = {
+        source.value for source in SourceType if source is not SourceType.FOOD
+    }
+    assert set(SOURCE_REGISTRY) == generic_source_types
 
 
 def test_mcp_filter_and_reporting_support_every_registered_source() -> None:

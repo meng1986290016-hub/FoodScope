@@ -4,7 +4,15 @@ from datetime import datetime, timezone
 from enum import Enum
 import re
 from typing import Annotated, Literal, Optional, List, Dict, Any, NamedTuple, Union
-from pydantic import BaseModel, HttpUrl, Field, field_validator
+from pydantic import BaseModel, HttpUrl, Field, field_validator, model_validator
+
+from .foodscope.config import (
+    CollectionConfig,
+    DeliveryConfig,
+    FoodScopeConfig,
+    ScheduleConfig,
+)
+from .foodscope.models import FoodIntelligence
 
 
 class SourceType(str, Enum):
@@ -20,6 +28,7 @@ class SourceType(str, Enum):
     OSSINSIGHT = "ossinsight"
     GDELT = "gdelt"
     GOOGLE_NEWS = "google_news"
+    FOOD = "food"
 
 
 class SourceDefinition(NamedTuple):
@@ -62,6 +71,7 @@ class ContentItem(BaseModel):
     ai_reason: Optional[str] = None
     ai_summary: Optional[str] = None
     ai_tags: List[str] = Field(default_factory=list)
+    food: Optional[FoodIntelligence] = None
 
 
 class AIProvider(str, Enum):
@@ -157,6 +167,21 @@ class AIConfig(BaseModel):
         if invalid:
             raise ValueError(f"invalid language code: {invalid[0]!r}")
         return languages
+
+
+class AIRouteConfig(AIConfig):
+    """One FoodScope AI route with explicit runtime controls."""
+
+    concurrency: int = Field(default=4, gt=0, le=64)
+    timeout_seconds: float = Field(default=60.0, gt=0)
+    max_attempts: int = Field(default=3, ge=1, le=10)
+
+
+class AIRoutesConfig(BaseModel):
+    """Fast candidate and deep selected-item AI routes."""
+
+    fast: AIRouteConfig
+    analysis: AIRouteConfig
 
 
 class GitHubSourceConfig(BaseModel):
@@ -499,3 +524,17 @@ class Config(BaseModel):
     extractors: Dict[str, ExtractorConfig] = Field(default_factory=dict)
     email: Optional[EmailConfig] = None
     webhook: Optional[WebhookConfig] = None
+    foodscope: Optional[FoodScopeConfig] = None
+    ai_routes: Optional[AIRoutesConfig] = None
+    schedule: ScheduleConfig = Field(default_factory=ScheduleConfig)
+    collection: CollectionConfig = Field(default_factory=CollectionConfig)
+    delivery: DeliveryConfig = Field(default_factory=DeliveryConfig)
+
+    @model_validator(mode="after")
+    def validate_foodscope_ai_routes(self):
+        if self.foodscope and self.foodscope.enabled and self.ai_routes is None:
+            raise ValueError(
+                "ai_routes.fast and ai_routes.analysis are required "
+                "when FoodScope is enabled"
+            )
+        return self
