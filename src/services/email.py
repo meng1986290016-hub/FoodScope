@@ -151,10 +151,16 @@ class EmailManager:
         except Exception as e:
             logger.error(f"Error checking subscriptions: {e}")
 
-    def send_daily_summary(self, summary_md: str, subject: str, subscribers: List[str]):
+    def send_daily_summary(
+        self,
+        summary_md: str,
+        subject: str,
+        subscribers: List[str],
+        html_body: str | None = None,
+    ) -> bool:
         """Sends the daily summary to all subscribers."""
         if not self.config.enabled or not subscribers:
-            return
+            return False
 
         cleaned_summary = clean_app_summary_markdown(summary_md)
         safe_summary = html.escape(cleaned_summary)
@@ -164,7 +170,7 @@ class EmailManager:
             else f"<pre>{safe_summary}</pre>"
         )
 
-        html_body = f"""
+        generated_html_body = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -187,8 +193,14 @@ class EmailManager:
         </body>
         </html>
         """
+        final_html_body = (
+            html_body
+            if html_body is not None
+            else generated_html_body
+        )
 
         try:
+            all_sent = True
             with smtplib.SMTP_SSL(
                 self.config.smtp_server, self.config.smtp_port
             ) as server:
@@ -205,7 +217,9 @@ class EmailManager:
                     msg["To"] = subscriber
 
                     text_part = MIMEText(cleaned_summary, "plain")
-                    html_part = MIMEText(html_body, "html")
+                    html_part = MIMEText(
+                        final_html_body, "html"
+                    )
 
                     msg.attach(text_part)
                     msg.attach(html_part)
@@ -214,10 +228,13 @@ class EmailManager:
                         server.send_message(msg)
                         logger.info(f"Sent summary to {subscriber}")
                     except Exception as e:
+                        all_sent = False
                         logger.error(f"Failed to send to {subscriber}: {e}")
+            return all_sent
 
         except Exception as e:
             logger.error(f"SMTP Error: {e}")
+            return False
 
     def _send_reply(self, to_email: str, subject: str, body: str):
         """Helper to send a simple reply."""

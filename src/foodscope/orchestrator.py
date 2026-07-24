@@ -22,6 +22,7 @@ from src.storage.manager import StorageManager
 
 from .analyzer import FoodContentAnalyzer
 from .briefing import BriefFacts, BriefMetadata, RenderedBrief
+from .delivery import DeliveryResult, FoodDeliveryManager
 from .enricher import FoodContentEnricher
 from .event_dedup import FoodEventFingerprintStore, merge_food_events
 from .evidence import EvidencePolicy
@@ -33,6 +34,7 @@ from .run_store import FoodRunStore, RunStage
 from .selector import FoodProfileSelector, SelectionResult
 from .source_health import SourceRunMetric
 from .sources.registry import FoodSourceRegistry
+from .wechat import WeChatDraftClient
 
 
 _COMMERCIAL_CATEGORIES = {
@@ -81,6 +83,13 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self._rendered_brief: RenderedBrief | None = None
         self._window_start: datetime | None = None
         self._window_end: datetime | None = None
+        self.delivery_results: list[DeliveryResult] = []
+        self._generic_webhook_delivered = False
+        self.wechat_draft_client = (
+            WeChatDraftClient(self.config.delivery.wechat)
+            if self.config.delivery.wechat.enabled
+            else None
+        )
 
     async def run(self, force_hours: int = None) -> None:
         """Create one durable run and delegate execution to Horizon."""
@@ -89,6 +98,8 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         )
         self._brief_facts = None
         self._rendered_brief = None
+        self.delivery_results = []
+        self._generic_webhook_delivered = False
         try:
             await super().run(force_hours=force_hours)
         finally:
@@ -335,6 +346,61 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             self._rendered_brief,
         )
         return self._rendered_brief.markdown
+
+    async def _deliver_summary(
+        self,
+        summary: str,
+        important_items: list[ContentItem],
+        all_items_count: int,
+        date: str,
+        lang: str,
+        summarizer: DailySummarizer,
+    ) -> None:
+        """Deliver the saved canonical brief through isolated adapters."""
+        if (
+            self.active_run_id is None
+            or self._brief_facts is None
+            or self._rendered_brief is None
+        ):
+            raise RuntimeError(
+                "FoodScope brief artifacts are not ready"
+            )
+        manager = FoodDeliveryManager(
+            run_id=self.active_run_id,
+            run_store=self.run_store,
+            config=self.config.delivery,
+            email_manager=self.email_manager,
+            subscribers=self.storage.load_subscribers(),
+            webhook_notifier=self.webhook_notifier,
+            wechat_client=self.wechat_draft_client,
+        )
+        self.delivery_results = await manager.deliver(
+            self._brief_facts, self._rendered_brief
+        )
+
+        # A non-Feishu Horizon webhook retains its established Markdown
+        # template substitution. It is intentionally separate from the
+        # structured Feishu Card JSON 2.0 channel.
+        webhook_config = getattr(
+            self.webhook_notifier, "config", None
+        )
+        platform = str(
+            getattr(webhook_config, "platform", "")
+        ).lower()
+        if (
+            self.webhook_notifier is not None
+            and platform not in {"feishu", "lark"}
+            and not self._generic_webhook_delivered
+        ):
+            await self.webhook_notifier.send_daily_summary(
+                summary=self._rendered_brief.markdown,
+                important_items=important_items,
+                all_items_count=all_items_count,
+                date=date,
+                lang=lang,
+                summarizer=summarizer,
+            )
+            self._generic_webhook_delivered = True
 
     def _get_food_analyzer(self) -> FoodContentAnalyzer:
         if self._food_analyzer is None:

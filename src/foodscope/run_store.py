@@ -190,6 +190,8 @@ class FoodRunStore:
         status: str,
         *,
         artifact_id: str,
+        external_id: str | None = None,
+        detail: str | None = None,
     ) -> None:
         manifest = self.load_manifest(run_id)
         delivery = manifest["deliveries"].setdefault(
@@ -218,10 +220,27 @@ class FoodRunStore:
                 "status": status,
                 "artifact_id": artifact_id,
                 "attempted_at": attempted_at,
+                "external_id": external_id,
+                "detail": detail,
             }
         )
         manifest["updated_at"] = attempted_at
         self._write_manifest(run_id, manifest)
+
+    def delivery_succeeded(
+        self,
+        run_id: str,
+        channel: str,
+        artifact_id: str,
+    ) -> bool:
+        """Return whether this exact artifact already reached a channel."""
+        manifest = self.load_manifest(run_id)
+        delivery = manifest.get("deliveries", {}).get(channel, {})
+        return any(
+            record.get("status") == "success"
+            and record.get("artifact_id") == artifact_id
+            for record in delivery.get("records", [])
+        )
 
     def record_source_metrics(
         self, run_id: str, metrics: list[dict[str, Any]]

@@ -79,6 +79,29 @@ def test_send_daily_summary_falls_back_to_email_address_for_smtp_login(monkeypat
     assert FakeSMTP.instances[0].login_calls == [("noreply@example.com", "secret")]
 
 
+def test_send_daily_summary_uses_pre_rendered_html_body(monkeypatch):
+    monkeypatch.setenv("EMAIL_PASSWORD", "secret")
+    monkeypatch.setattr("src.services.email.smtplib.SMTP_SSL", FakeSMTP)
+    FakeSMTP.instances = []
+    manager = EmailManager(_email_config())
+    rendered_html = (
+        "<!doctype html><html><body>"
+        "<h1>FoodScope</h1></body></html>"
+    )
+
+    sent = manager.send_daily_summary(
+        "# FoodScope",
+        "FoodScope Daily",
+        ["user@example.com"],
+        html_body=rendered_html,
+    )
+
+    html_part = FakeSMTP.instances[0].messages[0].get_payload()[1]
+    html_body = html_part.get_payload(decode=True).decode()
+    assert sent is True
+    assert html_body == rendered_html
+
+
 def test_send_daily_summary_escapes_raw_html(monkeypatch):
     monkeypatch.setenv("EMAIL_PASSWORD", "secret")
     monkeypatch.setattr("src.services.email.smtplib.SMTP_SSL", FakeSMTP)

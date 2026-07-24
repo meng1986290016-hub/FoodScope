@@ -142,3 +142,12 @@ def test_foodscope_run_persists_all_stages_and_isolates_bad_item(
     assert facts_hash in (run_dir / "brief.html").read_text(
         encoding="utf-8"
     )
+    assert {
+        channel: result["status"]
+        for channel, result in manifest["deliveries"].items()
+    } == {
+        "archive": "success",
+        "email": "disabled",
+        "feishu": "disabled",
+        "wechat_draft": "disabled",
+    }

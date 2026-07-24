@@ -658,6 +658,21 @@ class WebhookNotifier:
                 error_type=type(e).__name__,
             )
 
+    async def send_payload(
+        self, payload: dict
+    ) -> WebhookDeliveryResult:
+        """Send one pre-rendered JSON payload through the safe webhook path.
+
+        This preserves the configured URL and custom headers while bypassing
+        the legacy request-body template. It is used by FoodScope Feishu/Lark
+        cards and leaves ``notify`` and existing Horizon callers unchanged.
+        """
+        if not isinstance(payload, dict):
+            raise TypeError("webhook payload must be a dictionary")
+        return await self.notify(
+            {"_request_body_override": payload}
+        )
+
     def _check_body_error_code(self, body: str) -> Optional[str]:
         """Check if a 2xx response body contains a platform-specific error code.
 
