@@ -183,6 +183,87 @@ class FoodRunStore:
         _, run_id, stage = max(candidates, key=lambda value: value[:2])
         return run_id, stage
 
+    def latest_run(self) -> str | None:
+        """Return the newest valid run, including completed runs."""
+        candidates: list[tuple[str, str]] = []
+        for run_dir in self.root.iterdir():
+            if not run_dir.is_dir() or run_dir.is_symlink():
+                continue
+            try:
+                manifest = self.load_manifest(run_dir.name)
+            except (
+                FileNotFoundError,
+                json.JSONDecodeError,
+                TypeError,
+                ValueError,
+            ):
+                continue
+            candidates.append(
+                (
+                    manifest.get("updated_at", ""),
+                    run_dir.name,
+                )
+            )
+        if not candidates:
+            return None
+        return max(candidates)[1]
+
+    def set_run_window(
+        self,
+        run_id: str,
+        since: datetime,
+        until: datetime,
+    ) -> None:
+        """Persist the exact collection window before fetching."""
+        if (
+            since.tzinfo is None
+            or until.tzinfo is None
+            or since.utcoffset() is None
+            or until.utcoffset() is None
+        ):
+            raise ValueError(
+                "run window must be timezone-aware"
+            )
+        if since >= until:
+            raise ValueError(
+                "run window must be positive"
+            )
+        manifest = self.load_manifest(run_id)
+        manifest["run_window"] = {
+            "since": since.isoformat(),
+            "until": until.isoformat(),
+        }
+        manifest["updated_at"] = self._now()
+        self._write_manifest(run_id, manifest)
+
+    def load_brief_artifacts(
+        self, run_id: str
+    ) -> tuple[Any, Any]:
+        """Load and validate canonical facts and both render formats."""
+        from .briefing import BriefFacts, RenderedBrief
+
+        run_dir = self._run_dir(run_id)
+        facts = BriefFacts.model_validate_json(
+            (run_dir / "facts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        manifest = self.load_manifest(run_id)
+        rendered = RenderedBrief(
+            facts_sha256=manifest["facts_sha256"],
+            markdown=(run_dir / "brief.md").read_text(
+                encoding="utf-8"
+            ),
+            html=(run_dir / "brief.html").read_text(
+                encoding="utf-8"
+            ),
+        )
+        if facts.fact_hash() != rendered.facts_sha256:
+            raise ValueError(
+                "stored brief fact hash does not match facts.json"
+            )
+        return facts, rendered
+
     def record_delivery(
         self,
         run_id: str,
@@ -287,10 +368,27 @@ class FoodRunStore:
         self._write_manifest(run_id, manifest)
 
     def _run_dir(self, run_id: str) -> Path:
+        if (
+            not run_id
+            or Path(run_id).name != run_id
+            or "/" in run_id
+            or "\\" in run_id
+        ):
+            raise ValueError("invalid FoodScope run ID")
+        resolved_root = self.root.resolve()
         path = self.root / run_id
-        if not path.is_dir():
+        if path.is_symlink():
+            raise ValueError(
+                "FoodScope run directory cannot be a symlink"
+            )
+        resolved_path = path.resolve()
+        if resolved_path.parent != resolved_root:
+            raise ValueError(
+                "FoodScope run path escapes runs root"
+            )
+        if not resolved_path.is_dir():
             raise FileNotFoundError(f"unknown FoodScope run: {run_id}")
-        return path
+        return resolved_path
 
     def _write_manifest(
         self, run_id: str, manifest: dict[str, Any]

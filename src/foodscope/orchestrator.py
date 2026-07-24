@@ -31,6 +31,7 @@ from .models import FoodCategory
 from .normalizer import normalize_item
 from .rendering import FoodBriefRenderer
 from .run_store import FoodRunStore, RunStage
+from .scheduler import resolve_run_window
 from .selector import FoodProfileSelector, SelectionResult
 from .source_health import SourceRunMetric
 from .sources.registry import FoodSourceRegistry
@@ -85,25 +86,403 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self._window_end: datetime | None = None
         self.delivery_results: list[DeliveryResult] = []
         self._generic_webhook_delivered = False
+        self._delivery_enabled = True
         self.wechat_draft_client = (
             WeChatDraftClient(self.config.delivery.wechat)
             if self.config.delivery.wechat.enabled
             else None
         )
 
-    async def run(self, force_hours: int = None) -> None:
-        """Create one durable run and delegate execution to Horizon."""
-        self.active_run_id = self.run_store.create_run(
-            profile_id=self.profile.id
-        )
+    async def run(
+        self,
+        force_hours: int = None,
+        *,
+        since: datetime | str | None = None,
+        until: datetime | str | None = None,
+        deliver: bool = True,
+        resume_run_id: str | None = None,
+    ) -> None:
+        """Run or resume the FoodScope pipeline with an exact window."""
         self._brief_facts = None
         self._rendered_brief = None
         self.delivery_results = []
         self._generic_webhook_delivered = False
+        self._delivery_enabled = deliver
+        resume_stage: RunStage | None = None
+
+        if resume_run_id is not None:
+            self.active_run_id, resume_stage = (
+                self._prepare_resume(resume_run_id)
+            )
+            manifest = self.run_store.load_manifest(
+                self.active_run_id
+            )
+            raw_window = manifest.get("run_window")
+            if raw_window:
+                self._window_start = datetime.fromisoformat(
+                    raw_window["since"]
+                )
+                self._window_end = datetime.fromisoformat(
+                    raw_window["until"]
+                )
+            else:
+                window = resolve_run_window(
+                    lookback_hours=(
+                        self.config.collection.lookback_hours
+                    )
+                )
+                self._window_start = window.since
+                self._window_end = window.until
+        else:
+            window = resolve_run_window(
+                hours=force_hours,
+                since=since,
+                until=until,
+                lookback_hours=(
+                    self.config.collection.lookback_hours
+                ),
+            )
+            self._window_start = window.since
+            self._window_end = window.until
+            self.active_run_id = self.run_store.create_run(
+                profile_id=self.profile.id
+            )
+            self.run_store.set_run_window(
+                self.active_run_id,
+                window.since,
+                window.until,
+            )
+
         try:
-            await super().run(force_hours=force_hours)
+            await self._run_foodscope_pipeline(
+                resume_stage=resume_stage,
+                deliver=deliver,
+            )
+        except Exception as error:
+            self.console.print(
+                f"[bold red]❌ Error: {error}[/bold red]"
+            )
+            if (
+                deliver
+                and self.webhook_notifier is not None
+            ):
+                await self.webhook_notifier.send_failure(
+                    date=datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%d"
+                    ),
+                    error_message=str(error),
+                )
+            raise
         finally:
             self._record_source_metrics()
+
+    async def _run_foodscope_pipeline(
+        self,
+        *,
+        resume_stage: RunStage | None,
+        deliver: bool,
+    ) -> None:
+        if self.active_run_id is None:
+            raise RuntimeError(
+                "FoodScope run has not been created"
+            )
+        if (
+            deliver
+            and self.email_manager is not None
+            and self.config.email is not None
+            and self.config.email.enabled
+            and self.config.email.imap_enabled
+        ):
+            self.email_manager.check_subscriptions(
+                self.storage
+            )
+
+        stage_index = (
+            list(RunStage).index(resume_stage)
+            if resume_stage is not None
+            else -1
+        )
+        if resume_stage == RunStage.SUMMARY:
+            (
+                self._brief_facts,
+                self._rendered_brief,
+            ) = self.run_store.load_brief_artifacts(
+                self.active_run_id
+            )
+            if deliver:
+                selected = self._load_item_stage(
+                    RunStage.FILTERED
+                )
+                await self._deliver_summary(
+                    summary=self._rendered_brief.markdown,
+                    important_items=selected,
+                    all_items_count=self._raw_count(),
+                    date=self._brief_facts.metadata.date,
+                    lang="zh",
+                    summarizer=self._create_summarizer(),
+                )
+            return
+
+        if stage_index >= list(RunStage).index(
+            RunStage.RAW
+        ):
+            all_items = self._load_item_stage(RunStage.RAW)
+        else:
+            assert self._window_start is not None
+            all_items = await self.fetch_all_sources(
+                self._window_start
+            )
+            all_items = [
+                item
+                for item in all_items
+                if self._item_in_window(item)
+            ]
+            await self._on_stage("raw", all_items)
+            if (
+                self.last_fetch_report is not None
+                and self.last_fetch_report.all_failed
+            ):
+                raise RuntimeError(
+                    self.last_fetch_report.failure_message()
+                )
+        if not all_items:
+            self.console.print(
+                "[yellow]No new content found. Exiting.[/yellow]"
+            )
+            return
+
+        if stage_index >= list(RunStage).index(
+            RunStage.NORMALIZED
+        ):
+            normalized_items = self._load_item_stage(
+                RunStage.NORMALIZED
+            )
+        else:
+            merged_items = self.merge_cross_source_duplicates(
+                all_items
+            )
+            normalized_items = await self._normalize_items(
+                merged_items
+            )
+            await self._on_stage(
+                "normalized", normalized_items
+            )
+
+        if stage_index >= list(RunStage).index(
+            RunStage.SCORED
+        ):
+            analyzed_items = self._load_item_stage(
+                RunStage.SCORED
+            )
+        else:
+            analyzed_items = await self._analyze_content(
+                normalized_items
+            )
+            await self._on_stage("scored", analyzed_items)
+
+        if stage_index >= list(RunStage).index(
+            RunStage.FILTERED
+        ):
+            important_items = self._load_item_stage(
+                RunStage.FILTERED
+            )
+            self.selection_result = SelectionResult(
+                items=list(important_items)
+            )
+        else:
+            filtering_result = await self.filter_items(
+                analyzed_items,
+                apply_balance=False,
+            )
+            important_items = filtering_result.items
+            await self._expand_twitter_discussion(
+                important_items
+            )
+            important_items = self.apply_balanced_digest(
+                important_items
+            ).items
+            await self._on_stage(
+                "filtered", important_items
+            )
+
+        if stage_index >= list(RunStage).index(
+            RunStage.ENRICHED
+        ):
+            enriched = self._load_item_stage(
+                RunStage.ENRICHED
+            )
+            selected_ids = {
+                item.id for item in important_items
+            }
+            enriched_by_id = {
+                item.id: item for item in enriched
+            }
+            important_items = [
+                enriched_by_id.get(item.id, item)
+                for item in important_items
+            ]
+            self.selection_result = SelectionResult(
+                items=list(important_items),
+                risk_alerts=[
+                    item
+                    for item in enriched
+                    if item.id not in selected_ids
+                ],
+            )
+        else:
+            await self._enrich_important_items(
+                important_items
+            )
+            await self._on_stage(
+                "enriched", important_items
+            )
+
+        today = datetime.now(timezone.utc).strftime(
+            "%Y-%m-%d"
+        )
+        for language in self.config.ai.languages:
+            summarizer = self._create_summarizer()
+            summary = await self._generate_summary(
+                important_items,
+                today,
+                self._raw_count(default=len(all_items)),
+                language=language,
+                summarizer=summarizer,
+            )
+            await self._on_stage(
+                "summary",
+                {
+                    "language": language,
+                    "date": today,
+                    "total_fetched": self._raw_count(
+                        default=len(all_items)
+                    ),
+                    "markdown": summary,
+                },
+            )
+            self.storage.save_daily_summary(
+                today, summary, language=language
+            )
+            await self._deliver_summary(
+                summary=summary,
+                important_items=important_items,
+                all_items_count=self._raw_count(
+                    default=len(all_items)
+                ),
+                date=today,
+                lang=language,
+                summarizer=summarizer,
+            )
+
+    def _prepare_resume(
+        self, requested_run_id: str
+    ) -> tuple[str, RunStage]:
+        if requested_run_id == "latest":
+            latest = self.run_store.latest_resumable_run()
+            if latest is not None:
+                run_id, stage = latest
+                manifest = self.run_store.load_manifest(
+                    run_id
+                )
+            else:
+                run_id = self.run_store.latest_run()
+                if run_id is None:
+                    raise ValueError(
+                        "no FoodScope run is available to resume"
+                    )
+                manifest = self.run_store.load_manifest(
+                    run_id
+                )
+                completed = manifest.get(
+                    "completed_stages", []
+                )
+                if not completed:
+                    raise ValueError(
+                        "latest FoodScope run has no completed stage"
+                    )
+                stage = RunStage(completed[-1])
+        else:
+            run_id = requested_run_id
+            manifest = self.run_store.load_manifest(run_id)
+            completed = manifest.get(
+                "completed_stages", []
+            )
+            if not completed:
+                raise ValueError(
+                    "FoodScope run has no completed stage"
+                )
+            stage = max(
+                (RunStage(value) for value in completed),
+                key=lambda value: list(RunStage).index(value),
+            )
+        if manifest.get("profile_id") != self.profile.id:
+            raise ValueError(
+                "cannot resume a run created with a different profile"
+            )
+        if (
+            manifest.get("schema_version")
+            != self.run_store.SCHEMA_VERSION
+        ):
+            raise ValueError(
+                "cannot resume a run with a different schema version"
+            )
+        required = {
+            stage.value
+            for stage in list(RunStage)[
+                : list(RunStage).index(stage) + 1
+            ]
+        }
+        if not required.issubset(
+            set(manifest.get("completed_stages", []))
+        ):
+            raise ValueError(
+                "cannot resume a run with non-contiguous stages"
+            )
+        return run_id, stage
+
+    def _load_item_stage(
+        self, stage: RunStage
+    ) -> list[ContentItem]:
+        if self.active_run_id is None:
+            raise RuntimeError(
+                "FoodScope run has not been created"
+            )
+        payload = self.run_store.load_stage(
+            self.active_run_id, stage
+        )
+        if not isinstance(payload, list):
+            raise ValueError(
+                f"{stage.value} stage is not an item list"
+            )
+        return payload
+
+    def _raw_count(self, *, default: int = 0) -> int:
+        if self.active_run_id is None:
+            return default
+        manifest = self.run_store.load_manifest(
+            self.active_run_id
+        )
+        return int(
+            manifest.get("counts", {}).get("raw", default)
+        )
+
+    def _item_in_window(self, item: ContentItem) -> bool:
+        if (
+            self._window_start is None
+            or self._window_end is None
+        ):
+            return True
+        published_at = item.published_at
+        if (
+            published_at.tzinfo is None
+            or published_at.utcoffset() is None
+        ):
+            return False
+        return (
+            self._window_start.astimezone(timezone.utc)
+            <= published_at.astimezone(timezone.utc)
+            <= self._window_end.astimezone(timezone.utc)
+        )
 
     async def fetch_all_sources(
         self, since
@@ -369,10 +748,26 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             run_id=self.active_run_id,
             run_store=self.run_store,
             config=self.config.delivery,
-            email_manager=self.email_manager,
-            subscribers=self.storage.load_subscribers(),
-            webhook_notifier=self.webhook_notifier,
-            wechat_client=self.wechat_draft_client,
+            email_manager=(
+                self.email_manager
+                if self._delivery_enabled
+                else None
+            ),
+            subscribers=(
+                self.storage.load_subscribers()
+                if self._delivery_enabled
+                else []
+            ),
+            webhook_notifier=(
+                self.webhook_notifier
+                if self._delivery_enabled
+                else None
+            ),
+            wechat_client=(
+                self.wechat_draft_client
+                if self._delivery_enabled
+                else None
+            ),
         )
         self.delivery_results = await manager.deliver(
             self._brief_facts, self._rendered_brief
@@ -389,6 +784,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         ).lower()
         if (
             self.webhook_notifier is not None
+            and self._delivery_enabled
             and platform not in {"feishu", "lark"}
             and not self._generic_webhook_delivered
         ):

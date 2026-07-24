@@ -1,5 +1,7 @@
 import asyncio
 import json
+from datetime import datetime
+from pathlib import Path
 
 from src.foodscope.config import FoodSourceSpec
 from src.foodscope.models import (
@@ -9,7 +11,7 @@ from src.foodscope.models import (
     RiskLevel,
 )
 from src.foodscope.orchestrator import FoodScopeOrchestrator
-from src.models import Config
+from src.models import Config, ContentItem
 from src.orchestrator import FetchReport, SourceFetchOutcome
 from src.storage.manager import StorageManager
 from tests.foodscope.test_config_models import legacy_config
@@ -151,3 +153,164 @@ def test_foodscope_run_persists_all_stages_and_isolates_bad_item(
         "feishu": "disabled",
         "wechat_draft": "disabled",
     }
+
+
+def test_explicit_window_filters_items_after_until(
+    tmp_path, monkeypatch
+):
+    storage = StorageManager(data_dir=str(tmp_path / "data"))
+    orchestrator = FoodScopeOrchestrator(_config(), storage)
+    orchestrator.source_specs_by_id = {
+        "M001": FoodSourceSpec(
+            id="M001",
+            name="Industry source",
+            url="https://example.com",
+            adapter="rss",
+            evidence_tier=EvidenceTier.INDUSTRY,
+            collection_tier=CollectionTier.CORE,
+            categories=[FoodCategory.PRODUCT_INNOVATION],
+        )
+    }
+    orchestrator._food_analyzer = FakeAnalyzer()
+    orchestrator._food_enricher = FakeEnricher()
+    within = item("within", "Within")
+    after = item("after", "After")
+    within.published_at = datetime.fromisoformat(
+        "2026-07-24T05:00:00+00:00"
+    )
+    after.published_at = datetime.fromisoformat(
+        "2026-07-24T07:00:00+00:00"
+    )
+    for candidate in (within, after):
+        candidate.metadata["food_source_id"] = "M001"
+    observed_since = []
+
+    async def fetch_all_sources(since):
+        observed_since.append(since)
+        orchestrator.last_fetch_report = FetchReport(
+            [
+                SourceFetchOutcome(
+                    "M001",
+                    "success",
+                    items=[within, after],
+                )
+            ]
+        )
+        return [within, after]
+
+    monkeypatch.setattr(
+        orchestrator, "fetch_all_sources", fetch_all_sources
+    )
+    monkeypatch.chdir(tmp_path)
+
+    asyncio.run(
+        orchestrator.run(
+            since=datetime.fromisoformat(
+                "2026-07-24T00:00:00+00:00"
+            ),
+            until=datetime.fromisoformat(
+                "2026-07-24T06:00:00+00:00"
+            ),
+            deliver=False,
+        )
+    )
+
+    assert observed_since[0].isoformat() == (
+        "2026-07-24T00:00:00+00:00"
+    )
+    raw = orchestrator.run_store.load_stage(
+        orchestrator.active_run_id, "raw"
+    )
+    assert [candidate.id for candidate in raw] == ["within"]
+    manifest = orchestrator.run_store.load_manifest(
+        orchestrator.active_run_id
+    )
+    assert manifest["run_window"] == {
+        "since": "2026-07-24T00:00:00+00:00",
+        "until": "2026-07-24T06:00:00+00:00",
+    }
+
+
+def test_resume_from_enriched_skips_completed_work(
+    tmp_path, monkeypatch
+):
+    storage = StorageManager(data_dir=str(tmp_path / "data"))
+    orchestrator = FoodScopeOrchestrator(_config(), storage)
+    run_id = orchestrator.run_store.create_run("balanced")
+    fixture = Path(
+        "tests/fixtures/foodscope/selected_brief_facts.json"
+    )
+    fixture_path = Path(__file__).parents[2] / fixture
+    payload = json.loads(
+        fixture_path.read_text(encoding="utf-8")
+    )
+    candidate = ContentItem.model_validate(
+        payload["must_read"][0]
+    )
+    for stage in (
+        "raw",
+        "normalized",
+        "scored",
+        "filtered",
+        "enriched",
+    ):
+        orchestrator.run_store.save_stage(
+            run_id, stage, [candidate]
+        )
+    orchestrator.run_store.set_run_window(
+        run_id,
+        datetime.fromisoformat(
+            "2026-07-23T00:00:00+00:00"
+        ),
+        datetime.fromisoformat(
+            "2026-07-24T06:00:00+00:00"
+        ),
+    )
+
+    async def should_not_run(*args, **kwargs):
+        raise AssertionError("completed stage ran again")
+
+    monkeypatch.setattr(
+        orchestrator, "fetch_all_sources", should_not_run
+    )
+    monkeypatch.setattr(
+        orchestrator, "_analyze_content", should_not_run
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "_enrich_important_items",
+        should_not_run,
+    )
+    monkeypatch.chdir(tmp_path)
+
+    asyncio.run(
+        orchestrator.run(
+            resume_run_id=run_id, deliver=False
+        )
+    )
+
+    manifest = orchestrator.run_store.load_manifest(run_id)
+    assert manifest["completed_stages"][-1] == "summary"
+    assert manifest["facts_sha256"]
+
+
+def test_resume_rejects_profile_mismatch(tmp_path):
+    storage = StorageManager(data_dir=str(tmp_path / "data"))
+    orchestrator = FoodScopeOrchestrator(_config(), storage)
+    run_id = orchestrator.run_store.create_run("market")
+    orchestrator.run_store.save_stage(
+        run_id, "raw", [item("one", "One")]
+    )
+
+    try:
+        asyncio.run(
+            orchestrator.run(
+                resume_run_id=run_id, deliver=False
+            )
+        )
+    except ValueError as error:
+        assert "profile" in str(error)
+    else:
+        raise AssertionError(
+            "profile mismatch should reject resume"
+        )

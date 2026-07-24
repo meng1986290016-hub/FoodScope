@@ -1,3 +1,5 @@
+import pytest
+
 from src.foodscope.run_store import FoodRunStore, RunStage
 from tests.foodscope.test_normalizer import item
 
@@ -117,3 +119,13 @@ def test_source_metrics_are_idempotent_per_run_and_source(tmp_path):
     store.record_source_metrics(run_id, [metric])
 
     assert store.load_manifest(run_id)["source_metrics"] == [metric]
+
+
+@pytest.mark.parametrize(
+    "run_id", ["../outside", "../../etc", "nested/run"]
+)
+def test_run_store_rejects_traversal_ids(tmp_path, run_id):
+    store = FoodRunStore(tmp_path / "runs")
+
+    with pytest.raises(ValueError, match="run ID"):
+        store.load_manifest(run_id)

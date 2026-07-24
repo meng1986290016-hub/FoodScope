@@ -6,6 +6,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
+    "croniter>=3.0.0",
     "httpx>=0.27.0",
     "jinja2>=3.1.0",
     "feedparser>=6.0.11",
