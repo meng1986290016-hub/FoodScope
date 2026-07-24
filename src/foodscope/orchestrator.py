@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+import httpx
+
 from src.ai.client import create_ai_client
 from src.ai.summarizer import (
     DailySummarizer,
@@ -15,6 +17,7 @@ from src.models import Config, ContentItem
 from src.orchestrator import (
     BalancedDigestResult,
     FilteringPipelineResult,
+    FetchReport,
     HorizonOrchestrator,
 )
 from src.storage.manager import StorageManager
@@ -27,6 +30,7 @@ from .loaders import load_profile, load_source_packs
 from .normalizer import normalize_item
 from .run_store import FoodRunStore, RunStage
 from .selector import FoodProfileSelector, SelectionResult
+from .sources.registry import FoodSourceRegistry
 
 
 class FoodScopeOrchestrator(HorizonOrchestrator):
@@ -76,6 +80,29 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             profile_id=self.profile.id
         )
         await super().run(force_hours=force_hours)
+
+    async def fetch_all_sources(
+        self, since
+    ) -> list[ContentItem]:
+        """Fetch legacy and FoodScope pack sources independently."""
+        parent_items = await super().fetch_all_sources(since)
+        parent_outcomes = (
+            list(self.last_fetch_report.outcomes)
+            if self.last_fetch_report is not None
+            else []
+        )
+        sources = list(self.source_specs_by_id.values())
+        food_items: list[ContentItem] = []
+        food_outcomes = []
+        if sources:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                food_items, food_outcomes = await FoodSourceRegistry(
+                    client
+                ).fetch(sources, since)
+        self.last_fetch_report = FetchReport(
+            outcomes=parent_outcomes + food_outcomes
+        )
+        return parent_items + food_items
 
     async def _normalize_items(
         self, items: list[ContentItem]
