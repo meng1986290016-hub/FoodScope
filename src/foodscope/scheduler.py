@@ -9,7 +9,7 @@ import fcntl
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from croniter import croniter
@@ -273,7 +273,7 @@ class RunLock:
 
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
-        self._handle = None
+        self._handle: TextIO | None = None
 
     def acquire(self) -> None:
         if self._handle is not None:

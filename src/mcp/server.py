@@ -29,7 +29,7 @@ METRICS: dict[str, Any] = {
 
 
 def _ok(tool: str, data: dict[str, Any], duration_ms: float | None = None) -> dict[str, Any]:
-    payload = {
+    payload: dict[str, Any] = {
         "ok": True,
         "tool": tool,
         "data": data,
@@ -52,7 +52,7 @@ def _err(tool: str, error: Exception, duration_ms: float | None = None) -> dict[
         message = str(error)
         details = None
 
-    payload = {
+    payload: dict[str, Any] = {
         "ok": False,
         "tool": tool,
         "error": {

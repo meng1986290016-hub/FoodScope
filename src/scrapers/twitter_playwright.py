@@ -1,7 +1,6 @@
 """Twitter scraper using Playwright + Cookie (replaces Apify)."""
 
 import asyncio
-import glob
 import hashlib
 import json
 import logging
@@ -10,6 +9,7 @@ import random
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
+from pydantic import HttpUrl
 
 from ..models import ContentItem, SourceType, TwitterConfig
 from .base import BaseScraper
@@ -374,7 +374,9 @@ class TwitterPlaywrightScraper(BaseScraper):
                 id=self._generate_id(SourceType.TWITTER.value, "tweet", tweet_id),
                 source_type=SourceType.TWITTER,
                 title=f"@{username}: {title_body}",
-                url=f"https://x.com/{username}/status/{tweet_id}",
+                url=HttpUrl(
+                    f"https://x.com/{username}/status/{tweet_id}"
+                ),
                 content=text,
                 author=username,
                 published_at=published_at,

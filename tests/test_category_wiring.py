@@ -3,7 +3,6 @@
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
-import pytest
 from bs4 import BeautifulSoup
 
 from src.models import (
@@ -178,7 +177,6 @@ def test_reddit_rss_fallback_category_in_metadata():
     feed = feedparser.parse(rss_xml)
     # Simulate what _fetch_subreddit_rss produces from the parsed feed
     from src.models import SourceType
-    from src.scrapers.reddit import RedditScraper as RS
 
     items = []
     for entry in feed.entries[: cfg.fetch_limit]:

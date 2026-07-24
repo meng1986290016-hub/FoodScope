@@ -6,8 +6,6 @@ For items that pass the score threshold, this module:
 """
 
 import asyncio
-import json
-import re
 import sys
 import os
 from typing import List, Optional

@@ -10,6 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
+from pydantic import HttpUrl
 
 from ..ai.summarizer import DailySummarizer
 from ..models import ContentItem, SourceType
@@ -26,7 +27,7 @@ def _make_test_items() -> list[ContentItem]:
             id="github:test:1",
             source_type=SourceType.GITHUB,
             title="GPT-5 Released with Multimodal Capabilities",
-            url="https://example.com/gpt5",
+            url=HttpUrl("https://example.com/gpt5"),
             content="OpenAI announced GPT-5 with major improvements.",
             author="openai",
             published_at=datetime(2026, 4, 24, 10, 0, tzinfo=timezone.utc),
@@ -43,7 +44,7 @@ def _make_test_items() -> list[ContentItem]:
             id="hackernews:test:2",
             source_type=SourceType.HACKERNEWS,
             title="New Linux Kernel 7.0 Released",
-            url="https://example.com/linux7",
+            url=HttpUrl("https://example.com/linux7"),
             content="Linux kernel 7.0 brings significant performance improvements.",
             author="torvalds",
             published_at=datetime(2026, 4, 24, 8, 0, tzinfo=timezone.utc),

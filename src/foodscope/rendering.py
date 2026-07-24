@@ -23,6 +23,10 @@ CATEGORY_LABELS = {
 }
 
 
+def _category_label(value: object) -> str:
+    return CATEGORY_LABELS.get(str(value), str(value))
+
+
 def _item_tags(item: ContentItem) -> list[str]:
     if item.food is None:
         return list(item.ai_tags)
@@ -61,9 +65,7 @@ class FoodBriefRenderer:
                 {
                     "md": _escape_markdown,
                     "safe_url": lambda value: _safe_url(value) or "",
-                    "category_label": lambda value: (
-                        CATEGORY_LABELS.get(value, str(value))
-                    ),
+                    "category_label": _category_label,
                     "item_tags": _item_tags,
                 }
             )

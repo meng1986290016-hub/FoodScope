@@ -3,7 +3,7 @@
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, cast, Dict, List, Optional
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from anthropic import AsyncAnthropic
 from google import genai
@@ -124,7 +124,7 @@ class AnthropicClient(AIClient):
 
         api_key = _resolve_api_key(config)
 
-        kwargs = {"api_key": api_key}
+        kwargs: dict[str, Any] = {"api_key": api_key}
         if config.base_url:
             kwargs["base_url"] = config.base_url
 
@@ -168,7 +168,11 @@ class AnthropicClient(AIClient):
                 input_tokens=getattr(usage, "input_tokens", 0),
                 output_tokens=getattr(usage, "output_tokens", 0),
             )
-        return message.content[0].text
+        for block in message.content:
+            text = getattr(block, "text", None)
+            if isinstance(text, str):
+                return text
+        raise ValueError("Anthropic returned no text content")
 
 
 class OpenAIClient(AIClient):
@@ -203,7 +207,7 @@ class OpenAIClient(AIClient):
         fallback = "no_key" if config.provider == AIProvider.OLLAMA else None
         api_key = _resolve_api_key(config, fallback=fallback)
 
-        kwargs = {"api_key": api_key}
+        kwargs: dict[str, Any] = {"api_key": api_key}
         base_url = self._resolve_base_url(config)
         if base_url:
             kwargs["base_url"] = base_url
@@ -300,7 +304,7 @@ class OpenAIClient(AIClient):
                 input_tokens=getattr(usage, "prompt_tokens", 0),
                 output_tokens=getattr(usage, "completion_tokens", 0),
             )
-        return response.choices[0].message.content
+        return response.choices[0].message.content or ""
 
     async def _do_request(
         self,
@@ -312,7 +316,7 @@ class OpenAIClient(AIClient):
         include_temperature: bool,
         use_max_completion_tokens: bool,
     ):
-        request_kwargs = {
+        request_kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system},
@@ -325,7 +329,10 @@ class OpenAIClient(AIClient):
             request_kwargs["temperature"] = temperature
         if self.provider not in self._NO_RESPONSE_FORMAT:
             request_kwargs["response_format"] = {"type": "json_object"}
-        return await self.client.chat.completions.create(**request_kwargs)
+        completions = cast(
+            Any, self.client.chat.completions
+        )
+        return await completions.create(**request_kwargs)
 
     @staticmethod
     def _is_temperature_unsupported(message: str) -> bool:
@@ -435,7 +442,7 @@ class AzureOpenAIClient(AIClient):
                 input_tokens=getattr(usage, "prompt_tokens", 0),
                 output_tokens=getattr(usage, "completion_tokens", 0),
             )
-        return response.choices[0].message.content
+        return response.choices[0].message.content or ""
 
     async def _create_completion(
         self,
@@ -446,12 +453,15 @@ class AzureOpenAIClient(AIClient):
         max_tokens: int,
         use_max_completion_tokens: bool,
     ):
-        tokens_kwarg = (
+        tokens_kwarg: dict[str, Any] = (
             {"max_completion_tokens": max_tokens}
             if use_max_completion_tokens
             else {"max_tokens": max_tokens}
         )
-        return await self.client.chat.completions.create(
+        completions = cast(
+            Any, self.client.chat.completions
+        )
+        return await completions.create(
             model=self.model,
             messages=[
                 {"role": "system", "content": system},
@@ -527,7 +537,7 @@ class GeminiClient(AIClient):
             prompt = getattr(usage, "prompt_token_count", 0) or 0
             completion = max(0, total - prompt)
             record_usage("gemini", input_tokens=prompt, output_tokens=completion)
-        return response.text
+        return response.text or ""
 
 
 def _uses_anthropic_compatible_api(config: AIConfig) -> bool:

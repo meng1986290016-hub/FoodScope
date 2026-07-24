@@ -17,6 +17,7 @@ from src.orchestrator import (
     FilteringPipelineResult,
     FetchReport,
     HorizonOrchestrator,
+    SourceFetchOutcome,
 )
 from src.storage.manager import StorageManager
 
@@ -385,11 +386,12 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                     run_id
                 )
             else:
-                run_id = self.run_store.latest_run()
-                if run_id is None:
+                latest_run_id = self.run_store.latest_run()
+                if latest_run_id is None:
                     raise ValueError(
                         "no FoodScope run is available to resume"
                     )
+                run_id = latest_run_id
                 manifest = self.run_store.load_manifest(
                     run_id
                 )
@@ -496,7 +498,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         )
         sources = list(self.source_specs_by_id.values())
         food_items: list[ContentItem] = []
-        food_outcomes = []
+        food_outcomes: list[SourceFetchOutcome] = []
         if sources:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 food_items, food_outcomes = await FoodSourceRegistry(
@@ -525,7 +527,12 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         for item in items:
             if item.food is not None:
                 continue
-            source_id = item.metadata.get("food_source_id")
+            raw_source_id = item.metadata.get("food_source_id")
+            source_id = (
+                raw_source_id
+                if isinstance(raw_source_id, str)
+                else ""
+            )
             source = self.source_specs_by_id.get(source_id)
             if source is None:
                 item.ai_score = 0.0
@@ -547,7 +554,21 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         if self.active_run_id is None:
             raise RuntimeError("FoodScope run has not been created")
         run_stage = RunStage(stage)
-        stored_payload = payload
+        stored_payload: list[ContentItem] | dict | str
+        if (
+            run_stage != RunStage.SUMMARY
+            and isinstance(payload, list)
+            and all(
+                isinstance(item, ContentItem) for item in payload
+            )
+        ):
+            stored_payload = payload
+        elif isinstance(payload, (dict, str)):
+            stored_payload = payload
+        else:
+            raise TypeError(
+                f"invalid payload for {run_stage.value} stage"
+            )
         if run_stage == RunStage.ENRICHED and isinstance(payload, list):
             stored_payload = self._with_risk_alerts(payload)
         elif (

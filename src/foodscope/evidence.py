@@ -74,7 +74,7 @@ class EvidencePolicy:
                 EvidenceTier.INDUSTRY,
                 EvidenceTier.DISCOVERY,
             }
-            if accepted:
+            if accepted and linked_tier is not None:
                 effective_tier = linked_tier
                 reason = "accepted linked weak signal"
             else:
@@ -89,6 +89,8 @@ class EvidencePolicy:
     @staticmethod
     def _linked_tier(item: ContentItem) -> EvidenceTier | None:
         raw_tier = item.metadata.get("linked_evidence_tier")
+        if raw_tier is None:
+            return None
         try:
             return EvidenceTier(int(raw_tier))
         except (TypeError, ValueError):

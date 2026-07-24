@@ -27,6 +27,5 @@ VOLUME ["/app/data"]
 ENV PYTHONUNBUFFERED=1
 USER horizon
 
-# Run the application
-ENTRYPOINT ["uv", "run", "horizon"]
-CMD []
+# Run the same module entry point used by local and CI commands.
+CMD ["uv", "run", "python", "-m", "src.main"]

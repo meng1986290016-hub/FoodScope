@@ -1,9 +1,7 @@
 """Interactive setup wizard for Horizon configuration."""
 
-import json
 import os
 import sys
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -90,7 +88,11 @@ def configure_ai() -> Optional[AIConfig]:
         "Output languages (comma-separated)",
         default="zh,en",
     )
-    lang_list = [l.strip() for l in languages.split(",") if l.strip()]
+    lang_list = [
+        language.strip()
+        for language in languages.split(",")
+        if language.strip()
+    ]
 
     return AIConfig(
         provider=provider_enum,

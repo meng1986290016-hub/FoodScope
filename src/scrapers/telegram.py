@@ -3,11 +3,12 @@
 import asyncio
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 
 import httpx
 from bs4 import BeautifulSoup
+from pydantic import HttpUrl
 
 from .base import BaseScraper
 from ..models import ContentItem, TelegramConfig, TelegramChannelConfig, SourceType
@@ -152,7 +153,7 @@ class TelegramScraper(BaseScraper):
             id=self._generate_id("telegram", channel, msg_id),
             source_type=SourceType.TELEGRAM,
             title=title,
-            url=canonical_url,
+            url=HttpUrl(canonical_url),
             content=text,
             author=channel,
             published_at=published_at,

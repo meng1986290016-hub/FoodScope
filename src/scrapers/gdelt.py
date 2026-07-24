@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from pydantic import HttpUrl
 from typing import Any, List, Optional
 
 import httpx
@@ -156,7 +157,7 @@ class GDELTScraper(BaseScraper):
                 id=self._generate_id("gdelt", "article", native_id),
                 source_type=self.SOURCE_TYPE,
                 title=title,
-                url=url,
+                url=HttpUrl(str(url)),
                 content=None,
                 author=raw.get("domain"),
                 published_at=published,

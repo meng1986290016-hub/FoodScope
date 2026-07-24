@@ -10,6 +10,7 @@ from typing import List, Optional
 from email.utils import parsedate_to_datetime
 import httpx
 import feedparser
+from pydantic import HttpUrl
 
 from .base import BaseScraper
 from ..extractors import ExtractorRegistry
@@ -116,7 +117,9 @@ class RSSScraper(BaseScraper):
                     id=self._generate_id("rss", feed_id, entry_hash),
                     source_type=SourceType.RSS,
                     title=entry.get("title", "Untitled"),
-                    url=entry.get("link", str(source.url)),
+                    url=HttpUrl(
+                        str(entry.get("link", source.url))
+                    ),
                     content=content,
                     author=entry.get("author", source.name),
                     published_at=published_at,
@@ -135,7 +138,9 @@ class RSSScraper(BaseScraper):
 
         return items
 
-    def _parse_date(self, entry: dict) -> datetime:
+    def _parse_date(
+        self, entry: dict
+    ) -> Optional[datetime]:
         """Parse publication date from feed entry.
 
         Args:
@@ -171,12 +176,17 @@ class RSSScraper(BaseScraper):
             str: Extracted text content
         """
         # Try different content fields
-        if "summary" in entry:
-            return entry.summary
-        if "description" in entry:
-            return entry.description
-        if "content" in entry and entry.content:
+        summary = entry.get("summary")
+        if summary:
+            return str(summary)
+        description = entry.get("description")
+        if description:
+            return str(description)
+        content = entry.get("content")
+        if isinstance(content, list) and content:
             # content is usually a list
-            return entry.content[0].get("value", "")
+            first = content[0]
+            if isinstance(first, dict):
+                return str(first.get("value", ""))
 
         return ""

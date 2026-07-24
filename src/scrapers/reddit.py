@@ -214,7 +214,12 @@ class RedditScraper(BaseScraper):
                 permalink = f"/r/{cfg.subreddit}/comments/{post_id}/"
 
             url = str(thing.get("data-url") or "")
-            classes = thing.get("class") or []
+            raw_classes = thing.get("class")
+            classes: list[str] = (
+                raw_classes
+                if isinstance(raw_classes, list)
+                else []
+            )
             is_self = isinstance(classes, list) and "self" in classes or not url
             selftext = ""
             body_el = thing.select_one("div.expando div.usertext-body div.md")
@@ -403,7 +408,10 @@ class RedditScraper(BaseScraper):
         self, subreddit: str, post_id: str, fetch_limit: int
     ) -> List[dict]:
         url = f"{OLD_REDDIT_BASE}/r/{subreddit}/comments/{post_id}/"
-        params = {"limit": fetch_limit, "sort": "top"}
+        params: dict[str, str | int] = {
+            "limit": fetch_limit,
+            "sort": "top",
+        }
 
         try:
             response = await self.client.get(
@@ -423,7 +431,12 @@ class RedditScraper(BaseScraper):
         soup = BeautifulSoup(response.text, "html.parser")
         comments = []
         for comment_el in soup.select("div.comment[data-fullname]"):
-            classes = comment_el.get("class") or []
+            raw_classes = comment_el.get("class")
+            classes: list[str] = (
+                raw_classes
+                if isinstance(raw_classes, list)
+                else []
+            )
             if isinstance(classes, list) and "deleted" in classes:
                 continue
             body_el = comment_el.select_one("div.usertext-body div.md")
@@ -440,7 +453,12 @@ class RedditScraper(BaseScraper):
                 }
             )
 
-        comments.sort(key=lambda c: c.get("score", 0), reverse=True)
+        comments.sort(
+            key=lambda comment: self._parse_int(
+                comment.get("score"), default=0
+            ),
+            reverse=True,
+        )
         return comments[:fetch_limit]
 
     def _parse_post(

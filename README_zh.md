@@ -39,6 +39,23 @@
 `balanced` 综合情报画像。两条 AI 路由和所有分发凭证都只配置环境变量名，
 提交到仓库的 JSON 不保存秘密；关闭 FoodScope 时仍保持原有 Horizon 行为。
 
+```bash
+cp data/config.foodscope.example.json data/config.json
+cp .env.example .env
+uv sync --extra dev
+uv run python -m src.main --no-deliver
+```
+
+使用者可自行调整抓取时区、cron、回看时长、来源包、单一来源开关和五种简报
+画像（综合、市场、新品、研发、合规）。确认本地成品后再开启邮件、飞书或微信
+公众号草稿分发。
+
+[配置指南](docs/foodscope/configuration.md) ·
+[来源包](docs/foodscope/source-packs.md) ·
+[简报画像](docs/foodscope/profiles.md) ·
+[运行与恢复](docs/foodscope/operations.md) ·
+[参与贡献](docs/foodscope/contributing.md)
+
 ## 截图
 
 <table>

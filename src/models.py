@@ -89,7 +89,7 @@ class AIProvider(str, Enum):
 
 
 # Provider-specific defaults used by setup and provider-chain expansion.
-AI_PROVIDER_DEFAULTS = {
+AI_PROVIDER_DEFAULTS: Dict[AIProvider, Dict[str, Any]] = {
     AIProvider.ANTHROPIC: {
         "model": "claude-3-5-sonnet-20241022",
         "api_key_env": "ANTHROPIC_API_KEY",

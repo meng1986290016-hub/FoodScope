@@ -1,8 +1,6 @@
 """Content analysis using AI."""
 
 import asyncio
-import json
-import re
 from typing import List, Optional
 from pydantic import BaseModel, Field, ValidationError
 from tenacity import retry, stop_after_attempt, wait_exponential

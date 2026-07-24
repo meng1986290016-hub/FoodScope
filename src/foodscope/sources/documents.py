@@ -12,7 +12,6 @@ from src.foodscope.config import FoodSourceSpec
 from src.models import ContentItem
 from src.url_security import safe_request
 
-from .base import BaseFoodAdapter
 from .html_list import HTMLListAdapter
 
 

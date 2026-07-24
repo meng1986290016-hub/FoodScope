@@ -32,6 +32,7 @@ from datetime import datetime, timezone
 from typing import Any, Iterable, List, Optional
 
 import httpx
+from pydantic import HttpUrl
 
 from .base import BaseScraper
 from ..models import ContentItem, OpenBBConfig, OpenBBWatchlist, SourceType
@@ -120,8 +121,11 @@ class OpenBBScraper(BaseScraper):
     ) -> List[ContentItem]:
         """Fetch news for one watchlist via ``obb.news.company()``."""
         symbols_param = ",".join(watchlist.symbols)
+        obb = self._obb
+        if obb is None:
+            return []
         response = await asyncio.to_thread(
-            self._obb.news.company,
+            obb.news.company,
             symbol=symbols_param,
             limit=watchlist.fetch_limit,
             provider=watchlist.provider,
@@ -175,7 +179,7 @@ class OpenBBScraper(BaseScraper):
             id=self._generate_id("openbb", "news", native_id),
             source_type=self.SOURCE_TYPE,
             title=title,
-            url=url,
+            url=HttpUrl(url),
             content=body,
             author=author or (symbols[0] if symbols else None),
             published_at=published,

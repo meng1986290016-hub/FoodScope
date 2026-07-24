@@ -434,7 +434,9 @@ class TestWebhookNotifier:
         config = WebhookConfig(enabled=False, url_env=_TEST_URL_ENV)
         notifier = WebhookNotifier(config)
         with patch("httpx.AsyncClient") as mock_client:
-            result = _run_async(notifier.notify({"date": "2026-04-24"}))
+            result = _run_async(
+                notifier.notify({"date": "2026-04-24"})
+            )
             mock_client.assert_not_called()
             assert result.status == WebhookDeliveryStatus.DISABLED
             assert result.sent is False
@@ -446,7 +448,9 @@ class TestWebhookNotifier:
         notifier = WebhookNotifier(config)
         assert notifier.url is None
         with patch("httpx.AsyncClient") as mock_client:
-            result = _run_async(notifier.notify({"date": "2026-04-24"}))
+            result = _run_async(
+                notifier.notify({"date": "2026-04-24"})
+            )
             mock_client.assert_not_called()
             assert result.status == WebhookDeliveryStatus.SKIPPED
             assert result.sent is False
@@ -638,7 +642,7 @@ class TestWebhookNotifier:
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
 
-            result = _run_async(notifier.notify({"date": "2026-04-24"}))
+            _run_async(notifier.notify({"date": "2026-04-24"}))
             call_kwargs = mock_client.post.call_args[1]
             assert call_kwargs["headers"]["X-Auth"] == "token123"
             assert call_kwargs["headers"]["X-Secret"] == "abc"
@@ -760,7 +764,9 @@ class TestWebhookNotifier:
             mock_client_cls.return_value = mock_client
 
             # Should not raise — error is logged and printed
-            result = _run_async(notifier.notify({"date": "2026-04-24"}))
+            _run_async(
+                notifier.notify({"date": "2026-04-24"})
+            )
         del os.environ[_TEST_URL_ENV]
 
 
@@ -1351,7 +1357,9 @@ class TestHTTPStatusHandling:
             mock_client_cls.return_value = mock_client
 
             notifier.console = mock_console
-            result = _run_async(notifier.notify({"date": "2026-04-24"}))
+            result = _run_async(
+                notifier.notify({"date": "2026-04-24"})
+            )
 
             printed = " ".join(str(c) for c in mock_console.print.call_args_list)
             assert "status=200" in printed
@@ -1408,7 +1416,7 @@ class TestHTTPStatusHandling:
             mock_client_cls.return_value = mock_client
 
             notifier.console = mock_console
-            result = _run_async(notifier.notify({"date": "2026-04-24"}))
+            _run_async(notifier.notify({"date": "2026-04-24"}))
 
             printed = " ".join(str(c) for c in mock_console.print.call_args_list)
             assert "errcode=400" in printed

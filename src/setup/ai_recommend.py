@@ -1,7 +1,7 @@
 """AI-powered source recommendation for the setup wizard."""
 
 import asyncio
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from ..ai.client import create_ai_client
 from ..ai.utils import parse_json_response

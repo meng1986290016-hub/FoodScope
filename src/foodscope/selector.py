@@ -12,7 +12,7 @@ from src.models import ContentItem
 
 from .config import BriefProfile
 from .evidence import EvidenceDecision, EvidencePolicy
-from .models import EvidenceTier, FoodCategory, RiskLevel
+from .models import FoodCategory, RiskLevel
 
 
 class SelectionResult(BaseModel):
@@ -179,12 +179,15 @@ class FoodProfileSelector:
         if not ranked:
             return []
         low_priority_cutoff = median(profile.topic_weights.values())
-        exploration = [
-            candidate
-            for candidate in ranked
-            if profile.topic_weights[candidate.item.food.category]
-            < low_priority_cutoff
-        ]
+        exploration: list[_RankedItem] = []
+        for candidate in ranked:
+            food = candidate.item.food
+            assert food is not None
+            if (
+                profile.topic_weights[food.category]
+                < low_priority_cutoff
+            ):
+                exploration.append(candidate)
         selected: list[_RankedItem] = []
         selected_ids: set[int] = set()
         source_counts: dict[str, int] = {}

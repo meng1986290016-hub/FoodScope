@@ -1297,5 +1297,12 @@ class HorizonPipelineService:
 
         return {
             **delivery.to_dict(),
-            "variables": {k: (v if k != "summary" else f"<{len(v)} chars>") for k, v in variables.items()},
+            "variables": {
+                key: (
+                    value
+                    if key != "summary"
+                    else f"<{len(str(value))} chars>"
+                )
+                for key, value in variables.items()
+            },
         }

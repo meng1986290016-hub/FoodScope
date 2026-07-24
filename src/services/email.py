@@ -9,7 +9,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import parseaddr
-from typing import List
+from typing import Any, List
 
 try:
     import markdown
@@ -28,6 +28,7 @@ class EmailManager:
     def __init__(self, config: EmailConfig, console=None):
         self.config = config
         self.pwd = os.getenv(self.config.password_env)
+        self.console: Any
         if console is None:
             try:
                 from rich.console import Console
@@ -205,7 +206,8 @@ class EmailManager:
                 self.config.smtp_server, self.config.smtp_port
             ) as server:
                 server.login(
-                    self.config.smtp_username or self.config.email_address, self.pwd
+                    self.config.smtp_username or self.config.email_address,
+                    self.pwd or "",
                 )
 
                 for subscriber in subscribers:
@@ -243,7 +245,8 @@ class EmailManager:
                 self.config.smtp_server, self.config.smtp_port
             ) as server:
                 server.login(
-                    self.config.smtp_username or self.config.email_address, self.pwd
+                    self.config.smtp_username or self.config.email_address,
+                    self.pwd or "",
                 )
 
                 msg = MIMEText(body)

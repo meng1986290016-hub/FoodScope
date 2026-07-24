@@ -250,6 +250,7 @@ class WebhookNotifier:
 
     def __init__(self, config: WebhookConfig, console=None):
         self.config = config
+        self.console: Any
         if console is None:
             try:
                 from rich.console import Console
@@ -264,7 +265,7 @@ class WebhookNotifier:
                 self.console = DummyConsole()
         else:
             self.console = console
-        self.url = None
+        self.url: str | None = None
         self._validate_config()  # sets self.url or raises ValueError
 
     def _validate_url(self, url: str) -> str:

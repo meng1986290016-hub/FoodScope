@@ -1,0 +1,112 @@
+[
+  {
+    "id": "fixture-product-en",
+    "source_id": "E2E_PRODUCT_EN",
+    "title": "Protein tea launches in Japan",
+    "url": "https://sources.foodscope.test/product-en",
+    "content": "An English product launch report.",
+    "published_at": "2026-07-24T05:00:00+00:00",
+    "language": "en",
+    "markets": ["JP"],
+    "category": "product_innovation"
+  },
+  {
+    "id": "fixture-product-ja",
+    "source_id": "E2E_PRODUCT_JA",
+    "title": "日本でプロテインティー発売",
+    "url": "https://sources.foodscope.test/product-ja",
+    "content": "日本語の新商品記事。",
+    "published_at": "2026-07-24T04:50:00+00:00",
+    "language": "ja",
+    "markets": ["JP"],
+    "category": "product_innovation"
+  },
+  {
+    "id": "fixture-ingredient-ko",
+    "source_id": "E2E_INGREDIENT_KO",
+    "title": "발효 단백질 원료 상용화",
+    "url": "https://sources.foodscope.test/ingredient-ko",
+    "content": "한국어 원료 기술 기사.",
+    "published_at": "2026-07-24T04:40:00+00:00",
+    "language": "ko",
+    "markets": ["KR"],
+    "category": "ingredients_technology"
+  },
+  {
+    "id": "fixture-packaging-zh",
+    "source_id": "E2E_PACKAGING_ZH",
+    "title": "东南亚试点可回收软包装标签",
+    "url": "https://sources.foodscope.test/packaging-zh",
+    "content": "中文包装与标签动态。",
+    "published_at": "2026-07-24T04:30:00+00:00",
+    "language": "zh",
+    "markets": ["SG"],
+    "category": "packaging_labeling"
+  },
+  {
+    "id": "fixture-consumer-en",
+    "source_id": "E2E_CONSUMER_EN",
+    "title": "Consumers shift to smaller functional drinks",
+    "url": "https://sources.foodscope.test/consumer-en",
+    "content": "An English consumer trend report.",
+    "published_at": "2026-07-24T04:20:00+00:00",
+    "language": "en",
+    "markets": ["GB"],
+    "category": "consumer_trends"
+  },
+  {
+    "id": "fixture-regulation-ja",
+    "source_id": "E2E_REGULATION_OFFICIAL",
+    "title": "食品表示基準の改正案",
+    "url": "https://sources.foodscope.test/regulation-ja",
+    "content": "日本の食品表示基準に関する公式資料。",
+    "published_at": "2026-07-24T04:10:00+00:00",
+    "language": "ja",
+    "markets": ["JP"],
+    "category": "regulations_standards"
+  },
+  {
+    "id": "fixture-recall-en",
+    "source_id": "E2E_RECALL_OFFICIAL",
+    "title": "Official allergen recall notice",
+    "url": "https://sources.foodscope.test/recall-en",
+    "content": "An official allergen recall notice.",
+    "published_at": "2026-07-24T04:00:00+00:00",
+    "language": "en",
+    "markets": ["US"],
+    "category": "food_safety_recalls"
+  },
+  {
+    "id": "fixture-retail-ko",
+    "source_id": "E2E_RETAIL_KO",
+    "title": "편의점 건강 간식 매대 확대",
+    "url": "https://sources.foodscope.test/retail-ko",
+    "content": "한국 편의점과 외식 채널 동향.",
+    "published_at": "2026-07-24T03:50:00+00:00",
+    "language": "ko",
+    "markets": ["KR"],
+    "category": "retail_foodservice"
+  },
+  {
+    "id": "fixture-company-zh",
+    "source_id": "E2E_COMPANY_ZH",
+    "title": "国际食品企业扩建亚洲研发中心",
+    "url": "https://sources.foodscope.test/company-zh",
+    "content": "中文企业动态。",
+    "published_at": "2026-07-24T03:40:00+00:00",
+    "language": "zh",
+    "markets": ["CN", "SG"],
+    "category": "company_updates"
+  },
+  {
+    "id": "fixture-ai-failure",
+    "source_id": "E2E_AI_FAILURE",
+    "title": "Fixture invalid AI response",
+    "url": "https://sources.foodscope.test/ai-failure",
+    "content": "This item deliberately receives invalid AI output.",
+    "published_at": "2026-07-24T03:30:00+00:00",
+    "language": "en",
+    "markets": ["US"],
+    "category": "company_updates"
+  }
+]

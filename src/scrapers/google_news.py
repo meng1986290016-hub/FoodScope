@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import calendar
 import hashlib
+from pydantic import HttpUrl
 import logging
 import math
 from datetime import datetime, timezone
@@ -161,7 +162,7 @@ class GoogleNewsScraper(BaseScraper):
                 id=self._generate_id("google_news", "article", entry_hash),
                 source_type=self.SOURCE_TYPE,
                 title=title,
-                url=link,
+                url=HttpUrl(str(link)),
                 content=self._extract_content(entry),
                 author=source_name,
                 published_at=published,

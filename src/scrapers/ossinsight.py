@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 import httpx
+from pydantic import HttpUrl
 
 from ..models import ContentItem, OSSInsightConfig, SourceType
 from .base import BaseScraper
@@ -111,7 +112,7 @@ class OSSInsightScraper(BaseScraper):
             id=self._generate_id(SourceType.OSSINSIGHT.value, "trending", str(repo_id)),
             source_type=SourceType.OSSINSIGHT,
             title=title,
-            url=url,
+            url=HttpUrl(url),
             content="\n".join(content_lines),
             author=repo_name.split("/")[0] if "/" in repo_name else None,
             published_at=datetime.now(timezone.utc),

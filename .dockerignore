@@ -30,7 +30,10 @@ docs/
 .env
 data/*
 !data/config.example.json
+!data/config.foodscope.example.json
 !data/presets.json
+!data/foodscope/
+!data/foodscope/**
 
 # Build artifacts
 *.egg-info/

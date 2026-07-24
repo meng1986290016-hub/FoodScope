@@ -40,6 +40,24 @@ routes and every delivery credential are selected by environment-variable name;
 committed JSON contains no secret values. Legacy Horizon mode remains the
 default when FoodScope is disabled.
 
+```bash
+cp data/config.foodscope.example.json data/config.json
+cp .env.example .env
+uv sync --extra dev
+uv run python -m src.main --no-deliver
+```
+
+Operators can change the timezone, cron schedule, lookback window, source-pack
+mix, individual source overrides, and any of five briefing profiles. Verify the
+local archive first, then explicitly enable email, Feishu/Lark, or WeChat draft
+delivery.
+
+[Configuration](docs/foodscope/configuration.md) ·
+[Source packs](docs/foodscope/source-packs.md) ·
+[Profiles](docs/foodscope/profiles.md) ·
+[Operations](docs/foodscope/operations.md) ·
+[Contributing](docs/foodscope/contributing.md)
+
 ## Screenshots
 
 <table>

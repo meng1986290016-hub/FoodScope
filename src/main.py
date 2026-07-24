@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime, timezone
 import sys
 from pathlib import Path
+from typing import cast
 
 from dotenv import load_dotenv
 from rich.console import Console
@@ -196,6 +197,7 @@ def main(argv: list[str] | None = None):
             return
 
         from .foodscope.retention import RetentionPolicy
+        from .foodscope.orchestrator import FoodScopeOrchestrator
         from .foodscope.scheduler import (
             FoodScopeScheduler,
             RunLock,
@@ -227,8 +229,9 @@ def main(argv: list[str] | None = None):
         async def run_foodscope_once(
             *, scheduled: bool = False
         ) -> None:
-            orchestrator = create_orchestrator(
-                config, storage
+            orchestrator = cast(
+                FoodScopeOrchestrator,
+                create_orchestrator(config, storage),
             )
             if args.resume is not None:
                 await orchestrator.run(

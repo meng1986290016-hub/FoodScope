@@ -47,7 +47,7 @@ class HackerNewsScraper(BaseScraper):
             valid_stories = []
 
             for story in stories:
-                if isinstance(story, Exception) or story is None:
+                if isinstance(story, BaseException) or story is None:
                     continue
                 if story.get("score", 0) < min_score:
                     continue
@@ -63,7 +63,7 @@ class HackerNewsScraper(BaseScraper):
             all_comments = await asyncio.gather(*comment_tasks, return_exceptions=True)
 
             for story, comments in zip(valid_stories, all_comments):
-                if isinstance(comments, Exception):
+                if isinstance(comments, BaseException):
                     comments = []
                 item = self._parse_story(story, comments)
                 if item:

@@ -181,6 +181,12 @@ class FoodContentAnalyzer:
             raise ValueError(
                 "FoodScope analysis requires a normalized source contract"
             )
+        assert result.category is not None
+        assert result.importance_score is not None
+        assert result.profile_relevance_score is not None
+        assert result.opportunity_score is not None
+        assert result.evidence_quality_score is not None
+        assert result.risk_level is not None
 
         item.food = item.food.model_copy(
             update={

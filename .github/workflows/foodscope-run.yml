@@ -1,0 +1,64 @@
+name: Run FoodScope
+
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: Collection lookback in hours
+        required: true
+        default: "30"
+        type: string
+      deliver:
+        description: Enable configured external delivery channels
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.26"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Prepare FoodScope configuration
+        run: cp data/config.foodscope.example.json data/config.json
+
+      - name: Run FoodScope through the shared CLI
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          FOODSCOPE_FEISHU_URL: ${{ secrets.FOODSCOPE_FEISHU_URL }}
+          WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: |
+          if [ "${{ inputs.deliver }}" = "true" ]; then
+            uv run python -m src.main --hours "${{ inputs.hours }}"
+          else
+            uv run python -m src.main --hours "${{ inputs.hours }}" --no-deliver
+          fi
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foodscope-runs
+          path: data/runs
+          if-no-files-found: warn

@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import httpx
 from dateutil import parser as date_parser
+from pydantic import HttpUrl
 
 from src.foodscope.config import FoodSourceSpec
 from src.models import ContentItem, SourceType
@@ -100,7 +101,7 @@ class BaseFoodAdapter(ABC):
             ),
             source_type=SourceType.FOOD,
             title=title.strip() or "Untitled",
-            url=url,
+            url=HttpUrl(url),
             content=content,
             author=author or source.name,
             published_at=cls.ensure_utc(published_at),

@@ -1,7 +1,6 @@
 """Tests for ChainedAIClient fallback logic."""
 
 import asyncio
-from datetime import datetime, timezone
 
 import pytest
 

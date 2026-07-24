@@ -353,7 +353,9 @@ def test_fetch_replies_appends_top_comments(monkeypatch):
     assert "alice" in reply_lines[0]
     assert "Interesting take!" in reply_lines[0]
     # dave (0 likes) filtered out
-    assert not any("dave" in l for l in reply_lines)
+    assert not any(
+        "dave" in line for line in reply_lines
+    )
 
 
 def test_append_discussion_content_adds_marker():
@@ -415,6 +417,5 @@ def test_fetch_replies_no_conversation_id_returns_empty(monkeypatch):
     result = asyncio.run(scraper.fetch_replies_for_item(item))
     asyncio.run(client.aclose())
     assert result == []
-
 
 

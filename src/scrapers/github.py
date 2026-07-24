@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from typing import List, Optional
 import httpx
+from pydantic import HttpUrl
 
 from .base import BaseScraper
 from ..models import ContentItem, SourceType, GitHubSourceConfig
@@ -157,7 +158,7 @@ class GitHubScraper(BaseScraper):
             id=self._generate_id("github", "event", event_id),
             source_type=SourceType.GITHUB,
             title=title,
-            url=repo_url,
+            url=HttpUrl(str(repo_url)),
             content=content,
             author=username,
             published_at=created_at,

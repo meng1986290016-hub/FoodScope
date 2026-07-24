@@ -2,7 +2,7 @@
 
 import html
 import re
-from typing import Dict, List, Optional
+from typing import List, Optional
 from urllib.parse import quote, urlsplit
 
 from ..models import ContentItem

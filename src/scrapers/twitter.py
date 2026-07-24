@@ -9,6 +9,7 @@ from typing import List, Optional
 
 from dateutil.parser import isoparse
 import httpx
+from pydantic import HttpUrl
 
 from .base import BaseScraper
 from ..models import ContentItem, SourceType, TwitterConfig
@@ -46,7 +47,7 @@ class TwitterScraper(BaseScraper):
         logger.info(f"Fetching Twitter (Apify) for users: {users}")
 
         run_id, dataset_id = await self._start_run(token, users)
-        if not run_id:
+        if not run_id or not dataset_id:
             return []
 
         succeeded = await self._wait_for_run(token, run_id)
@@ -292,7 +293,7 @@ class TwitterScraper(BaseScraper):
                 id=self._generate_id(SourceType.TWITTER.value, "tweet", numeric_id),
                 source_type=SourceType.TWITTER,
                 title=f"@{screen_name}: {title_body}",
-                url=url,
+                url=HttpUrl(str(url)),
                 content=text,
                 author=author,
                 published_at=published_at,

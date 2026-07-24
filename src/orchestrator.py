@@ -461,10 +461,27 @@ class HorizonOrchestrator:
             if self.config.sources.twitter and self.config.sources.twitter.enabled:
                 tw_cfg = self.config.sources.twitter
                 if tw_cfg.mode == "playwright":
-                    twitter_scraper = TwitterPlaywrightScraper(tw_cfg)
+                    playwright_twitter_scraper = (
+                        TwitterPlaywrightScraper(tw_cfg)
+                    )
+                    tasks.append(
+                        self._fetch_with_progress(
+                            "Twitter",
+                            playwright_twitter_scraper,
+                            since,
+                        )
+                    )
                 else:
-                    twitter_scraper = TwitterScraper(tw_cfg, client)
-                tasks.append(self._fetch_with_progress("Twitter", twitter_scraper, since))
+                    api_twitter_scraper = TwitterScraper(
+                        tw_cfg, client
+                    )
+                    tasks.append(
+                        self._fetch_with_progress(
+                            "Twitter",
+                            api_twitter_scraper,
+                            since,
+                        )
+                    )
 
             # OpenBB (financial news / filings via the OpenBB Platform SDK)
             if self.config.sources.openbb and self.config.sources.openbb.enabled:
@@ -791,13 +808,14 @@ class HorizonOrchestrator:
         default_group = filtering.default_group
 
         for item in sorted_items:
-            category = item.metadata.get("category")
+            raw_category = item.metadata.get("category")
             group_key = (
-                category_to_group.get(category, default_group)
-                if isinstance(category, str)
+                category_to_group.get(raw_category, default_group)
+                if isinstance(raw_category, str)
                 else default_group
             )
 
+            limit: Optional[int]
             if group_key in groups:
                 limit = groups[group_key].limit
             else:

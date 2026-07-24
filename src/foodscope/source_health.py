@@ -24,6 +24,12 @@ class SourceRunMetric(BaseModel):
     estimated_cost: float = Field(ge=0)
 
 
+CollectionTier = Literal["core", "extended", "discovery", "disable"]
+AdapterMode = Literal[
+    "direct_metadata", "metadata_or_query", "disabled"
+]
+
+
 class SourceTrialSummary(BaseModel):
     source_id: str
     run_count: int
@@ -42,12 +48,8 @@ class SourceTrialSummary(BaseModel):
     access_modes: list[str]
     ai_tokens: int
     estimated_cost: float
-    recommended_collection_tier: Literal[
-        "core", "extended", "discovery", "disable"
-    ]
-    recommended_adapter_mode: Literal[
-        "direct_metadata", "metadata_or_query", "disabled"
-    ]
+    recommended_collection_tier: CollectionTier
+    recommended_adapter_mode: AdapterMode
 
     @classmethod
     def from_metrics(
@@ -145,7 +147,7 @@ class SourceTrialSummary(BaseModel):
         fetch_success_rate: float,
         parse_rate: float,
         unique_events: int,
-    ) -> str:
+    ) -> CollectionTier:
         if (
             {"robots_denied", "terms_denied"} & set(access_modes)
             or fetch_success_rate < 0.50
@@ -164,8 +166,8 @@ class SourceTrialSummary(BaseModel):
 
     @staticmethod
     def _recommend_adapter_mode(
-        access_modes: list[str], tier: str
-    ) -> str:
+        access_modes: list[str], tier: CollectionTier
+    ) -> AdapterMode:
         if tier == "disable":
             return "disabled"
         restricted = {
