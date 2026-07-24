@@ -432,6 +432,52 @@ async def hz_send_webhook(
     )
 
 
+@mcp.tool()
+async def fs_validate_config(
+    check_env: bool = True,
+    horizon_path: str | None = None,
+    config_path: str | None = None,
+) -> dict[str, Any]:
+    """Validate FoodScope profiles, source packs, schedule, and env."""
+
+    return await _run_tool(
+        "fs_validate_config",
+        lambda: service.fs_validate_config(
+            check_env=check_env,
+            horizon_path=horizon_path,
+            config_path=config_path,
+        ),
+    )
+
+
+@mcp.tool()
+async def fs_run_pipeline(
+    hours: int | None = 30,
+    since: str | None = None,
+    until: str | None = None,
+    profile: str | None = None,
+    deliver: bool = False,
+    resume_run_id: str | None = None,
+    horizon_path: str | None = None,
+    config_path: str | None = None,
+) -> dict[str, Any]:
+    """Run or resume FoodScope; delivery is disabled by default."""
+
+    return await _run_tool(
+        "fs_run_pipeline",
+        lambda: service.fs_run_pipeline(
+            hours=hours,
+            since=since,
+            until=until,
+            profile=profile,
+            deliver=deliver,
+            resume_run_id=resume_run_id,
+            horizon_path=horizon_path,
+            config_path=config_path,
+        ),
+    )
+
+
 @mcp.resource("horizon://server/info")
 def r_server_info() -> dict[str, Any]:
     """Server metadata resource."""
@@ -492,6 +538,80 @@ def r_effective_config() -> dict[str, Any]:
     """Effective default config resolved from local Horizon path."""
 
     return _resource_result("horizon://config/effective", service.get_effective_config)
+
+
+@mcp.resource("foodscope://runs")
+def r_foodscope_runs() -> dict[str, Any]:
+    """Recent FoodScope run list."""
+
+    return _resource_result(
+        "foodscope://runs",
+        lambda: service.fs_list_runs(limit=30),
+    )
+
+
+@mcp.resource("foodscope://runs/{run_id}/manifest")
+def r_foodscope_manifest(
+    run_id: str,
+) -> dict[str, Any]:
+    """FoodScope run manifest."""
+
+    return _resource_result(
+        f"foodscope://runs/{run_id}/manifest",
+        lambda: service.fs_get_manifest(run_id),
+    )
+
+
+@mcp.resource("foodscope://runs/{run_id}/stage/{stage}")
+def r_foodscope_stage(
+    run_id: str, stage: str
+) -> dict[str, Any]:
+    """Bounded FoodScope stage snapshot."""
+
+    return _resource_result(
+        f"foodscope://runs/{run_id}/stage/{stage}",
+        lambda: service.fs_get_stage(
+            run_id, stage, max_items=200
+        ),
+    )
+
+
+@mcp.resource("foodscope://runs/{run_id}/isolated")
+def r_foodscope_isolated(
+    run_id: str,
+) -> dict[str, Any]:
+    """FoodScope item-isolation diagnostics."""
+
+    return _resource_result(
+        f"foodscope://runs/{run_id}/isolated",
+        lambda: service.fs_get_isolated(
+            run_id, max_items=200
+        ),
+    )
+
+
+@mcp.resource("foodscope://runs/{run_id}/brief/{format}")
+def r_foodscope_brief(
+    run_id: str, format: str
+) -> dict[str, Any]:
+    """Canonical FoodScope facts, Markdown, or HTML."""
+
+    return _resource_result(
+        f"foodscope://runs/{run_id}/brief/{format}",
+        lambda: service.fs_get_brief(run_id, format),
+    )
+
+
+@mcp.resource("foodscope://latest/brief/{format}")
+def r_foodscope_latest_brief(
+    format: str,
+) -> dict[str, Any]:
+    """Newest canonical FoodScope brief."""
+
+    return _resource_result(
+        f"foodscope://latest/brief/{format}",
+        lambda: service.fs_get_latest_brief(format),
+    )
 
 
 def main() -> None:

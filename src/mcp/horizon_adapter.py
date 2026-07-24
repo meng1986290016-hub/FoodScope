@@ -36,6 +36,10 @@ class HorizonRuntime:
     DailySummarizer: Any
     expand_env_vars: Any
     create_orchestrator: Any | None = None
+    FoodRunStore: Any | None = None
+    load_foodscope_profile: Any | None = None
+    load_foodscope_source_packs: Any | None = None
+    FoodScopeScheduler: Any | None = None
 
 
 def resolve_horizon_path(explicit: str | None = None) -> Path:
@@ -138,6 +142,32 @@ def load_runtime(horizon_path: Path) -> HorizonRuntime:
     except ModuleNotFoundError:
         orchestrator_constructor = None
 
+    try:
+        foodscope_store = importlib.import_module(
+            "src.foodscope.run_store"
+        )
+        foodscope_loaders = importlib.import_module(
+            "src.foodscope.loaders"
+        )
+        foodscope_scheduler = importlib.import_module(
+            "src.foodscope.scheduler"
+        )
+        food_run_store = foodscope_store.FoodRunStore
+        load_foodscope_profile = (
+            foodscope_loaders.load_profile
+        )
+        load_foodscope_source_packs = (
+            foodscope_loaders.load_source_packs
+        )
+        scheduler_constructor = (
+            foodscope_scheduler.FoodScopeScheduler
+        )
+    except ModuleNotFoundError:
+        food_run_store = None
+        load_foodscope_profile = None
+        load_foodscope_source_packs = None
+        scheduler_constructor = None
+
     return HorizonRuntime(
         horizon_path=horizon_path,
         ContentItem=models.ContentItem,
@@ -150,6 +180,12 @@ def load_runtime(horizon_path: Path) -> HorizonRuntime:
         DailySummarizer=summarizer.DailySummarizer,
         expand_env_vars=storage._expand_env_vars,
         create_orchestrator=orchestrator_constructor,
+        FoodRunStore=food_run_store,
+        load_foodscope_profile=load_foodscope_profile,
+        load_foodscope_source_packs=(
+            load_foodscope_source_packs
+        ),
+        FoodScopeScheduler=scheduler_constructor,
     )
 
 

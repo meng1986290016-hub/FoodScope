@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import copy
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +26,18 @@ from .horizon_adapter import (
     resolve_horizon_path,
 )
 from .run_store import RunStore
+from ..foodscope.loaders import (
+    load_profile as load_foodscope_profile,
+    load_source_packs as load_foodscope_source_packs,
+)
+from ..foodscope.run_store import (
+    FoodRunStore,
+    RunStage as FoodRunStage,
+)
+from ..foodscope.scheduler import (
+    FoodScopeScheduler,
+    resolve_run_window,
+)
 from ..services.webhook import WebhookNotifier
 
 
@@ -33,10 +46,19 @@ _SENSITIVE_NAME = re.compile(
     r"(?:^|[-_])(authorization|cookie|credential|key|password|secret|signature|token|api[-_]?key)(?:$|[-_])",
     re.IGNORECASE,
 )
+_SENSITIVE_DIAGNOSTIC = re.compile(
+    r"(?i)(authorization|cookie|credential|key|password|secret|signature|token)"
+    r"\s*[:=]\s*[^\s,;]+"
+)
 
 
 def _redact_config(value: Any, key: str = "") -> Any:
     """Redact secrets from expanded config while preserving its structure."""
+    if (
+        key.lower() in {"error", "detail", "message"}
+        and isinstance(value, str)
+    ):
+        return _sanitize_diagnostic(value)
     if key.lower().endswith("_env"):
         return value
     if _SENSITIVE_NAME.search(key):
@@ -76,6 +98,18 @@ def _redact_config(value: Any, key: str = "") -> Any:
     return value
 
 
+def _sanitize_diagnostic(value: Any) -> str:
+    """Bound and redact free-form adapter/AI diagnostic text."""
+    text = str(value)
+    text = _SENSITIVE_DIAGNOSTIC.sub(
+        lambda match: (
+            f"{match.group(1)}=<redacted>"
+        ),
+        text,
+    )
+    return text[:500]
+
+
 def _default_runs_root() -> Path:
     return Path(__file__).resolve().parents[2] / "data" / "mcp-runs"
 
@@ -111,15 +145,485 @@ class PipelineContext:
 class HorizonPipelineService:
     """High-level staged pipeline service."""
 
-    def __init__(self, runs_root: Path | None = None):
+    def __init__(
+        self,
+        runs_root: Path | None = None,
+        foodscope_runs_root: Path | None = None,
+    ):
         self.runs_root = Path(runs_root).resolve() if runs_root else _default_runs_root().resolve()
         self._run_store: RunStore | None = None
+        default_foodscope_root = (
+            Path(__file__).resolve().parents[2]
+            / "data"
+            / "runs"
+        )
+        self.foodscope_runs_root = (
+            Path(foodscope_runs_root).resolve()
+            if foodscope_runs_root is not None
+            else default_foodscope_root.resolve()
+        )
+        self._foodscope_run_store: FoodRunStore | None = None
 
     @property
     def run_store(self) -> RunStore:
         if self._run_store is None:
             self._run_store = RunStore(self.runs_root)
         return self._run_store
+
+    @property
+    def foodscope_run_store(self) -> FoodRunStore:
+        if self._foodscope_run_store is None:
+            self._foodscope_run_store = FoodRunStore(
+                self.foodscope_runs_root
+            )
+        return self._foodscope_run_store
+
+    def fs_list_runs(
+        self, limit: int = 30
+    ) -> dict[str, Any]:
+        """List recent FoodScope runs without exposing source bodies."""
+        if limit <= 0:
+            raise HorizonMcpError(
+                code="FS_INVALID_INPUT",
+                message="limit must be greater than 0",
+            )
+        manifests: list[dict[str, Any]] = []
+        root = self.foodscope_run_store.root
+        for run_dir in root.iterdir():
+            if run_dir.is_symlink() or not run_dir.is_dir():
+                continue
+            try:
+                manifest = self.foodscope_run_store.load_manifest(
+                    run_dir.name
+                )
+            except (
+                FileNotFoundError,
+                ValueError,
+                TypeError,
+                OSError,
+            ):
+                continue
+            manifests.append(
+                {
+                    "run_id": manifest.get(
+                        "run_id", run_dir.name
+                    ),
+                    "profile_id": manifest.get("profile_id"),
+                    "created_at": manifest.get("created_at"),
+                    "updated_at": manifest.get("updated_at"),
+                    "completed_stages": manifest.get(
+                        "completed_stages", []
+                    ),
+                    "counts": manifest.get("counts", {}),
+                    "facts_sha256": manifest.get(
+                        "facts_sha256"
+                    ),
+                }
+            )
+        manifests.sort(
+            key=lambda item: (
+                item.get("updated_at")
+                or item.get("created_at")
+                or ""
+            ),
+            reverse=True,
+        )
+        return {
+            "count": min(len(manifests), limit),
+            "items": manifests[:limit],
+            "truncated": len(manifests) > limit,
+        }
+
+    def fs_get_manifest(
+        self, run_id: str
+    ) -> dict[str, Any]:
+        """Read one sanitized FoodScope run manifest."""
+        try:
+            manifest = self.foodscope_run_store.load_manifest(
+                run_id
+            )
+        except ValueError as error:
+            raise HorizonMcpError(
+                code="FS_INVALID_RUN_ID",
+                message="invalid FoodScope run ID",
+                details={"run_id": run_id},
+            ) from error
+        except FileNotFoundError as error:
+            raise HorizonMcpError(
+                code="FS_RUN_NOT_FOUND",
+                message="FoodScope run was not found",
+                details={"run_id": run_id},
+            ) from error
+        return {
+            "run_id": run_id,
+            "manifest": _redact_config(manifest),
+        }
+
+    def fs_get_stage(
+        self,
+        run_id: str,
+        stage: str,
+        max_items: int = 200,
+    ) -> dict[str, Any]:
+        """Read a bounded FoodScope stage snapshot."""
+        try:
+            normalized_stage = FoodRunStage(stage)
+        except ValueError as error:
+            raise HorizonMcpError(
+                code="FS_INVALID_STAGE",
+                message="invalid FoodScope stage",
+                details={
+                    "stage": stage,
+                    "allowed": [
+                        value.value for value in FoodRunStage
+                    ],
+                },
+            ) from error
+        if max_items <= 0:
+            raise HorizonMcpError(
+                code="FS_INVALID_INPUT",
+                message="max_items must be greater than 0",
+            )
+        bounded_limit = min(max_items, 500)
+        try:
+            payload = self.foodscope_run_store.load_stage(
+                run_id, normalized_stage
+            )
+        except ValueError as error:
+            if "run ID" in str(error):
+                raise HorizonMcpError(
+                    code="FS_INVALID_RUN_ID",
+                    message="invalid FoodScope run ID",
+                    details={"run_id": run_id},
+                ) from error
+            raise
+        except FileNotFoundError as error:
+            raise HorizonMcpError(
+                code="FS_STAGE_NOT_FOUND",
+                message="FoodScope stage was not found",
+                details={
+                    "run_id": run_id,
+                    "stage": stage,
+                },
+            ) from error
+        if isinstance(payload, list):
+            serialized = [
+                item.model_dump(mode="json")
+                for item in payload
+            ]
+            return {
+                "run_id": run_id,
+                "stage": normalized_stage.value,
+                "count": len(serialized),
+                "items": serialized[:bounded_limit],
+                "truncated": len(serialized) > bounded_limit,
+            }
+        return {
+            "run_id": run_id,
+            "stage": normalized_stage.value,
+            "count": 1,
+            "payload": payload,
+            "truncated": False,
+        }
+
+    def fs_get_isolated(
+        self,
+        run_id: str,
+        max_items: int = 200,
+    ) -> dict[str, Any]:
+        """Read bounded isolation diagnostics without article bodies."""
+        if max_items <= 0:
+            raise HorizonMcpError(
+                code="FS_INVALID_INPUT",
+                message="max_items must be greater than 0",
+            )
+        manifest = self.fs_get_manifest(run_id)["manifest"]
+        isolation = manifest.get("isolation", [])
+        safe_items = [
+            {
+                "item_id": str(entry.get("item_id", ""))[:200],
+                "stage": str(entry.get("stage", ""))[:40],
+                "error": _sanitize_diagnostic(
+                    entry.get("error", "")
+                ),
+            }
+            for entry in isolation
+            if isinstance(entry, dict)
+        ]
+        bounded_limit = min(max_items, 500)
+        return {
+            "run_id": run_id,
+            "count": len(safe_items),
+            "items": safe_items[:bounded_limit],
+            "truncated": len(safe_items) > bounded_limit,
+        }
+
+    def fs_get_brief(
+        self, run_id: str, format: str
+    ) -> dict[str, Any]:
+        """Read canonical FoodScope facts, Markdown, or HTML."""
+        if format not in {"facts", "markdown", "html"}:
+            raise HorizonMcpError(
+                code="FS_INVALID_FORMAT",
+                message="invalid FoodScope brief format",
+                details={
+                    "format": format,
+                    "allowed": [
+                        "facts",
+                        "markdown",
+                        "html",
+                    ],
+                },
+            )
+        try:
+            facts, rendered = (
+                self.foodscope_run_store.load_brief_artifacts(
+                    run_id
+                )
+            )
+        except ValueError as error:
+            if "run ID" in str(error):
+                raise HorizonMcpError(
+                    code="FS_INVALID_RUN_ID",
+                    message="invalid FoodScope run ID",
+                    details={"run_id": run_id},
+                ) from error
+            raise HorizonMcpError(
+                code="FS_BRIEF_INVALID",
+                message="stored FoodScope brief is invalid",
+                details={"run_id": run_id},
+            ) from error
+        except (FileNotFoundError, KeyError) as error:
+            raise HorizonMcpError(
+                code="FS_BRIEF_NOT_FOUND",
+                message="FoodScope brief was not found",
+                details={"run_id": run_id},
+            ) from error
+        content: Any
+        if format == "facts":
+            content = facts.model_dump(mode="json")
+        elif format == "markdown":
+            content = rendered.markdown
+        else:
+            content = rendered.html
+        return {
+            "run_id": run_id,
+            "format": format,
+            "facts_sha256": rendered.facts_sha256,
+            "content": content,
+        }
+
+    def fs_get_latest_brief(
+        self, format: str
+    ) -> dict[str, Any]:
+        """Read the newest FoodScope brief."""
+        run_id = self.foodscope_run_store.latest_run()
+        if run_id is None:
+            raise HorizonMcpError(
+                code="FS_RUN_NOT_FOUND",
+                message="no FoodScope run is available",
+            )
+        return self.fs_get_brief(run_id, format)
+
+    async def fs_validate_config(
+        self,
+        *,
+        horizon_path: str | None = None,
+        config_path: str | None = None,
+        check_env: bool = True,
+    ) -> dict[str, Any]:
+        """Validate FoodScope profiles, packs, schedule, and env names."""
+        context = self._build_foodscope_context(
+            horizon_path=horizon_path,
+            config_path=config_path,
+        )
+        config = context.config
+        try:
+            profile = load_foodscope_profile(
+                config.foodscope
+            )
+            sources = load_foodscope_source_packs(
+                config.foodscope
+            )
+            FoodScopeScheduler(
+                timezone=config.schedule.timezone,
+                cron=config.schedule.cron,
+            )
+        except Exception as error:
+            raise HorizonMcpError(
+                code="FS_CONFIG_INVALID",
+                message="FoodScope configuration is invalid",
+                details={"error": str(error)},
+            ) from error
+
+        missing_env: list[str] = []
+        if check_env:
+            env_names = {
+                config.ai_routes.fast.api_key_env,
+                config.ai_routes.analysis.api_key_env,
+            }
+            if config.email and config.email.enabled:
+                env_names.add(config.email.password_env)
+            if config.webhook and config.webhook.enabled:
+                if config.webhook.url_env:
+                    env_names.add(config.webhook.url_env)
+            if config.delivery.wechat.enabled:
+                env_names.update(
+                    {
+                        config.delivery.wechat.app_id_env,
+                        config.delivery.wechat.app_secret_env,
+                    }
+                )
+            if (
+                any(
+                    source.enabled
+                    and source.adapter == "x_official_api"
+                    for source in sources
+                )
+                and config.foodscope.x_bearer_token_env
+            ):
+                env_names.add(
+                    config.foodscope.x_bearer_token_env
+                )
+            missing_env = sorted(
+                name
+                for name in env_names
+                if name and not os.getenv(name)
+            )
+        config_issues: list[str] = []
+        if (
+            config.delivery.wechat.enabled
+            and not config.delivery.wechat.thumb_media_id
+        ):
+            config_issues.append(
+                "delivery.wechat.thumb_media_id is required"
+            )
+        return {
+            "valid": not missing_env and not config_issues,
+            "profile": profile.model_dump(mode="json"),
+            "source_count": len(sources),
+            "source_pack_count": len(
+                config.foodscope.source_packs
+            ),
+            "schedule": {
+                "timezone": config.schedule.timezone,
+                "cron": config.schedule.cron,
+            },
+            "missing_env": missing_env,
+            "issues": config_issues,
+        }
+
+    async def fs_run_pipeline(
+        self,
+        *,
+        hours: int | None = 30,
+        since: str | None = None,
+        until: str | None = None,
+        profile: str | None = None,
+        deliver: bool = False,
+        resume_run_id: str | None = None,
+        horizon_path: str | None = None,
+        config_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Run FoodScope; external delivery is opt-in."""
+        if profile is not None and not re.fullmatch(
+            r"[A-Za-z0-9_-]+", profile
+        ):
+            raise HorizonMcpError(
+                code="FS_INVALID_PROFILE",
+                message="invalid FoodScope profile ID",
+            )
+        if resume_run_id is not None:
+            if (
+                resume_run_id != "latest"
+                and (
+                    not re.fullmatch(
+                        r"[A-Za-z0-9][A-Za-z0-9._-]*",
+                        resume_run_id,
+                    )
+                    or ".." in resume_run_id
+                )
+            ):
+                raise HorizonMcpError(
+                    code="FS_INVALID_RUN_ID",
+                    message="invalid FoodScope run ID",
+                )
+            if since is not None or until is not None:
+                raise HorizonMcpError(
+                    code="FS_INVALID_WINDOW",
+                    message=(
+                        "resume_run_id cannot be combined "
+                        "with since/until"
+                    ),
+                )
+        if resume_run_id is None:
+            try:
+                resolve_run_window(
+                    hours=(
+                        None
+                        if since is not None or until is not None
+                        else hours
+                    ),
+                    since=since,
+                    until=until,
+                    lookback_hours=30,
+                )
+            except ValueError as error:
+                raise HorizonMcpError(
+                    code="FS_INVALID_WINDOW",
+                    message=str(error),
+                ) from error
+
+        context = self._build_foodscope_context(
+            horizon_path=horizon_path,
+            config_path=config_path,
+        )
+        config = copy.deepcopy(context.config)
+        if profile is not None:
+            config.foodscope.profile = profile
+            config.foodscope.profile_path = None
+        storage = make_storage(
+            context.runtime, context.config_path
+        )
+        orchestrator = make_orchestrator(
+            context.runtime, config, storage
+        )
+        await orchestrator.run(
+            force_hours=(
+                None
+                if since is not None or until is not None
+                else hours
+            ),
+            since=since,
+            until=until,
+            deliver=deliver,
+            resume_run_id=resume_run_id,
+        )
+        run_id = orchestrator.active_run_id
+        if not run_id:
+            raise HorizonMcpError(
+                code="FS_RUN_FAILED",
+                message="FoodScope did not create a run",
+            )
+        self._foodscope_run_store = orchestrator.run_store
+        self.foodscope_runs_root = (
+            orchestrator.run_store.root.resolve()
+        )
+        manifest = orchestrator.run_store.load_manifest(
+            run_id
+        )
+        return {
+            "run_id": run_id,
+            "profile": config.foodscope.profile,
+            "deliver": deliver,
+            "facts_sha256": manifest.get(
+                "facts_sha256"
+            ),
+            "completed_stages": manifest.get(
+                "completed_stages", []
+            ),
+            "deliveries": manifest.get("deliveries", {}),
+        }
 
     def list_runs(self, limit: int = 20) -> dict[str, Any]:
         """List recent runs and stage availability."""
@@ -645,6 +1149,55 @@ class HorizonPipelineService:
             ),
             selected_sources,
             unknown_sources,
+        )
+
+    def _build_foodscope_context(
+        self,
+        *,
+        horizon_path: str | None,
+        config_path: str | None,
+    ) -> PipelineContext:
+        context, _, _ = self._build_context(
+            horizon_path=horizon_path,
+            config_path=config_path,
+            sources=None,
+        )
+        foodscope = getattr(
+            context.config, "foodscope", None
+        )
+        if foodscope is None or not foodscope.enabled:
+            raise HorizonMcpError(
+                code="FS_NOT_ENABLED",
+                message=(
+                    "FoodScope MCP methods require "
+                    "foodscope.enabled"
+                ),
+            )
+        config = context.config.model_copy(deep=True)
+        base = context.horizon_path
+        fs_config = config.foodscope
+        for field_name in (
+            "source_pack_dir",
+            "profile_dir",
+        ):
+            value = Path(getattr(fs_config, field_name))
+            if not value.is_absolute():
+                setattr(
+                    fs_config,
+                    field_name,
+                    (base / value).resolve(),
+                )
+        if fs_config.profile_path is not None:
+            profile_path = Path(fs_config.profile_path)
+            if not profile_path.is_absolute():
+                fs_config.profile_path = (
+                    base / profile_path
+                ).resolve()
+        return PipelineContext(
+            horizon_path=context.horizon_path,
+            config_path=context.config_path,
+            runtime=context.runtime,
+            config=config,
         )
 
     def _load_stage_items(
