@@ -242,6 +242,31 @@ class FoodRunStore:
         manifest["updated_at"] = self._now()
         self._write_manifest(run_id, manifest)
 
+    def save_brief_artifacts(
+        self, run_id: str, facts, rendered
+    ) -> None:
+        """Atomically persist canonical facts and both render formats."""
+        run_dir = self._run_dir(run_id)
+        self._atomic_json_write(
+            run_dir / "facts.json",
+            json.loads(facts.canonical_json()),
+        )
+        self._atomic_text_write(
+            run_dir / "brief.md", rendered.markdown
+        )
+        self._atomic_text_write(
+            run_dir / "brief.html", rendered.html
+        )
+        manifest = self.load_manifest(run_id)
+        manifest["facts_sha256"] = rendered.facts_sha256
+        manifest["artifacts"] = {
+            "facts": "facts.json",
+            "markdown": "brief.md",
+            "html": "brief.html",
+        }
+        manifest["updated_at"] = self._now()
+        self._write_manifest(run_id, manifest)
+
     def _run_dir(self, run_id: str) -> Path:
         path = self.root / run_id
         if not path.is_dir():
@@ -270,6 +295,20 @@ class FoodRunStore:
                     sort_keys=True,
                 )
                 handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    @staticmethod
+    def _atomic_text_write(path: Path, content: str) -> None:
+        temporary = path.with_name(
+            f".{path.name}.{uuid4().hex}.tmp"
+        )
+        try:
+            with temporary.open("w", encoding="utf-8") as handle:
+                handle.write(content)
                 handle.flush()
                 os.fsync(handle.fileno())
             temporary.replace(path)

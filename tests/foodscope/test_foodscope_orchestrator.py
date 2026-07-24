@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from src.foodscope.config import FoodSourceSpec
 from src.foodscope.models import (
@@ -128,3 +129,16 @@ def test_foodscope_run_persists_all_stages_and_isolates_bad_item(
     assert metric["candidate_count"] == 2
     assert metric["food_relevant_count"] == 1
     assert metric["admitted_count"] == 1
+    run_dir = storage.data_dir / "runs" / orchestrator.active_run_id
+    assert (run_dir / "facts.json").is_file()
+    assert (run_dir / "brief.md").is_file()
+    assert (run_dir / "brief.html").is_file()
+    facts = json.loads(
+        (run_dir / "facts.json").read_text(encoding="utf-8")
+    )
+    assert facts["metadata"]["profile_id"] == "balanced"
+    facts_hash = manifest["facts_sha256"]
+    assert facts_hash in summary["markdown"]
+    assert facts_hash in (run_dir / "brief.html").read_text(
+        encoding="utf-8"
+    )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -9,11 +10,7 @@ import httpx
 
 from src.ai.client import create_ai_client
 from src.ai.tokens import get_usage_snapshot
-from src.ai.summarizer import (
-    DailySummarizer,
-    _escape_markdown,
-    _safe_url,
-)
+from src.ai.summarizer import DailySummarizer
 from src.models import Config, ContentItem
 from src.orchestrator import (
     BalancedDigestResult,
@@ -24,11 +21,14 @@ from src.orchestrator import (
 from src.storage.manager import StorageManager
 
 from .analyzer import FoodContentAnalyzer
+from .briefing import BriefFacts, BriefMetadata, RenderedBrief
 from .enricher import FoodContentEnricher
 from .event_dedup import FoodEventFingerprintStore, merge_food_events
 from .evidence import EvidencePolicy
 from .loaders import load_profile, load_source_packs
+from .models import FoodCategory
 from .normalizer import normalize_item
+from .rendering import FoodBriefRenderer
 from .run_store import FoodRunStore, RunStage
 from .selector import FoodProfileSelector, SelectionResult
 from .source_health import SourceRunMetric
@@ -77,12 +77,18 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self.active_run_id: Optional[str] = None
         self._food_analyzer: FoodContentAnalyzer | None = None
         self._food_enricher: FoodContentEnricher | None = None
+        self._brief_facts: BriefFacts | None = None
+        self._rendered_brief: RenderedBrief | None = None
+        self._window_start: datetime | None = None
+        self._window_end: datetime | None = None
 
     async def run(self, force_hours: int = None) -> None:
         """Create one durable run and delegate execution to Horizon."""
         self.active_run_id = self.run_store.create_run(
             profile_id=self.profile.id
         )
+        self._brief_facts = None
+        self._rendered_brief = None
         try:
             await super().run(force_hours=force_hours)
         finally:
@@ -110,6 +116,18 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             outcomes=parent_outcomes + food_outcomes
         )
         return parent_items + food_items
+
+    def _determine_time_window(
+        self, force_hours: int = None
+    ) -> datetime:
+        self._window_end = datetime.now(timezone.utc)
+        hours = (
+            force_hours
+            if force_hours is not None
+            else self.config.collection.lookback_hours
+        )
+        self._window_start = self._window_end - timedelta(hours=hours)
+        return self._window_start
 
     async def _normalize_items(
         self, items: list[ContentItem]
@@ -142,6 +160,15 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         stored_payload = payload
         if run_stage == RunStage.ENRICHED and isinstance(payload, list):
             stored_payload = self._with_risk_alerts(payload)
+        elif (
+            run_stage == RunStage.SUMMARY
+            and isinstance(payload, dict)
+            and self._rendered_brief is not None
+        ):
+            stored_payload = {
+                **payload,
+                "facts_sha256": self._rendered_brief.facts_sha256,
+            }
         self.run_store.save_stage(
             self.active_run_id, run_stage, stored_payload
         )
@@ -229,28 +256,85 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         language: str = "zh",
         summarizer: Optional[DailySummarizer] = None,
     ) -> str:
-        """Render a temporary FoodScope Markdown brief."""
-        lines = [
-            f"# 食界雷达 · 全球食品产业简报（{date}）",
-            "",
-            (
-                f"> 共抓取 {total_fetched} 条，"
-                f"入选 {len(items)} 条常规情报，"
-                f"另有 {len(self.selection_result.risk_alerts)} 条风险快讯。"
-            ),
+        """Render and persist one canonical FoodScope fact snapshot."""
+        if self._rendered_brief is not None:
+            return self._rendered_brief.markdown
+        if self.active_run_id is None:
+            raise RuntimeError("FoodScope run has not been created")
+
+        selected = [
+            self._ordered_copy(item, index)
+            for index, item in enumerate(items)
         ]
-        if self.selection_result.risk_alerts:
-            lines.extend(["", "## 风险快讯", ""])
-            lines.extend(
-                self._render_item_line(item)
-                for item in self.selection_result.risk_alerts
+        risk_alerts = [
+            self._ordered_copy(item, index)
+            for index, item in enumerate(
+                self.selection_result.risk_alerts
             )
-        lines.extend(["", "## 今日情报", ""])
-        if items:
-            lines.extend(self._render_item_line(item) for item in items)
-        else:
-            lines.append("- 今日没有满足当前画像与证据门槛的常规情报。")
-        return "\n".join(lines).rstrip() + "\n"
+        ]
+        sections = {
+            category.value: [
+                item
+                for item in selected
+                if item.food is not None
+                and item.food.category == category
+            ]
+            for category in FoodCategory
+        }
+        manifest = self.run_store.load_manifest(
+            self.active_run_id
+        )
+        source_outcomes = (
+            self.last_fetch_report.outcomes
+            if self.last_fetch_report is not None
+            else []
+        )
+        generated_at = datetime.now(timezone.utc)
+        window_end = self._window_end or generated_at
+        window_start = self._window_start or (
+            window_end
+            - timedelta(hours=self.config.collection.lookback_hours)
+        )
+        self._brief_facts = BriefFacts(
+            metadata=BriefMetadata(
+                run_id=self.active_run_id,
+                profile_id=self.profile.id,
+                profile_name=self.profile.name,
+                date=date,
+                window_start=window_start,
+                window_end=window_end,
+                generated_at=generated_at,
+                fetched_count=total_fetched,
+                candidate_count=manifest.get("counts", {}).get(
+                    "scored", total_fetched
+                ),
+                selected_count=len(selected) + len(risk_alerts),
+                isolated_count=len(
+                    manifest.get("isolation", [])
+                ),
+                source_success_count=sum(
+                    outcome.status in {"success", "empty"}
+                    for outcome in source_outcomes
+                ),
+                source_failure_count=sum(
+                    outcome.status == "failure"
+                    for outcome in source_outcomes
+                ),
+            ),
+            risk_alerts=risk_alerts,
+            must_read=selected[:5],
+            sections=sections,
+            observations=[],
+        )
+        self._rendered_brief = FoodBriefRenderer().render(
+            self._brief_facts
+        )
+        self.run_store.save_brief_artifacts(
+            self.active_run_id,
+            self._brief_facts,
+            self._rendered_brief,
+        )
+        return self._rendered_brief.markdown
 
     def _get_food_analyzer(self) -> FoodContentAnalyzer:
         if self._food_analyzer is None:
@@ -421,17 +505,9 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         return "direct_metadata"
 
     @staticmethod
-    def _render_item_line(item: ContentItem) -> str:
-        food = item.food
-        title = _escape_markdown(
-            item.metadata.get("title_zh") or item.title
-        )
-        url = (
-            food.original_source_url
-            if food and food.original_source_url
-            else str(item.url)
-        )
-        safe_url = _safe_url(url)
-        if safe_url:
-            return f"- [{title}]({safe_url})"
-        return f"- {title}"
+    def _ordered_copy(
+        item: ContentItem, index: int
+    ) -> ContentItem:
+        copied = item.model_copy(deep=True)
+        copied.metadata["selection_order"] = index
+        return copied
