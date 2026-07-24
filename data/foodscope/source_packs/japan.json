@@ -1,0 +1,272 @@
+{
+  "id": "japan",
+  "name": "日本食品产业",
+  "sources": [
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "retail_foodservice",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M075",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "日本食糧新聞",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "部分内容付费，但覆盖最完整",
+        "trial_signals": "食品全产业、企业、新品、流通"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://news.nissyoku.co.jp/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "consumer_trends",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M076",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "食品新聞",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "新闻稿需识别",
+        "trial_signals": "新品、品牌、企业、品类"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://shokuhin.net/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M079",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "食品化学新聞",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "专业性强，部分内容为刊物入口",
+        "trial_signals": "添加剂、功能原料、法规"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://www.foodchemicalnews.co.jp/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "consumer_trends",
+        "retail_foodservice"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M080",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "ダイヤモンド・チェーンストア",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "零售商业价值高",
+        "trial_signals": "商超、便利店、消费、渠道"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://diamond-rm.net/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M084",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "健康産業新聞",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "功能食品价值高",
+        "trial_signals": "健康食品、原料、法规"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://www.kenko-media.com/health_idst/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "regulations_standards",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M085",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "健康産業速報Online",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "订阅内容较多",
+        "trial_signals": "健康食品、政策、企业"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://www.kenko-sokuho.co.jp/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "retail_foodservice",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M086",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "激流オンライン",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "付费墙和更新量需实测",
+        "trial_signals": "食品流通、零售、企业"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://gekiryu-online.jp/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "retail_foodservice"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M087",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "健康産業流通新聞",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "与 M084/M085 重叠",
+        "trial_signals": "健康食品、渠道、原料"
+      },
+      "packs": [
+        "japan"
+      ],
+      "url": "https://www.him-news.com/"
+    }
+  ]
+}

@@ -1,0 +1,436 @@
+{
+  "id": "ingredients_rd",
+  "name": "配料、营养与研发",
+  "sources": [
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "consumer_trends",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M019",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "BeverageDaily",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "与 M001 同集团，需跨站去重",
+        "trial_signals": "饮料新品、品牌、消费"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.beveragedaily.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M020",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "NutraIngredients",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "多区域站点需合并去重",
+        "trial_signals": "功能食品、补充剂、原料"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.nutraingredients.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "ingredients_technology"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M021",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Food Ingredients First",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "供应商消息较多，商业价值也高",
+        "trial_signals": "配料、配方、供应商创新"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.foodingredientsfirst.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M022",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Nutrition Insight",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "与 M021 同一媒体集团",
+        "trial_signals": "营养、功能原料、研究"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.nutritioninsight.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M024",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Ingredients Insight",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "需验证更新频率",
+        "trial_signals": "食品配料、供应商、技术"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.ingredients-insight.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "consumer_trends"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M026",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "Nutritional Outlook",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "美国市场偏重",
+        "trial_signals": "补充剂、功能配料、市场"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.nutritionaloutlook.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "packaging_labeling"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M028",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "Dairy Foods",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "垂直品类源",
+        "trial_signals": "乳品新品、工厂、包装"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.dairyfoods.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "ingredients_technology",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M030",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Baking Business",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "与 M031 同域名，接入时可合并",
+        "trial_signals": "烘焙新品、企业、配料"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.bakingbusiness.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M032",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "MEAT+POULTRY",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "动物蛋白垂直源",
+        "trial_signals": "肉类企业、工厂、加工"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.meatpoultry.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "consumer_trends",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M033",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "SeafoodSource",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "部分深度内容需注册",
+        "trial_signals": "水产、贸易、企业、市场"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.seafoodsource.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "retail_foodservice",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M034",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "The Packer",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "偏生鲜上游与流通",
+        "trial_signals": "果蔬、零售、供应链"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.thepacker.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "ingredients_technology",
+        "consumer_trends"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M035",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "ConfectioneryNews",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "与 M001 同集团，需去重",
+        "trial_signals": "糖果巧克力、配料、消费"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.confectionerynews.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "regulations_standards",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M036",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "DairyReporter",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "与 M001 同集团，需去重",
+        "trial_signals": "乳业、配料、企业、法规"
+      },
+      "packs": [
+        "ingredients_rd"
+      ],
+      "url": "https://www.dairyreporter.com/"
+    }
+  ]
+}

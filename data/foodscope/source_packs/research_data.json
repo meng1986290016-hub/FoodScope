@@ -1,0 +1,173 @@
+{
+  "id": "research_data",
+  "name": "数据、研究与商业信号",
+  "sources": [
+    {
+      "adapter": "html_list",
+      "categories": [
+        "consumer_trends",
+        "retail_foodservice"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M110",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "NIQ",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "C",
+        "trial_note": "只使用公开洞察并保留方法",
+        "trial_signals": "快消、渠道、消费者"
+      },
+      "packs": [
+        "research_data"
+      ],
+      "url": "https://nielseniq.com/global/en/insights/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "consumer_trends"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M111",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Mintel",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "C",
+        "trial_note": "报告付费；公开文章可作线索",
+        "trial_signals": "新品、消费、品类趋势"
+      },
+      "packs": [
+        "research_data"
+      ],
+      "url": "https://www.mintel.com/insights/food-and-drink/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "ingredients_technology",
+        "consumer_trends"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M112",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Innova Market Insights",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "C",
+        "trial_note": "新闻稿常为报告推广",
+        "trial_signals": "新品、配料、趋势"
+      },
+      "packs": [
+        "research_data"
+      ],
+      "url": "https://www.innovamarketinsights.com/press-releases/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "consumer_trends",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M113",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Euromonitor",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "C",
+        "trial_note": "付费数据不可从摘要外推",
+        "trial_signals": "市场、企业、消费者"
+      },
+      "packs": [
+        "research_data"
+      ],
+      "url": "https://www.euromonitor.com/insights"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "consumer_trends",
+        "retail_foodservice"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M115",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Tastewise",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "C",
+        "trial_note": "供应商自有模型，方法需核验",
+        "trial_signals": "菜单、社媒、风味趋势"
+      },
+      "packs": [
+        "research_data"
+      ],
+      "url": "https://tastewise.io/blog"
+    }
+  ]
+}

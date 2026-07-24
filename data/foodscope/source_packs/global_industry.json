@@ -1,0 +1,376 @@
+{
+  "id": "global_industry",
+  "name": "全球食品工业媒体",
+  "sources": [
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "ingredients_technology",
+        "consumer_trends",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M001",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "FoodNavigator",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "综合性强；需识别合作内容",
+        "trial_signals": "新品、配料、消费、企业"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.foodnavigator.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "consumer_trends"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M002",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "Food Business News",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "商业信号密集",
+        "trial_signals": "新品、公司、市场、烘焙"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.foodbusinessnews.net/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M003",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "FoodBev Media",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "新闻稿比例需实测",
+        "trial_signals": "新品、品牌、企业交易"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.foodbev.com/blog"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M004",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "Food Dive",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "独立编辑分析较强",
+        "trial_signals": "企业战略、并购、品牌"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.fooddive.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M005",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Just Food",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "部分内容付费",
+        "trial_signals": "公司、工厂、并购、供应链"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.just-food.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "packaging_labeling",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M006",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "New Food",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "兼有供应商内容",
+        "trial_signals": "加工、质量、安全、技术"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.newfoodmagazine.com/news/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M007",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GB"
+      ],
+      "name": "Food Manufacture",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "英国信号突出",
+        "trial_signals": "制造、法规、劳动力、企业"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.foodmanufacture.co.uk/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "food_safety_recalls",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M009",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "Food Manufacturing",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "与 M008/M010 重叠",
+        "trial_signals": "制造、设备、供应链、安全"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.foodmanufacturing.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "product_innovation",
+        "ingredients_technology",
+        "consumer_trends"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M011",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "Prepared Foods",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "适合研发和产品人员",
+        "trial_signals": "配方、新品、趋势、配料"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.preparedfoods.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M012",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "IFT Food Technology",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "学会媒体，专业性强",
+        "trial_signals": "食品科学、研发、法规"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.ift.org/foodtechnology/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "packaging_labeling",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M017",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "Food & Drink Technology",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "需控制供应商稿比例",
+        "trial_signals": "加工、包装、配料、企业"
+      },
+      "packs": [
+        "global_industry"
+      ],
+      "url": "https://www.foodanddrinktechnology.com/"
+    }
+  ]
+}

@@ -18,7 +18,7 @@ def test_factory_preserves_legacy_horizon(tmp_path):
 
 def test_factory_selects_foodscope(tmp_path):
     raw = legacy_config()
-    raw["foodscope"] = {"enabled": True}
+    raw["foodscope"] = {"enabled": True, "source_packs": []}
     raw["ai_routes"] = {"fast": raw["ai"], "analysis": raw["ai"]}
     config = Config.model_validate(raw)
 
