@@ -22,6 +22,36 @@ PRESETS_ENDPOINT = f"{API_BASE_URL}/api/presets"
 REQUEST_TIMEOUT = 10  # seconds
 
 
+def build_foodscope_preset(selected_ai_config: Dict) -> Dict:
+    """Build the open-source FoodScope defaults around a selected AI route."""
+
+    return {
+        "ai_routes": {
+            "fast": dict(selected_ai_config),
+            "analysis": dict(selected_ai_config),
+        },
+        "foodscope": {
+            "enabled": True,
+            "profile": "balanced",
+            "source_packs": [
+                "official_evidence",
+                "global_industry",
+                "product_launches",
+            ],
+        },
+        "schedule": {
+            "timezone": "Asia/Shanghai",
+            "cron": "30 6 * * *",
+        },
+        "collection": {"lookback_hours": 30},
+        "delivery": {
+            "target_minutes": 60,
+            "markdown_enabled": True,
+            "html_enabled": True,
+        },
+    }
+
+
 def fetch_presets() -> Optional[Dict]:
     """Fetch presets from the horizon-site API.
 

@@ -31,6 +31,15 @@
 
 </div>
 
+## FoodScope Industry Edition
+
+This fork adds an optional, self-hosted food-industry workflow under
+`src/foodscope/`. Set `foodscope.enabled` in `data/config.json` to use
+configurable source packs and the default `balanced` briefing profile. Both AI
+routes and every delivery credential are selected by environment-variable name;
+committed JSON contains no secret values. Legacy Horizon mode remains the
+default when FoodScope is disabled.
+
 ## Screenshots
 
 <table>

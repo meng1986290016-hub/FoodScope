@@ -10,6 +10,54 @@
     "analysis_concurrency": 1,
     "enrichment_concurrency": 1
   },
+  "ai_routes": {
+    "fast": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "api_key_env": "OPENAI_API_KEY",
+      "languages": ["zh"],
+      "concurrency": 4,
+      "timeout_seconds": 60,
+      "max_attempts": 3
+    },
+    "analysis": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "api_key_env": "OPENAI_API_KEY",
+      "languages": ["zh"],
+      "concurrency": 2,
+      "timeout_seconds": 90,
+      "max_attempts": 3
+    }
+  },
+  "foodscope": {
+    "enabled": false,
+    "profile": "balanced",
+    "source_packs": [
+      "official_evidence",
+      "global_industry",
+      "product_launches"
+    ]
+  },
+  "schedule": {
+    "timezone": "Asia/Shanghai",
+    "cron": "30 6 * * *"
+  },
+  "collection": {
+    "lookback_hours": 30
+  },
+  "delivery": {
+    "target_minutes": 60,
+    "markdown_enabled": true,
+    "html_enabled": true,
+    "wechat": {
+      "enabled": false,
+      "app_id_env": "WECHAT_APP_ID",
+      "app_secret_env": "WECHAT_APP_SECRET",
+      "thumb_media_id": null,
+      "author": "FoodScope"
+    }
+  },
   "email": {
     "enabled": false,
     "smtp_server": "smtp.qq.com",

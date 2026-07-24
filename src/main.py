@@ -8,8 +8,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from rich.console import Console
 
+from .orchestrator_factory import create_orchestrator
 from .storage.manager import ConfigError, StorageManager
-from .orchestrator import HorizonOrchestrator
 
 
 console = Console()
@@ -73,7 +73,7 @@ def main():
             sys.exit(1)
 
         # Create and run orchestrator
-        orchestrator = HorizonOrchestrator(config, storage)
+        orchestrator = create_orchestrator(config, storage)
         asyncio.run(orchestrator.run(force_hours=args.hours))
 
     except KeyboardInterrupt:

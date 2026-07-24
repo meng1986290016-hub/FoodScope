@@ -32,6 +32,13 @@
 
 </div>
 
+## FoodScope 食品行业版
+
+本 Fork 在 `src/foodscope/` 中增加可选的、自部署的食品行业工作流。在
+`data/config.json` 中启用 `foodscope.enabled` 后，可组合来源包并使用默认
+`balanced` 综合情报画像。两条 AI 路由和所有分发凭证都只配置环境变量名，
+提交到仓库的 JSON 不保存秘密；关闭 FoodScope 时仍保持原有 Horizon 行为。
+
 ## 截图
 
 <table>

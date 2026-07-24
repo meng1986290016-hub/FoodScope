@@ -35,6 +35,7 @@ class HorizonRuntime:
     ContentEnricher: Any
     DailySummarizer: Any
     expand_env_vars: Any
+    create_orchestrator: Any | None = None
 
 
 def resolve_horizon_path(explicit: str | None = None) -> Path:
@@ -131,6 +132,12 @@ def load_runtime(horizon_path: Path) -> HorizonRuntime:
             details={"error": str(exc)},
         ) from exc
 
+    try:
+        orchestrator_factory = importlib.import_module("src.orchestrator_factory")
+        orchestrator_constructor = orchestrator_factory.create_orchestrator
+    except ModuleNotFoundError:
+        orchestrator_constructor = None
+
     return HorizonRuntime(
         horizon_path=horizon_path,
         ContentItem=models.ContentItem,
@@ -142,6 +149,7 @@ def load_runtime(horizon_path: Path) -> HorizonRuntime:
         ContentEnricher=enricher.ContentEnricher,
         DailySummarizer=summarizer.DailySummarizer,
         expand_env_vars=storage._expand_env_vars,
+        create_orchestrator=orchestrator_constructor,
     )
 
 
@@ -171,6 +179,8 @@ def make_storage(runtime: HorizonRuntime, config_path: Path) -> Any:
 def make_orchestrator(runtime: HorizonRuntime, config: Any, storage: Any) -> Any:
     """Build native Horizon orchestrator."""
 
+    if runtime.create_orchestrator is not None:
+        return runtime.create_orchestrator(config, storage)
     return runtime.HorizonOrchestrator(config, storage)
 
 
