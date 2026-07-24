@@ -49,15 +49,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
 
         self.foodscope_config = config.foodscope
         self.profile = load_profile(self.foodscope_config)
-        try:
-            loaded_sources = load_source_packs(self.foodscope_config)
-        except FileNotFoundError:
-            pack_dir = self.foodscope_config.source_pack_dir
-            if pack_dir != Path("data/foodscope/source_packs") or any(
-                pack_dir.glob("*.json")
-            ):
-                raise
-            loaded_sources = []
+        loaded_sources = load_source_packs(self.foodscope_config)
         self.source_specs_by_id = {
             source.id: source for source in loaded_sources
         }

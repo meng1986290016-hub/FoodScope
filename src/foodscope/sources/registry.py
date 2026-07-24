@@ -12,6 +12,7 @@ from src.models import ContentItem
 from src.orchestrator import SourceFetchOutcome
 
 from .base import BaseFoodAdapter
+from .discovery_query import DiscoveryQueryAdapter
 from .documents import DocumentIndexAdapter
 from .html_list import HTMLListAdapter
 from .json_api import JSONAPIAdapter
@@ -23,6 +24,7 @@ ADAPTERS: dict[str, type[BaseFoodAdapter]] = {
     "json_api": JSONAPIAdapter,
     "html_list": HTMLListAdapter,
     "document_index": DocumentIndexAdapter,
+    "discovery_query": DiscoveryQueryAdapter,
 }
 
 
