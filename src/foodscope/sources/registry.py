@@ -17,6 +17,7 @@ from .documents import DocumentIndexAdapter
 from .html_list import HTMLListAdapter
 from .json_api import JSONAPIAdapter
 from .rss import RSSFoodAdapter
+from .x_official_api import XOfficialAPIAdapter
 
 
 ADAPTERS: dict[str, type[BaseFoodAdapter]] = {
@@ -25,6 +26,7 @@ ADAPTERS: dict[str, type[BaseFoodAdapter]] = {
     "html_list": HTMLListAdapter,
     "document_index": DocumentIndexAdapter,
     "discovery_query": DiscoveryQueryAdapter,
+    "x_official_api": XOfficialAPIAdapter,
 }
 
 

@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+import re
 
 from .config import (
     BriefProfile,
@@ -44,6 +45,31 @@ def load_source_packs(config: FoodScopeConfig) -> list[FoodSourceSpec]:
             candidate = FoodSourceSpec.model_validate(
                 {**source.model_dump(), **override}
             )
+            if (
+                candidate.adapter == "x_official_api"
+                and candidate.enabled
+            ):
+                if config.x_access_mode != "official_api":
+                    raise ValueError(
+                        "enabled x_official_api source requires "
+                        "x_access_mode='official_api'"
+                    )
+                token_env = config.x_bearer_token_env or ""
+                if not re.fullmatch(
+                    r"[A-Z][A-Z0-9_]*", token_env
+                ):
+                    raise ValueError(
+                        "x_bearer_token_env must be an uppercase "
+                        "environment variable name"
+                    )
+                candidate = candidate.model_copy(
+                    update={
+                        "options": {
+                            **candidate.options,
+                            "bearer_token_env": token_env,
+                        }
+                    }
+                )
             if source.id in merged:
                 packs = sorted(
                     set(merged[source.id].packs + candidate.packs + [pack_id])
