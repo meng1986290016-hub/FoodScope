@@ -58,3 +58,20 @@ def test_redelivery_requires_resume():
     with pytest.raises(SystemExit):
         parse_args(["--redeliver"])
 
+
+def test_scheduled_flag_is_accepted_with_manual_run():
+    args = parse_args(["--scheduled", "--no-deliver", "--hours", "6"])
+    assert args.scheduled is True
+    assert args.no_deliver is True
+    assert args.hours == 6
+
+
+def test_scheduled_is_rejected_with_daemon():
+    with pytest.raises(SystemExit):
+        parse_args(["--scheduled", "--daemon"])
+
+
+def test_scheduled_is_rejected_with_healthcheck():
+    with pytest.raises(SystemExit):
+        parse_args(["--scheduled", "--healthcheck"])
+
