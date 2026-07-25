@@ -1,0 +1,166 @@
+{
+  "id": "x_watch",
+  "name": "X 食品行业弱信号观察（默认关闭）",
+  "sources": [
+    {
+      "adapter": "x_official_api",
+      "categories": [
+        "product_innovation",
+        "consumer_trends"
+      ],
+      "collection_tier": "discovery",
+      "enabled": false,
+      "evidence_tier": 4,
+      "id": "S021",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "FoodNavigator",
+      "options": {
+        "evidence_role": "discovery_only",
+        "retention_mode": "metadata_only",
+        "username": "FoodNavigator"
+      },
+      "packs": [
+        "x_watch"
+      ],
+      "url": "https://x.com/FoodNavigator"
+    },
+    {
+      "adapter": "x_official_api",
+      "categories": [
+        "product_innovation",
+        "consumer_trends"
+      ],
+      "collection_tier": "discovery",
+      "enabled": false,
+      "evidence_tier": 4,
+      "id": "S022",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "APAC"
+      ],
+      "name": "FoodNavAsia",
+      "options": {
+        "evidence_role": "discovery_only",
+        "retention_mode": "metadata_only",
+        "username": "FoodNavAsia"
+      },
+      "packs": [
+        "x_watch"
+      ],
+      "url": "https://x.com/FoodNavAsia"
+    },
+    {
+      "adapter": "x_official_api",
+      "categories": [
+        "company_updates",
+        "product_innovation"
+      ],
+      "collection_tier": "discovery",
+      "enabled": false,
+      "evidence_tier": 4,
+      "id": "S023",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "just_food",
+      "options": {
+        "evidence_role": "discovery_only",
+        "retention_mode": "metadata_only",
+        "username": "just_food"
+      },
+      "packs": [
+        "x_watch"
+      ],
+      "url": "https://x.com/just_food"
+    },
+    {
+      "adapter": "x_official_api",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "discovery",
+      "enabled": false,
+      "evidence_tier": 4,
+      "id": "S028",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "FoodSafetyMag",
+      "options": {
+        "evidence_role": "discovery_only",
+        "retention_mode": "metadata_only",
+        "username": "FoodSafetyMag"
+      },
+      "packs": [
+        "x_watch"
+      ],
+      "url": "https://x.com/FoodSafetyMag"
+    },
+    {
+      "adapter": "x_official_api",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "discovery",
+      "enabled": false,
+      "evidence_tier": 4,
+      "id": "S029",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "foodsafetynews",
+      "options": {
+        "evidence_role": "discovery_only",
+        "retention_mode": "metadata_only",
+        "username": "foodsafetynews"
+      },
+      "packs": [
+        "x_watch"
+      ],
+      "url": "https://x.com/foodsafetynews"
+    },
+    {
+      "adapter": "x_official_api",
+      "categories": [
+        "food_safety_recalls",
+        "regulations_standards"
+      ],
+      "collection_tier": "discovery",
+      "enabled": false,
+      "evidence_tier": 4,
+      "id": "S038",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "FDAFood",
+      "options": {
+        "evidence_role": "discovery_only",
+        "retention_mode": "metadata_only",
+        "username": "FDAFood"
+      },
+      "packs": [
+        "x_watch"
+      ],
+      "url": "https://x.com/FDAFood"
+    }
+  ]
+}

@@ -1,0 +1,230 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "run_id": "run-fixture",
+    "profile_id": "balanced",
+    "profile_name": "综合情报",
+    "date": "2026-07-24",
+    "window_start": "2026-07-23T00:30:00+00:00",
+    "window_end": "2026-07-24T06:30:00+00:00",
+    "generated_at": "2026-07-24T06:40:00+00:00",
+    "fetched_count": 120,
+    "candidate_count": 30,
+    "selected_count": 3,
+    "isolated_count": 1,
+    "source_success_count": 38,
+    "source_failure_count": 2
+  },
+  "risk_alerts": [
+    {
+      "id": "food:official:recall",
+      "source_type": "food",
+      "title": "Official allergen recall",
+      "url": "https://official.example/recall",
+      "published_at": "2026-07-24T05:00:00+00:00",
+      "metadata": {
+        "title_zh": "某即食产品因未标示过敏原被召回",
+        "summary_zh": "监管机构发布召回通知。产品存在未标示过敏原。相关批次与销售区域以官方通知为准。",
+        "selection_order": 0
+      },
+      "ai_summary": "监管机构发布召回通知。产品存在未标示过敏原。相关批次与销售区域以官方通知为准。",
+      "food": {
+        "category": "food_safety_recalls",
+        "markets": ["US"],
+        "company_tags": ["Example Foods"],
+        "importance_score": 10,
+        "profile_relevance_score": 9,
+        "opportunity_score": 1,
+        "evidence_quality_score": 10,
+        "risk_level": "severe",
+        "risk_reason": "未标示过敏原可能带来直接安全风险。",
+        "what_happened_zh": "美国监管机构对特定批次即食产品发布召回通知。",
+        "why_it_matters_zh": "向美国出口同类产品的企业应立即核查过敏原标签与供应链记录。",
+        "rd_significance_zh": "",
+        "opportunity_signal_zh": "可借此复核过敏原控制和标签校验流程。",
+        "risk_signal_zh": "不得将非涉事产品或其他市场自动视为同等风险。",
+        "recommended_action_zh": "核对官方批次清单并检查同类配方和标签。",
+        "evidence_tier": 1,
+        "collection_tier": "core",
+        "source_id": "us_fda_food_recalls",
+        "event_key": "example|ready-meal|recall|US|2026-07-24",
+        "original_source_url": "https://official.example/recall",
+        "evidence_urls": ["https://official.example/recall"],
+        "official_evidence_urls": ["https://official.example/recall"],
+        "selection_reason": "profile=balanced; final_rank=10.0000"
+      }
+    }
+  ],
+  "must_read": [
+    {
+      "id": "food:media:launch",
+      "source_type": "food",
+      "title": "Example launches Protein Tea in Japan",
+      "url": "https://media.example/protein-tea",
+      "published_at": "2026-07-24T04:00:00+00:00",
+      "metadata": {
+        "title_zh": "Example 在日本推出蛋白茶",
+        "summary_zh": "Example 在日本上市一款蛋白茶新品。产品将高蛋白诉求与即饮茶形态结合。首发渠道为日本零售市场。",
+        "selection_order": 1
+      },
+      "ai_summary": "Example 在日本上市一款蛋白茶新品。产品将高蛋白诉求与即饮茶形态结合。首发渠道为日本零售市场。",
+      "food": {
+        "category": "product_innovation",
+        "markets": ["JP"],
+        "product_tags": ["蛋白茶", "即饮茶"],
+        "ingredient_tags": ["蛋白"],
+        "company_tags": ["Example"],
+        "importance_score": 8,
+        "profile_relevance_score": 8.5,
+        "opportunity_score": 7,
+        "evidence_quality_score": 8,
+        "risk_level": "none",
+        "what_happened_zh": "Example 在日本推出一款 350 毫升即饮蛋白茶。",
+        "why_it_matters_zh": "它把高蛋白诉求带入茶饮形态，提供了跨品类创新样本。",
+        "rd_significance_zh": "需要关注蛋白体系在茶基底中的稳定性与口感。",
+        "opportunity_signal_zh": "中国品牌可验证运动营养与即饮茶人群的交集。",
+        "risk_signal_zh": "功能宣称与实际营养含量需要按目标市场规则核验。",
+        "recommended_action_zh": "跟踪日本渠道反馈，并先进行小规模配方和消费者测试。",
+        "evidence_tier": 2,
+        "collection_tier": "core",
+        "source_id": "M001",
+        "event_key": "example|protein-tea|launch|JP|2026-07-24",
+        "original_source_url": "https://media.example/protein-tea",
+        "evidence_urls": [
+          "https://media.example/protein-tea",
+          "https://company.example/protein-tea"
+        ],
+        "official_evidence_urls": [],
+        "selection_reason": "profile=balanced; final_rank=9.1800"
+      }
+    },
+    {
+      "id": "food:media:trend",
+      "source_type": "food",
+      "title": "Retailers expand smaller functional drink formats",
+      "url": "https://research.example/functional-format",
+      "published_at": "2026-07-24T03:00:00+00:00",
+      "metadata": {
+        "title_zh": "零售渠道增加小规格功能饮料",
+        "summary_zh": "多家零售商增加小规格功能饮料陈列。报道将便携和价格门槛列为可能因素。该变化仍需销售数据进一步验证。",
+        "selection_order": 2
+      },
+      "ai_summary": "多家零售商增加小规格功能饮料陈列。报道将便携和价格门槛列为可能因素。该变化仍需销售数据进一步验证。",
+      "food": {
+        "category": "consumer_trends",
+        "markets": ["GB", "EU"],
+        "product_tags": ["功能饮料", "小规格"],
+        "company_tags": ["Example Retail"],
+        "importance_score": 7,
+        "profile_relevance_score": 8,
+        "opportunity_score": 8,
+        "evidence_quality_score": 7,
+        "risk_level": "low",
+        "risk_reason": "报道样本有限，不能直接外推整个市场。",
+        "what_happened_zh": "部分欧洲零售商增加了小规格功能饮料的货架配置。",
+        "why_it_matters_zh": "规格变化可能影响试饮门槛、单次价格和渠道周转。",
+        "rd_significance_zh": "",
+        "opportunity_signal_zh": "可测试小包装是否有助于新品教育和组合售卖。",
+        "risk_signal_zh": "目前缺少统一销量口径，不能断言已形成全市场趋势。",
+        "recommended_action_zh": "选择一个渠道进行规格与价格 A/B 测试。",
+        "evidence_tier": 2,
+        "collection_tier": "extended",
+        "source_id": "M055",
+        "event_key": "retail|functional-drink-format|trend|EU|2026-07-24",
+        "original_source_url": "https://research.example/functional-format",
+        "evidence_urls": ["https://research.example/functional-format"],
+        "official_evidence_urls": [],
+        "selection_reason": "profile=balanced; final_rank=8.7600"
+      }
+    }
+  ],
+  "sections": {
+    "product_innovation": [
+      {
+        "id": "food:media:launch",
+        "source_type": "food",
+        "title": "Example launches Protein Tea in Japan",
+        "url": "https://media.example/protein-tea",
+        "published_at": "2026-07-24T04:00:00+00:00",
+        "metadata": {
+          "title_zh": "Example 在日本推出蛋白茶",
+          "summary_zh": "Example 在日本上市一款蛋白茶新品。产品将高蛋白诉求与即饮茶形态结合。首发渠道为日本零售市场。",
+          "selection_order": 1
+        },
+        "ai_summary": "Example 在日本上市一款蛋白茶新品。产品将高蛋白诉求与即饮茶形态结合。首发渠道为日本零售市场。",
+        "food": {
+          "category": "product_innovation",
+          "markets": ["JP"],
+          "product_tags": ["蛋白茶", "即饮茶"],
+          "ingredient_tags": ["蛋白"],
+          "company_tags": ["Example"],
+          "importance_score": 8,
+          "profile_relevance_score": 8.5,
+          "opportunity_score": 7,
+          "evidence_quality_score": 8,
+          "risk_level": "none",
+          "what_happened_zh": "Example 在日本推出一款 350 毫升即饮蛋白茶。",
+          "why_it_matters_zh": "它把高蛋白诉求带入茶饮形态，提供了跨品类创新样本。",
+          "rd_significance_zh": "需要关注蛋白体系在茶基底中的稳定性与口感。",
+          "opportunity_signal_zh": "中国品牌可验证运动营养与即饮茶人群的交集。",
+          "risk_signal_zh": "功能宣称与实际营养含量需要按目标市场规则核验。",
+          "recommended_action_zh": "跟踪日本渠道反馈，并先进行小规模配方和消费者测试。",
+          "evidence_tier": 2,
+          "collection_tier": "core",
+          "source_id": "M001",
+          "event_key": "example|protein-tea|launch|JP|2026-07-24",
+          "original_source_url": "https://media.example/protein-tea",
+          "evidence_urls": ["https://media.example/protein-tea", "https://company.example/protein-tea"],
+          "official_evidence_urls": [],
+          "selection_reason": "profile=balanced; final_rank=9.1800"
+        }
+      }
+    ],
+    "consumer_trends": [
+      {
+        "id": "food:media:trend",
+        "source_type": "food",
+        "title": "Retailers expand smaller functional drink formats",
+        "url": "https://research.example/functional-format",
+        "published_at": "2026-07-24T03:00:00+00:00",
+        "metadata": {
+          "title_zh": "零售渠道增加小规格功能饮料",
+          "summary_zh": "多家零售商增加小规格功能饮料陈列。报道将便携和价格门槛列为可能因素。该变化仍需销售数据进一步验证。",
+          "selection_order": 2
+        },
+        "ai_summary": "多家零售商增加小规格功能饮料陈列。报道将便携和价格门槛列为可能因素。该变化仍需销售数据进一步验证。",
+        "food": {
+          "category": "consumer_trends",
+          "markets": ["GB", "EU"],
+          "product_tags": ["功能饮料", "小规格"],
+          "company_tags": ["Example Retail"],
+          "importance_score": 7,
+          "profile_relevance_score": 8,
+          "opportunity_score": 8,
+          "evidence_quality_score": 7,
+          "risk_level": "low",
+          "risk_reason": "报道样本有限，不能直接外推整个市场。",
+          "what_happened_zh": "部分欧洲零售商增加了小规格功能饮料的货架配置。",
+          "why_it_matters_zh": "规格变化可能影响试饮门槛、单次价格和渠道周转。",
+          "rd_significance_zh": "",
+          "opportunity_signal_zh": "可测试小包装是否有助于新品教育和组合售卖。",
+          "risk_signal_zh": "目前缺少统一销量口径，不能断言已形成全市场趋势。",
+          "recommended_action_zh": "选择一个渠道进行规格与价格 A/B 测试。",
+          "evidence_tier": 2,
+          "collection_tier": "extended",
+          "source_id": "M055",
+          "event_key": "retail|functional-drink-format|trend|EU|2026-07-24",
+          "original_source_url": "https://research.example/functional-format",
+          "evidence_urls": ["https://research.example/functional-format"],
+          "official_evidence_urls": [],
+          "selection_reason": "profile=balanced; final_rank=8.7600"
+        }
+      }
+    ],
+    "空栏目": []
+  },
+  "observations": [
+    "新品信号集中在功能诉求与传统饮料形态的组合。",
+    "零售规格变化仍需销量与复购数据验证。"
+  ]
+}

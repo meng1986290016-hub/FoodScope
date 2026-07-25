@@ -1,0 +1,593 @@
+{
+  "id": "official_evidence",
+  "name": "全球食品法规、安全与召回官方证据",
+  "sources": [
+    {
+      "adapter": "html_list",
+      "categories": [
+        "regulations_standards",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "eu_ec_food_safety_news",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "European Commission Food Safety",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 新闻列表＋正文",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://food.ec.europa.eu/food-safety_en"
+    },
+    {
+      "adapter": "rss",
+      "categories": [
+        "ingredients_technology",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "eu_efsa_news",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "EFSA News RSS",
+      "options": {
+        "source_collection_method": "RSS＋正文",
+        "source_priority": "P0/一级"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.efsa.europa.eu/en/press/rss"
+    },
+    {
+      "adapter": "rss",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "eu_eurlex_food_law",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "EUR-Lex Predefined RSS Alerts",
+      "options": {
+        "source_collection_method": "RSS；监测 OJ L 与委员会提案，再按食品词表过滤",
+        "source_priority": "P0/一级"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://eur-lex.europa.eu/content/help/search/predefined-rss.html?locale=en"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "eu_rasff",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "RASFF Window",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "公开查询结果；若结构变化则降级为消费者门户列表",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://webgate.ec.europa.eu/rasff-window/screen/search"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "regulations_standards",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "global_codex_news",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Codex News and Events",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋正文",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.fao.org/fao-who-codexalimentarius/news-and-events/en/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "global_wto_sps",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "WTO ePing SPS/TBT",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "公开检索页；食品、饮料、添加剂、包装接触材料关键词",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://epingalert.org/en"
+    },
+    {
+      "adapter": "document_index",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "jp_caa_food_labeling",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "消费者厅食品表示",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋PDF",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.caa.go.jp/policies/policy/food_labeling/information"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "jp_caa_food_recalls",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "消费者厅食品表示召回",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋详情",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.caa.go.jp/policies/policy/food_labeling/food_labeling_recall"
+    },
+    {
+      "adapter": "document_index",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "jp_caa_food_standards",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "消费者厅食品卫生基准新着",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋PDF",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.caa.go.jp/policies/policy/standards_evaluation/appliance/archive/"
+    },
+    {
+      "adapter": "document_index",
+      "categories": [
+        "regulations_standards",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "kr_mfds_press",
+      "languages": [
+        "ko"
+      ],
+      "markets": [
+        "KR"
+      ],
+      "name": "MFDS 보도자료",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋PDF/HWPX；按食品部门和关键词过滤",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.mfds.go.kr/brd/m_99/list.do"
+    },
+    {
+      "adapter": "document_index",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "kr_mfds_standards",
+      "languages": [
+        "ko"
+      ],
+      "markets": [
+        "KR"
+      ],
+      "name": "MFDS 고시전문",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋PDF/HWPX",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.mfds.go.kr/brd/m_211/list.do"
+    },
+    {
+      "adapter": "rss",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "sg_sfa_food_alerts",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "SG"
+      ],
+      "name": "SFA Food Alerts RSS",
+      "options": {
+        "source_collection_method": "RSS＋正文",
+        "source_priority": "P0/一级"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.sfa.gov.sg/rss/annual-listing-food-alerts"
+    },
+    {
+      "adapter": "rss",
+      "categories": [
+        "ingredients_technology",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "sg_sfa_newsroom",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "SG"
+      ],
+      "name": "SFA Newsroom RSS",
+      "options": {
+        "source_collection_method": "RSS＋正文",
+        "source_priority": "P0/一级"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.sfa.gov.sg/rss/newsroom"
+    },
+    {
+      "adapter": "json_api",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "uk_fsa_food_alerts",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GB"
+      ],
+      "name": "UK FSA Food Alerts API",
+      "options": {
+        "content_field": "description",
+        "date_field": "created",
+        "id_field": "@id",
+        "items_path": "items",
+        "source_collection_method": "JSON API，按发布日期增量抓取",
+        "source_priority": "P0/一级",
+        "title_field": "title",
+        "url_field": "@id"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://data.food.gov.uk/food-alerts/id.json"
+    },
+    {
+      "adapter": "document_index",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "us_fda_food_guidance",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "FDA Food Guidance and Regulation",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋PDF",
+        "source_priority": "P0/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.fda.gov/guidance-regulation-0"
+    },
+    {
+      "adapter": "rss",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "us_fda_food_recalls",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "FDA Food Safety Recalls RSS",
+      "options": {
+        "source_collection_method": "RSS＋正文",
+        "source_priority": "P0/一级"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/food-safety-recalls/rss.xml"
+    },
+    {
+      "adapter": "rss",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "us_fda_outbreaks",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "FDA Outbreaks RSS",
+      "options": {
+        "source_collection_method": "RSS＋正文",
+        "source_priority": "P0/一级"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/fda-outbreaks/rss.xml"
+    },
+    {
+      "adapter": "json_api",
+      "categories": [
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "us_fsis_recalls",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "USDA FSIS Recall API",
+      "options": {
+        "content_field": "Summary",
+        "date_field": "RecallDate",
+        "id_field": "RecallID",
+        "items_path": "",
+        "source_collection_method": "JSON API",
+        "source_priority": "P0/一级",
+        "title_field": "RecallTitle",
+        "url_field": "RecallURL"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://www.fsis.usda.gov/fsis/api/recall/v/1"
+    },
+    {
+      "adapter": "json_api",
+      "categories": [
+        "packaging_labeling",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "core",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "us_openfda_enforcement",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "US"
+      ],
+      "name": "openFDA Food Enforcement API",
+      "options": {
+        "content_field": "product_description",
+        "date_field": "report_date",
+        "id_field": "event_id",
+        "items_path": "results",
+        "source_collection_method": "JSON API，按 `report_date` 增量抓取",
+        "source_priority": "P0/一级",
+        "title_field": "reason_for_recall",
+        "url_field": "_foodscope_url"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://api.fda.gov/food/enforcement.json"
+    },
+    {
+      "adapter": "document_index",
+      "categories": [
+        "regulations_standards",
+        "food_safety_recalls"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 1,
+      "id": "vn_vfa_news",
+      "languages": [
+        "vi"
+      ],
+      "markets": [
+        "VN"
+      ],
+      "name": "Vietnam Food Administration",
+      "options": {
+        "date_selector": "time",
+        "item_selector": "article, li",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "source_collection_method": "HTML 列表＋正文/PDF",
+        "source_priority": "P1/一级",
+        "title_selector": "h1, h2, h3, a[href]"
+      },
+      "packs": [
+        "official_evidence"
+      ],
+      "url": "https://vfa.gov.vn/"
+    }
+  ]
+}

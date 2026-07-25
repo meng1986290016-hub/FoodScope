@@ -1,0 +1,172 @@
+{
+  "id": "packaging_processing",
+  "name": "包装、加工与供应链",
+  "sources": [
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M039",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Green Queen",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "议题立场鲜明，需交叉验证",
+        "trial_signals": "替代蛋白、气候食品、投资"
+      },
+      "packs": [
+        "packaging_processing"
+      ],
+      "url": "https://www.greenqueen.com.hk/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M040",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "FoodHack",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "社区、活动和服务属性较强",
+        "trial_signals": "创业、融资、技术生态"
+      },
+      "packs": [
+        "packaging_processing"
+      ],
+      "url": "https://www.foodhack.global/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M042",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "EU"
+      ],
+      "name": "Packaging Europe",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "食品之外内容需过滤",
+        "trial_signals": "包装创新、法规、可持续"
+      },
+      "packs": [
+        "packaging_processing"
+      ],
+      "url": "https://packagingeurope.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "packaging_labeling",
+        "company_updates"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M044",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Packaging Insights",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "A",
+        "trial_note": "与配料媒体集团有关联",
+        "trial_signals": "包装创新、材料、品牌"
+      },
+      "packs": [
+        "packaging_processing"
+      ],
+      "url": "https://www.packaginginsights.com/"
+    },
+    {
+      "adapter": "html_list",
+      "categories": [
+        "ingredients_technology",
+        "packaging_labeling",
+        "regulations_standards"
+      ],
+      "collection_tier": "extended",
+      "enabled": true,
+      "evidence_tier": 2,
+      "id": "M050",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "Food Packaging Forum",
+      "options": {
+        "content_selector": "p",
+        "date_selector": "time",
+        "item_selector": "article",
+        "link_selector": "a[href]",
+        "max_content_chars": 1200,
+        "title_selector": "h1, h2, h3",
+        "trial_initial_grade": "B",
+        "trial_note": "非传统媒体，适合技术证据补位",
+        "trial_signals": "食品接触材料、科学、法规"
+      },
+      "packs": [
+        "packaging_processing"
+      ],
+      "url": "https://www.foodpackagingforum.org/"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "version": "1.0",
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "api_key_env": "OPENAI_API_KEY",
+    "languages": ["zh"]
+  },
+  "ai_routes": {
+    "fast": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "api_key_env": "OPENAI_API_KEY",
+      "languages": ["zh"],
+      "input_cost_per_million": null,
+      "output_cost_per_million": null,
+      "concurrency": 4,
+      "timeout_seconds": 60,
+      "max_attempts": 3
+    },
+    "analysis": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "api_key_env": "OPENAI_API_KEY",
+      "languages": ["zh"],
+      "input_cost_per_million": null,
+      "output_cost_per_million": null,
+      "concurrency": 2,
+      "timeout_seconds": 90,
+      "max_attempts": 3
+    }
+  },
+  "foodscope": {
+    "enabled": true,
+    "profile": "balanced",
+    "source_packs": [
+      "official_evidence",
+      "global_industry",
+      "product_launches",
+      "x_watch"
+    ],
+    "source_pack_dir": "data/foodscope/source_packs",
+    "profile_dir": "data/foodscope/profiles",
+    "source_overrides": {},
+    "x_access_mode": null,
+    "x_bearer_token_env": "X_BEARER_TOKEN"
+  },
+  "schedule": {
+    "timezone": "Asia/Shanghai",
+    "cron": "30 6 * * *"
+  },
+  "collection": {
+    "lookback_hours": 30,
+    "minimum_sources_per_run": 20,
+    "extended_rotation_days": 2,
+    "discovery_rotation_days": 3,
+    "fallback_sources_per_run": 5
+  },
+  "delivery": {
+    "target_minutes": 60,
+    "markdown_enabled": true,
+    "html_enabled": true,
+    "wechat": {
+      "enabled": false,
+      "app_id_env": "WECHAT_APP_ID",
+      "app_secret_env": "WECHAT_APP_SECRET",
+      "thumb_media_id": null,
+      "author": "FoodScope"
+    }
+  },
+  "email": {
+    "enabled": false,
+    "imap_enabled": false,
+    "smtp_server": "smtp.example.com",
+    "smtp_port": 465,
+    "smtp_username": null,
+    "imap_server": "imap.example.com",
+    "imap_port": 993,
+    "email_address": "noreply@example.com",
+    "password_env": "EMAIL_PASSWORD",
+    "sender_name": "FoodScope",
+    "subscribe_keyword": "SUBSCRIBE",
+    "unsubscribe_keyword": "UNSUBSCRIBE"
+  },
+  "webhook": {
+    "enabled": false,
+    "url_env": "FOODSCOPE_FEISHU_URL",
+    "request_body": null,
+    "headers": null,
+    "delivery": "summary",
+    "overview_position": "first",
+    "platform": "feishu",
+    "layout": "collapsible",
+    "fallback_layout": "markdown",
+    "languages": ["zh"]
+  },
+  "sources": {
+    "github": [],
+    "hackernews": {"enabled": false},
+    "rss": [],
+    "reddit": {"enabled": false},
+    "telegram": {"enabled": false},
+    "twitter": {"enabled": false, "users": []},
+    "openbb": {"enabled": false, "watchlists": []},
+    "ossinsight": {"enabled": false},
+    "gdelt": {"enabled": false},
+    "google_news": {"enabled": false}
+  },
+  "filtering": {
+    "ai_score_threshold": 6,
+    "time_window_hours": 30,
+    "max_items": null,
+    "category_groups": {},
+    "default_group": "other",
+    "default_group_limit": null
+  }
+}

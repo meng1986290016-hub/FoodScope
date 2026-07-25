@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "ai": {
+    "provider": "openai",
+    "model": "offline-fixture",
+    "api_key_env": "OPENAI_API_KEY",
+    "languages": ["zh"]
+  },
+  "ai_routes": {
+    "fast": {
+      "provider": "openai",
+      "model": "offline-fast",
+      "api_key_env": "OPENAI_API_KEY",
+      "languages": ["zh"],
+      "concurrency": 4,
+      "timeout_seconds": 10,
+      "max_attempts": 1
+    },
+    "analysis": {
+      "provider": "openai",
+      "model": "offline-analysis",
+      "api_key_env": "OPENAI_API_KEY",
+      "languages": ["zh"],
+      "concurrency": 4,
+      "timeout_seconds": 10,
+      "max_attempts": 1
+    }
+  },
+  "foodscope": {
+    "enabled": true,
+    "profile": "balanced",
+    "source_packs": []
+  },
+  "schedule": {
+    "timezone": "Asia/Shanghai",
+    "cron": "30 6 * * *"
+  },
+  "collection": {
+    "lookback_hours": 30
+  },
+  "delivery": {
+    "target_minutes": 60,
+    "markdown_enabled": true,
+    "html_enabled": true,
+    "wechat": {
+      "enabled": true,
+      "app_id_env": "WECHAT_APP_ID",
+      "app_secret_env": "WECHAT_APP_SECRET",
+      "thumb_media_id": "offline-permanent-thumb",
+      "author": "FoodScope"
+    }
+  },
+  "email": {
+    "enabled": true,
+    "imap_enabled": false,
+    "smtp_server": "smtp.foodscope.test",
+    "smtp_port": 465,
+    "imap_server": "imap.foodscope.test",
+    "imap_port": 993,
+    "email_address": "noreply@foodscope.test",
+    "password_env": "EMAIL_PASSWORD",
+    "sender_name": "FoodScope"
+  },
+  "webhook": {
+    "enabled": true,
+    "url_env": "FOODSCOPE_FEISHU_URL",
+    "platform": "feishu",
+    "layout": "collapsible"
+  },
+  "sources": {
+    "hackernews": {"enabled": false},
+    "reddit": {"enabled": false},
+    "telegram": {"enabled": false}
+  },
+  "filtering": {
+    "ai_score_threshold": 6,
+    "time_window_hours": 30
+  }
+}

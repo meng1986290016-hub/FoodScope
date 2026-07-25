@@ -1,0 +1,21 @@
+{
+  "id": "new_products",
+  "name": "新品雷达",
+  "max_items": 20,
+  "max_per_source": 3,
+  "exploration_slots": 2,
+  "commercial_min_ratio": 0.0,
+  "minimum_score": 6.0,
+  "risk_override_min": "high",
+  "topic_weights": {
+    "product_innovation": 0.55,
+    "ingredients_technology": 0.15,
+    "packaging_labeling": 0.1,
+    "consumer_trends": 0.1,
+    "regulations_standards": 0.01,
+    "food_safety_recalls": 0.01,
+    "retail_foodservice": 0.05,
+    "company_updates": 0.03
+  },
+  "market_weights": {}
+}

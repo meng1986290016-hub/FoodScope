@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>FoodScope Fixture</title>
+    <item>
+      <guid>new-product</guid>
+      <title>New cultured drink launches</title>
+      <link>https://93.184.216.34/articles/new-product</link>
+      <description>A concise launch description.</description>
+      <pubDate>Fri, 24 Jul 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <guid>old-product</guid>
+      <title>Old product</title>
+      <link>https://93.184.216.34/articles/old-product</link>
+      <description>This item is outside the window.</description>
+      <pubDate>Thu, 23 Jul 2026 08:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

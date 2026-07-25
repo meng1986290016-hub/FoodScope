@@ -1,0 +1,676 @@
+{
+  "id": "discovery_queries",
+  "name": "多语言食品产业发现查询",
+  "sources": [
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_alternative_protein",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_alternative_protein",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"alternative protein\" OR \"plant-based\" OR \"cultivated meat\") (launch OR approval OR scale)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "consumer_trends",
+        "company_updates"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_brand_strategy",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_brand_strategy",
+      "options": {
+        "category_hint": [
+          "consumer_trends",
+          "company_updates"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(food OR beverage) (\"brand strategy\" OR portfolio OR premiumization OR localisation)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology",
+        "company_updates"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_capacity_expansion",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_capacity_expansion",
+      "options": {
+        "category_hint": [
+          "ingredients_technology",
+          "company_updates"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"food company\" OR \"beverage company\") (\"new facility\" OR expansion OR partnership OR \"innovation center\")"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "consumer_trends"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_consumer_trends",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_consumer_trends",
+      "options": {
+        "category_hint": [
+          "consumer_trends"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"food consumer trend\" OR \"beverage trend\") (survey OR report OR market)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_fermentation",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_fermentation",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"precision fermentation\" OR \"biomass fermentation\" OR \"food fermentation\")"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "packaging_labeling"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_food_packaging",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_food_packaging",
+      "options": {
+        "category_hint": [
+          "packaging_labeling"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"food packaging\" OR \"beverage packaging\") (recyclable OR active OR smart OR innovation)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "product_innovation"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_functional_food",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_functional_food",
+      "options": {
+        "category_hint": [
+          "product_innovation"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"functional food\" OR nutraceutical OR probiotic OR prebiotic) (ingredient OR product)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_ingredient_innovation",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_ingredient_innovation",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"food ingredient\" OR \"novel ingredient\") (launch OR innovation OR technology)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "company_updates"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_investment_ma",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_investment_ma",
+      "options": {
+        "category_hint": [
+          "company_updates"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"food company\" OR \"beverage company\" OR foodtech) (funding OR investment OR acquisition)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_processing_technology",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_processing_technology",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"food processing technology\" OR \"non-thermal processing\" OR \"food manufacturing technology\")"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "product_innovation"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_product_launch",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_product_launch",
+      "options": {
+        "category_hint": [
+          "product_innovation"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(food OR beverage) (\"new product\" OR launch OR innovation)"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_reformulation",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_reformulation",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"sugar reduction\" OR \"sodium reduction\" OR \"clean label\") food"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "retail_foodservice"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_retail_foodservice",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "GLOBAL"
+      ],
+      "name": "en_retail_foodservice",
+      "options": {
+        "category_hint": [
+          "retail_foodservice"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(retail OR restaurant OR foodservice) (\"new product\" OR menu OR concept) food"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "product_innovation",
+        "retail_foodservice",
+        "company_updates"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "en_southeast_asia",
+      "languages": [
+        "en"
+      ],
+      "markets": [
+        "SEA"
+      ],
+      "name": "en_southeast_asia",
+      "options": {
+        "category_hint": [
+          "product_innovation",
+          "retail_foodservice",
+          "company_updates"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news",
+          "gdelt"
+        ],
+        "query": "(\"Singapore\" OR Malaysia OR Thailand OR Vietnam OR ASEAN) (\"food launch\" OR foodtech OR investment OR \"new facility\" OR \"retail expansion\")"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "ja_ingredient_technology",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "ja_ingredient_technology",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news"
+        ],
+        "query": "食品 原料 技術 OR 発酵 技術 OR 代替たんぱく"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "consumer_trends",
+        "retail_foodservice",
+        "company_updates"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "ja_market_retail",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "ja_market_retail",
+      "options": {
+        "category_hint": [
+          "consumer_trends",
+          "retail_foodservice",
+          "company_updates"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news"
+        ],
+        "query": "食品 市場動向 OR 小売 新業態 OR 外食 新メニュー OR 食品企業 投資"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "product_innovation"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "ja_product_launch",
+      "languages": [
+        "ja"
+      ],
+      "markets": [
+        "JP"
+      ],
+      "name": "ja_product_launch",
+      "options": {
+        "category_hint": [
+          "product_innovation"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news"
+        ],
+        "query": "食品 新商品 OR 飲料 新商品 OR 食品 開発"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "ingredients_technology"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "ko_ingredient_technology",
+      "languages": [
+        "ko"
+      ],
+      "markets": [
+        "KR"
+      ],
+      "name": "ko_ingredient_technology",
+      "options": {
+        "category_hint": [
+          "ingredients_technology"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news"
+        ],
+        "query": "식품 원료 기술 OR 발효 기술 OR 대체 단백질"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "consumer_trends",
+        "retail_foodservice",
+        "company_updates"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "ko_market_retail",
+      "languages": [
+        "ko"
+      ],
+      "markets": [
+        "KR"
+      ],
+      "name": "ko_market_retail",
+      "options": {
+        "category_hint": [
+          "consumer_trends",
+          "retail_foodservice",
+          "company_updates"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news"
+        ],
+        "query": "식품 시장 동향 OR 유통 신사업 OR 외식 신메뉴 OR 식품 기업 투자"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    },
+    {
+      "adapter": "discovery_query",
+      "categories": [
+        "product_innovation"
+      ],
+      "collection_tier": "discovery",
+      "enabled": true,
+      "evidence_tier": 3,
+      "id": "ko_product_launch",
+      "languages": [
+        "ko"
+      ],
+      "markets": [
+        "KR"
+      ],
+      "name": "ko_product_launch",
+      "options": {
+        "category_hint": [
+          "product_innovation"
+        ],
+        "max_candidates_after_dedup": 12,
+        "max_candidates_per_provider": 20,
+        "providers": [
+          "google_news"
+        ],
+        "query": "식품 신제품 OR 음료 신제품 OR 제품 개발"
+      },
+      "packs": [
+        "discovery_queries"
+      ],
+      "url": "https://news.google.com/rss/search"
+    }
+  ]
+}
