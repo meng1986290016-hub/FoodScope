@@ -167,6 +167,7 @@ class AnthropicClient(AIClient):
                 self.config.provider.value,
                 input_tokens=getattr(usage, "input_tokens", 0),
                 output_tokens=getattr(usage, "output_tokens", 0),
+                model=self.model,
             )
         for block in message.content:
             text = getattr(block, "text", None)
@@ -303,6 +304,7 @@ class OpenAIClient(AIClient):
                 self.provider,
                 input_tokens=getattr(usage, "prompt_tokens", 0),
                 output_tokens=getattr(usage, "completion_tokens", 0),
+                model=self.model,
             )
         return response.choices[0].message.content or ""
 
@@ -438,9 +440,10 @@ class AzureOpenAIClient(AIClient):
         usage = getattr(response, "usage", None)
         if usage is not None:
             record_usage(
-                "openai",
+                "azure",
                 input_tokens=getattr(usage, "prompt_tokens", 0),
                 output_tokens=getattr(usage, "completion_tokens", 0),
+                model=self.model,
             )
         return response.choices[0].message.content or ""
 
@@ -536,7 +539,12 @@ class GeminiClient(AIClient):
             total = getattr(usage, "total_token_count", 0) or 0
             prompt = getattr(usage, "prompt_token_count", 0) or 0
             completion = max(0, total - prompt)
-            record_usage("gemini", input_tokens=prompt, output_tokens=completion)
+            record_usage(
+                "gemini",
+                input_tokens=prompt,
+                output_tokens=completion,
+                model=self.model,
+            )
         return response.text or ""
 
 

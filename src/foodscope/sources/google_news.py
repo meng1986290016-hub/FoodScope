@@ -16,7 +16,10 @@ from .base import BaseFoodAdapter
 
 class GoogleNewsFoodAdapter(BaseFoodAdapter):
     async def fetch(
-        self, source: FoodSourceSpec, since: datetime
+        self,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         options = source.options
         language = source.languages[0] if source.languages else "en"
@@ -49,7 +52,10 @@ class GoogleNewsFoodAdapter(BaseFoodAdapter):
             ),
             self.client,
         )
-        raw_items = await scraper.fetch(since)
+        raw_items = await scraper.fetch(since, until)
+        self.raw_candidate_count = scraper.raw_candidate_count
+        self.date_parse_attempts = scraper.date_parse_attempts
+        self.date_parse_successes = scraper.date_parse_successes
         return [
             self._convert(source, item) for item in raw_items
         ]

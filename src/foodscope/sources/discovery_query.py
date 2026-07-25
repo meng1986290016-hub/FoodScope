@@ -21,19 +21,37 @@ PROVIDERS: dict[str, type[BaseFoodAdapter]] = {
 
 class DiscoveryQueryAdapter(BaseFoodAdapter):
     async def fetch(
-        self, source: FoodSourceSpec, since: datetime
+        self,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         provider_names = source.options.get("providers", [])
         if not isinstance(provider_names, list) or not provider_names:
             raise ValueError(
                 "discovery_query requires non-empty providers"
             )
+        adapters = [
+            PROVIDERS[name](self.client)
+            for name in provider_names
+        ]
         results = await asyncio.gather(
             *(
-                PROVIDERS[name](self.client).fetch(source, since)
-                for name in provider_names
+                adapter.fetch(
+                    source, since, until
+                )
+                for adapter in adapters
             ),
             return_exceptions=True,
+        )
+        self.raw_candidate_count = sum(
+            adapter.raw_candidate_count for adapter in adapters
+        )
+        self.date_parse_attempts = sum(
+            adapter.date_parse_attempts for adapter in adapters
+        )
+        self.date_parse_successes = sum(
+            adapter.date_parse_successes for adapter in adapters
         )
         provider_errors = [
             result

@@ -50,7 +50,7 @@ def test_manifest_tracks_stage_counts_and_isolation(tmp_path):
     )
     manifest = store.load_manifest(run_id)
 
-    assert manifest["schema_version"] == 1
+    assert manifest["schema_version"] == 3
     assert manifest["profile_id"] == "balanced"
     assert manifest["completed_stages"] == ["scored"]
     assert manifest["counts"]["scored"] == 2
@@ -113,12 +113,172 @@ def test_failed_delivery_can_retry_same_artifact(tmp_path):
 def test_source_metrics_are_idempotent_per_run_and_source(tmp_path):
     store = FoodRunStore(tmp_path)
     run_id = store.create_run(profile_id="balanced")
-    metric = {"source_id": "M001", "run_id": run_id}
+    metric = {
+        "source_id": "M001",
+        "run_id": run_id,
+        "candidate_count": 1,
+    }
+    updated = {
+        "source_id": "M001",
+        "run_id": run_id,
+        "candidate_count": 2,
+    }
 
     store.record_source_metrics(run_id, [metric])
-    store.record_source_metrics(run_id, [metric])
+    store.record_source_metrics(run_id, [updated])
 
-    assert store.load_manifest(run_id)["source_metrics"] == [metric]
+    assert store.load_manifest(run_id)["source_metrics"] == [
+        updated
+    ]
+
+
+def test_source_selection_is_ordered_deduplicated_and_persisted(
+    tmp_path,
+):
+    store = FoodRunStore(tmp_path)
+    run_id = store.create_run(
+        profile_id="balanced",
+        run_provenance="scheduled",
+    )
+
+    store.set_source_selection(
+        run_id,
+        ["M002", "M001", "M002"],
+        eligible_source_ids=["M001", "M002", "M001"],
+        source_config_sha256="abc123",
+    )
+
+    manifest = store.load_manifest(run_id)
+    assert manifest["run_provenance"] == "scheduled"
+    assert manifest["source_selection"] == ["M002", "M001"]
+    assert manifest["eligible_sources"] == ["M001", "M002"]
+    assert manifest["source_config_sha256"] == "abc123"
+
+
+def test_source_outcomes_and_token_usage_survive_resume(tmp_path):
+    store = FoodRunStore(tmp_path)
+    run_id = store.create_run(profile_id="balanced")
+    store.record_source_outcomes(
+        run_id,
+        [
+            {
+                "source": "M001",
+                "status": "success",
+                "item_count": 2,
+                "candidate_count": 2,
+                "published_at_candidate_count": 2,
+                "published_at_parse_count": 1,
+                "ignored": "not persisted",
+            }
+        ],
+    )
+    pricing = [
+        {
+            "route": "fast",
+            "provider": "openai",
+            "model": "gpt-test",
+            "input_cost_per_million": 2.0,
+            "output_cost_per_million": 4.0,
+        }
+    ]
+    store.record_token_usage(
+        run_id,
+        input_tokens=100,
+        output_tokens=50,
+        per_model=[
+            {
+                "key": "openai/gpt-test",
+                "provider": "openai",
+                "model": "gpt-test",
+                "input_tokens": 100,
+                "output_tokens": 50,
+            }
+        ],
+        pricing=pricing,
+    )
+    store.record_token_usage(
+        run_id,
+        input_tokens=20,
+        output_tokens=10,
+        per_model=[
+            {
+                "key": "openai/gpt-test",
+                "provider": "openai",
+                "model": "gpt-test",
+                "input_tokens": 20,
+                "output_tokens": 10,
+            }
+        ],
+        pricing=pricing,
+    )
+
+    manifest = store.load_manifest(run_id)
+    assert manifest["source_outcomes"] == [
+        {
+            "source": "M001",
+            "status": "success",
+            "candidate_count": 2,
+            "published_at_candidate_count": 2,
+            "published_at_parse_count": 1,
+        }
+    ]
+    assert manifest["token_usage"]["input_tokens"] == 120
+    assert manifest["token_usage"]["output_tokens"] == 60
+    assert manifest["token_usage"]["total_tokens"] == 180
+    assert (
+        manifest["token_usage"]["per_model"]
+        ["openai/gpt-test"]["total_tokens"]
+        == 180
+    )
+    assert manifest["token_usage"]["estimated_cost"] == 0.00048
+    assert manifest["token_usage"]["unpriced_models"] == []
+
+
+def test_unconfigured_model_price_is_not_reported_as_zero(tmp_path):
+    store = FoodRunStore(tmp_path)
+    run_id = store.create_run(profile_id="balanced")
+
+    store.record_token_usage(
+        run_id,
+        input_tokens=10,
+        output_tokens=5,
+        per_model=[
+            {
+                "key": "openai/gpt-test",
+                "provider": "openai",
+                "model": "gpt-test",
+                "input_tokens": 10,
+                "output_tokens": 5,
+            }
+        ],
+        pricing=[],
+    )
+
+    usage = store.load_manifest(run_id)["token_usage"]
+    assert usage["estimated_cost"] is None
+    assert usage["unpriced_models"] == ["openai/gpt-test"]
+
+
+def test_run_timing_records_target_service_level(tmp_path):
+    store = FoodRunStore(tmp_path)
+    run_id = store.create_run(profile_id="balanced")
+
+    store.record_timing(
+        run_id,
+        duration_seconds=3660.0,
+        target_minutes=60,
+    )
+    store.record_timing(
+        run_id,
+        duration_seconds=1.0,
+        target_minutes=60,
+    )
+
+    assert store.load_manifest(run_id)["timing"] == {
+        "duration_seconds": 3660.0,
+        "target_minutes": 60,
+        "completed_within_target": False,
+    }
 
 
 @pytest.mark.parametrize(

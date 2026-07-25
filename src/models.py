@@ -154,6 +154,12 @@ class AIConfig(BaseModel):
     analysis_concurrency: int = 1
     enrichment_concurrency: int = 1
     languages: List[str] = Field(default_factory=lambda: ["en"])
+    input_cost_per_million: Optional[float] = Field(
+        default=None, ge=0
+    )
+    output_cost_per_million: Optional[float] = Field(
+        default=None, ge=0
+    )
     # Azure OpenAI specific; required when provider == AZURE
     azure_endpoint_env: Optional[str] = None
     api_version: Optional[str] = None
@@ -167,6 +173,19 @@ class AIConfig(BaseModel):
         if invalid:
             raise ValueError(f"invalid language code: {invalid[0]!r}")
         return languages
+
+    @model_validator(mode="after")
+    def validate_pricing_pair(self):
+        configured = (
+            self.input_cost_per_million is not None,
+            self.output_cost_per_million is not None,
+        )
+        if configured[0] != configured[1]:
+            raise ValueError(
+                "input_cost_per_million and "
+                "output_cost_per_million must be set together"
+            )
+        return self
 
 
 class AIRouteConfig(AIConfig):
@@ -537,4 +556,24 @@ class Config(BaseModel):
                 "ai_routes.fast and ai_routes.analysis are required "
                 "when FoodScope is enabled"
             )
+        if self.ai_routes is not None:
+            prices: dict[
+                tuple[AIProvider, str],
+                tuple[Optional[float], Optional[float]],
+            ] = {}
+            for route in (
+                self.ai_routes.fast,
+                self.ai_routes.analysis,
+            ):
+                key = (route.provider, route.model)
+                price = (
+                    route.input_cost_per_million,
+                    route.output_cost_per_million,
+                )
+                if key in prices and prices[key] != price:
+                    raise ValueError(
+                        "AI routes sharing a provider/model must "
+                        "use identical pricing"
+                    )
+                prices[key] = price
         return self

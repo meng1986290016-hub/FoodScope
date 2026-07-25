@@ -1,8 +1,9 @@
+import json
 from pathlib import Path
 
 import pytest
 
-from src.foodscope.config import FoodScopeConfig
+from src.foodscope.config import BriefProfile, FoodScopeConfig
 from src.foodscope.loaders import load_profile, load_source_packs
 from src.foodscope.models import FoodCategory
 
@@ -23,6 +24,45 @@ def test_balanced_profile_preserves_commercial_target():
 
     assert profile.commercial_min_ratio == 0.70
     assert profile.topic_weights[FoodCategory.PRODUCT_INNOVATION] == 0.20
+
+
+def test_profile_requires_all_categories_and_bounded_weights():
+    payload = json.loads(
+        Path("data/foodscope/profiles/balanced.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload["topic_weights"].pop("company_updates")
+    payload["topic_weights"]["product_innovation"] += 0.1
+
+    with pytest.raises(ValueError, match="all FoodCategory"):
+        BriefProfile.model_validate(payload)
+
+    payload = json.loads(
+        Path("data/foodscope/profiles/balanced.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload["topic_weights"]["product_innovation"] = -0.1
+    payload["topic_weights"]["company_updates"] += 0.3
+
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        BriefProfile.model_validate(payload)
+
+
+@pytest.mark.parametrize("weight", [-0.1, 1.01])
+def test_profile_market_weights_must_be_bounded(weight):
+    payload = json.loads(
+        Path("data/foodscope/profiles/balanced.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload["market_weights"] = {"US": weight}
+
+    with pytest.raises(
+        ValueError, match="market_weights"
+    ):
+        BriefProfile.model_validate(payload)
 
 
 def test_duplicate_sources_from_multiple_packs_are_merged(tmp_path):
@@ -47,9 +87,15 @@ def test_duplicate_sources_from_multiple_packs_are_merged(tmp_path):
 
 
 def test_builtin_profile_id_must_match_file_name(tmp_path):
+    payload = json.loads(
+        Path("data/foodscope/profiles/balanced.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload["id"] = "market"
+    payload["name"] = "Wrong"
     (tmp_path / "balanced.json").write_text(
-        '{"id":"market","name":"Wrong","topic_weights":'
-        '{"product_innovation":1.0}}',
+        json.dumps(payload),
         encoding="utf-8",
     )
 

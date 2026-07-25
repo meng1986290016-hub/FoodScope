@@ -59,6 +59,21 @@ def test_time_window_uses_startdatetime_when_no_timespan() -> None:
     assert "timespan" not in params
 
 
+def test_explicit_until_is_sent_as_gdelt_enddatetime() -> None:
+    client = _mock_client(_articles_payload())
+    config = GDELTConfig(enabled=True, query="ai")
+    scraper = GDELTScraper(config, client)
+    until = datetime(
+        2026, 6, 28, 12, 30, 0, tzinfo=timezone.utc
+    )
+
+    items = asyncio.run(scraper.fetch(SINCE, until))
+
+    params = client.get.call_args.kwargs["params"]
+    assert params["enddatetime"] == until.strftime("%Y%m%d%H%M%S")
+    assert [item.title for item in items] == ["AI breakthrough one"]
+
+
 def test_time_window_uses_timespan_when_set() -> None:
     client = _mock_client(_articles_payload())
     config = GDELTConfig(enabled=True, query="ai", timespan="24h")

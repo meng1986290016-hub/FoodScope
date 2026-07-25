@@ -72,16 +72,26 @@ class FoodBriefRenderer:
 
     def render(self, facts: BriefFacts) -> RenderedBrief:
         facts_hash = facts.fact_hash()
+        featured_ids = {
+            item.id
+            for item in facts.risk_alerts + facts.must_read
+        }
         sections = [
             {
                 "id": section_id,
                 "label": CATEGORY_LABELS.get(
                     section_id, section_id
                 ),
-                "items": items,
+                "items": [
+                    item
+                    for item in items
+                    if item.id not in featured_ids
+                ],
             }
             for section_id, items in facts.sections.items()
-            if items
+            if any(
+                item.id not in featured_ids for item in items
+            )
         ]
         context = {
             "facts": facts,

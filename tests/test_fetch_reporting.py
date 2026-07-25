@@ -97,7 +97,11 @@ def test_partial_failure_keeps_items_and_source_names(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "src.orchestrator.HackerNewsScraper",
-        lambda config, client: StubScraper(error=ValueError("unavailable")),
+        lambda config, client: StubScraper(
+            error=ValueError(
+                "unavailable?access_token=source-secret"
+            )
+        ),
     )
 
     items = asyncio.run(orchestrator.fetch_all_sources(SINCE))
@@ -110,7 +114,10 @@ def test_partial_failure_keeps_items_and_source_names(monkeypatch) -> None:
     assert report.failed_count == 1
     source_reports = report.to_dict()["sources"]
     assert isinstance(source_reports, list)
-    assert source_reports[1]["error"] == "ValueError: unavailable"
+    assert source_reports[1]["error"] == (
+        "Source fetch failed (ValueError)"
+    )
+    assert "source-secret" not in str(source_reports)
 
 
 def test_native_run_raises_when_every_attempted_source_failed(monkeypatch) -> None:

@@ -31,7 +31,7 @@ import hashlib
 from pydantic import HttpUrl
 import logging
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any, List, Optional
 
@@ -59,8 +59,15 @@ class GoogleNewsScraper(BaseScraper):
         """
         super().__init__({"google_news": config}, http_client)
         self.gn_config = config
+        self.raw_candidate_count = 0
+        self.date_parse_attempts = 0
+        self.date_parse_successes = 0
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(
+        self,
+        since: datetime,
+        until: datetime | None = None,
+    ) -> List[ContentItem]:
         """Fetch articles from the Google News RSS search endpoint.
 
         Args:
@@ -70,6 +77,9 @@ class GoogleNewsScraper(BaseScraper):
         Returns:
             List[ContentItem]: Fetched content items.
         """
+        self.raw_candidate_count = 0
+        self.date_parse_attempts = 0
+        self.date_parse_successes = 0
         if not self.gn_config.enabled:
             return []
 
@@ -77,7 +87,9 @@ class GoogleNewsScraper(BaseScraper):
         if not base_query:
             return []
 
-        query = f"{base_query} {self._time_operator(since)}"
+        query = (
+            f"{base_query} {self._time_operator(since, until)}"
+        )
 
         ceid = self.gn_config.ceid or f"{self.gn_config.country}:{self.gn_config.language}"
         params: dict[str, Any] = {
@@ -99,8 +111,19 @@ class GoogleNewsScraper(BaseScraper):
             for entry in feed.entries:
                 if len(items) >= self.gn_config.max_results:
                     break
+                self.raw_candidate_count += 1
+                self.date_parse_attempts += 1
+                if self._parse_date(entry) is not None:
+                    self.date_parse_successes += 1
                 item = self._entry_to_item(entry)
-                if item is not None:
+                if (
+                    item is not None
+                    and item.published_at >= self._ensure_utc(since)
+                    and (
+                        until is None
+                        or item.published_at <= self._ensure_utc(until)
+                    )
+                ):
                     items.append(item)
             return items
 
@@ -111,7 +134,11 @@ class GoogleNewsScraper(BaseScraper):
             logger.warning("Error parsing Google News feed: %s", exc)
             return []
 
-    def _time_operator(self, since: datetime) -> str:
+    def _time_operator(
+        self,
+        since: datetime,
+        until: datetime | None = None,
+    ) -> str:
         """Build the Google News time operator from ``since``.
 
         Computes the number of whole hours between ``since`` and now (min 1).
@@ -120,6 +147,15 @@ class GoogleNewsScraper(BaseScraper):
         to ``after:YYYY-MM-DD`` using the ``since`` date.
         """
         since_utc = self._ensure_utc(since)
+        if until is not None:
+            until_utc = self._ensure_utc(until)
+            before_date = (
+                until_utc.date() + timedelta(days=1)
+            ).isoformat()
+            return (
+                f"after:{since_utc.date().isoformat()} "
+                f"before:{before_date}"
+            )
         now_utc = datetime.now(timezone.utc)
         seconds = (now_utc - since_utc).total_seconds()
         hours = max(1, math.ceil(seconds / 3600))

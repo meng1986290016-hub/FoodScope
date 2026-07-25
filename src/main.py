@@ -244,6 +244,9 @@ def main(argv: list[str] | None = None):
                     since=args.since,
                     until=args.until,
                     deliver=not args.no_deliver,
+                    run_provenance=(
+                        "scheduled" if scheduled else "manual"
+                    ),
                 )
             if scheduled:
                 RetentionPolicy().apply(

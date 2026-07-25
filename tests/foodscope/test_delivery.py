@@ -63,6 +63,60 @@ class SuccessfulWeChat:
         )
 
 
+class PartialEmail:
+    config = SimpleNamespace(enabled=True)
+
+    def __init__(self):
+        self.calls = []
+        self.fail_second = True
+
+    def send_daily_summary(
+        self, summary_md, subject, subscribers, html_body=None
+    ):
+        self.calls.append(subscribers[0])
+        if subscribers[0] == "second@example.com" and self.fail_second:
+            raise RuntimeError("smtp token=partial-secret")
+        return True
+
+
+class PartialFeishu:
+    config = SimpleNamespace(enabled=True, platform="feishu")
+
+    def __init__(self):
+        self.calls = []
+        self.fail_second = True
+
+    async def send_payload(self, payload):
+        self.calls.append(payload["card"])
+        if payload["card"] == 2 and self.fail_second:
+            return WebhookDeliveryResult(
+                WebhookDeliveryStatus.HTTP_FAILURE,
+                status_code=500,
+            )
+        return WebhookDeliveryResult(
+            WebhookDeliveryStatus.SUCCESS,
+            status_code=200,
+        )
+
+
+class PartialGenericWebhook:
+    def __init__(self):
+        self.calls = []
+        self.fail_second = True
+
+    async def notify(self, message):
+        self.calls.append(message["message"])
+        if message["message"] == 2 and self.fail_second:
+            return WebhookDeliveryResult(
+                WebhookDeliveryStatus.HTTP_FAILURE,
+                status_code=500,
+            )
+        return WebhookDeliveryResult(
+            WebhookDeliveryStatus.SUCCESS,
+            status_code=200,
+        )
+
+
 def _facts_and_rendered():
     facts = BriefFacts.model_validate_json(
         FIXTURE.read_text(encoding="utf-8")
@@ -176,3 +230,117 @@ def test_successful_delivery_is_idempotent(tmp_path, monkeypatch):
     assert deliveries["feishu"]["attempts"] == 1
     assert deliveries["wechat_draft"]["attempts"] == 1
     assert deliveries["email"]["attempts"] == 2
+
+
+def test_partial_email_retry_skips_recipient_already_delivered(
+    tmp_path,
+):
+    run_store = FoodRunStore(tmp_path / "runs")
+    run_id = run_store.create_run("balanced")
+    facts, rendered = _facts_and_rendered()
+    run_store.save_brief_artifacts(run_id, facts, rendered)
+    email = PartialEmail()
+    manager = FoodDeliveryManager(
+        run_id=run_id,
+        run_store=run_store,
+        config=DeliveryConfig(),
+        email_manager=email,
+        subscribers=[
+            "first@example.com",
+            "second@example.com",
+        ],
+    )
+
+    first = asyncio.run(manager.deliver(facts, rendered))
+    email.fail_second = False
+    second = asyncio.run(manager.deliver(facts, rendered))
+
+    assert {result.channel: result.status for result in first}[
+        "email"
+    ] == DeliveryStatus.FAILURE
+    assert {result.channel: result.status for result in second}[
+        "email"
+    ] == DeliveryStatus.SUCCESS
+    assert email.calls == [
+        "first@example.com",
+        "second@example.com",
+        "second@example.com",
+    ]
+    manifest_text = str(run_store.load_manifest(run_id))
+    assert "first@example.com" not in manifest_text
+    assert "second@example.com" not in manifest_text
+    assert "partial-secret" not in manifest_text
+
+
+def test_partial_feishu_retry_skips_card_already_delivered(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.foodscope.delivery.build_feishu_brief_payload",
+        lambda facts, rendered: [{"card": 1}, {"card": 2}],
+    )
+    run_store = FoodRunStore(tmp_path / "runs")
+    run_id = run_store.create_run("balanced")
+    facts, rendered = _facts_and_rendered()
+    run_store.save_brief_artifacts(run_id, facts, rendered)
+    feishu = PartialFeishu()
+    manager = FoodDeliveryManager(
+        run_id=run_id,
+        run_store=run_store,
+        config=DeliveryConfig(),
+        webhook_notifier=feishu,
+    )
+
+    first = asyncio.run(manager.deliver(facts, rendered))
+    feishu.fail_second = False
+    second = asyncio.run(manager.deliver(facts, rendered))
+
+    assert {result.channel: result.status for result in first}[
+        "feishu"
+    ] == DeliveryStatus.FAILURE
+    assert {result.channel: result.status for result in second}[
+        "feishu"
+    ] == DeliveryStatus.SUCCESS
+    assert feishu.calls == [1, 2, 2]
+
+
+def test_generic_webhook_messages_are_individually_idempotent(
+    tmp_path,
+):
+    run_store = FoodRunStore(tmp_path / "runs")
+    run_id = run_store.create_run("balanced")
+    facts, rendered = _facts_and_rendered()
+    notifier = PartialGenericWebhook()
+    manager = FoodDeliveryManager(
+        run_id=run_id,
+        run_store=run_store,
+        config=DeliveryConfig(),
+        webhook_notifier=notifier,
+    )
+    messages = [
+        {"message": 1, "timestamp": "100"},
+        {"message": 2, "timestamp": "100"},
+    ]
+
+    first = asyncio.run(
+        manager.deliver_generic_webhook(
+            [
+                {"message": 1, "timestamp": "200"},
+                {"message": 2, "timestamp": "200"},
+            ],
+            rendered.facts_sha256,
+        )
+    )
+    notifier.fail_second = False
+    second = asyncio.run(
+        manager.deliver_generic_webhook(
+            messages, rendered.facts_sha256
+        )
+    )
+
+    assert first.status == DeliveryStatus.FAILURE
+    assert second.status == DeliveryStatus.SUCCESS
+    assert notifier.calls == [1, 2, 2]
+    assert run_store.delivery_succeeded(
+        run_id, "webhook", rendered.facts_sha256
+    )

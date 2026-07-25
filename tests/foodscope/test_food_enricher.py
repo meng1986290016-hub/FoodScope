@@ -1,4 +1,5 @@
 import asyncio
+import json
 from collections import deque
 from pathlib import Path
 
@@ -79,3 +80,22 @@ def test_failed_item_is_isolated_while_other_item_completes():
     assert completed.food is not None
     assert completed.food.recommended_action_zh
     assert client.calls == 4
+
+
+def test_failed_enrichment_does_not_persist_provider_error_details():
+    client = StubClient(
+        [
+            RuntimeError(
+                "https://provider.test?api_key=enrichment-secret"
+            )
+        ]
+    )
+
+    failed = asyncio.run(
+        FoodContentEnricher(client, max_attempts=1).enrich([_item()])
+    )[0]
+
+    assert failed.metadata["foodscope_analysis_error"] == (
+        "FoodScope enrichment failed (RuntimeError)"
+    )
+    assert "enrichment-secret" not in json.dumps(failed.metadata)

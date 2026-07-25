@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from enum import StrEnum
+from hashlib import sha256
+import json
 from typing import Any, Sequence
 
 from pydantic import BaseModel
@@ -168,25 +170,68 @@ class FoodDeliveryManager:
             "FoodScope 全球食品产业简报 · "
             f"{facts.metadata.date}"
         )
-        sent = await asyncio.to_thread(
-            self.email_manager.send_daily_summary,
-            rendered.markdown,
-            subject,
-            self.subscribers,
-            rendered.html,
-        )
-        if sent is False:
+        delivered = 0
+        failed = 0
+        for recipient in self.subscribers:
+            recipient_hash = sha256(
+                recipient.strip().casefold().encode("utf-8")
+            ).hexdigest()[:16]
+            child_channel = (
+                f"email:recipient:{recipient_hash}"
+            )
+            if self.run_store.delivery_succeeded(
+                self.run_id,
+                child_channel,
+                rendered.facts_sha256,
+            ):
+                delivered += 1
+                continue
+            try:
+                sent = await asyncio.to_thread(
+                    self.email_manager.send_daily_summary,
+                    rendered.markdown,
+                    subject,
+                    [recipient],
+                    rendered.html,
+                )
+                if sent is False:
+                    raise RuntimeError("SMTP delivery returned false")
+            except Exception as error:
+                failed += 1
+                detail = (
+                    "email recipient delivery failed "
+                    f"({type(error).__name__})"
+                )
+                self.run_store.record_delivery(
+                    self.run_id,
+                    child_channel,
+                    DeliveryStatus.FAILURE.value,
+                    artifact_id=rendered.facts_sha256,
+                    detail=detail,
+                )
+                continue
+            self.run_store.record_delivery(
+                self.run_id,
+                child_channel,
+                DeliveryStatus.SUCCESS.value,
+                artifact_id=rendered.facts_sha256,
+            )
+            delivered += 1
+        if failed:
             return DeliveryResult(
                 channel="email",
                 status=DeliveryStatus.FAILURE,
                 facts_sha256=rendered.facts_sha256,
-                detail="SMTP delivery failed",
+                external_id=(
+                    f"{delivered}/{len(self.subscribers)}"
+                ),
+                detail=f"{failed} email recipient delivery(s) failed",
             )
         return DeliveryResult(
             channel="email",
             status=DeliveryStatus.SUCCESS,
             facts_sha256=rendered.facts_sha256,
-            external_id=str(len(self.subscribers)),
+            external_id=str(delivered),
         )
 
     async def _deliver_feishu(
@@ -211,23 +256,50 @@ class FoodDeliveryManager:
             facts, rendered
         )
         delivered = 0
-        for payload in payloads:
+        for index, payload in enumerate(payloads):
+            payload_digest = self._payload_digest(
+                {"index": index, "payload": payload}
+            )
+            child_channel = (
+                f"feishu:card:{payload_digest[:16]}"
+            )
+            if self.run_store.delivery_succeeded(
+                self.run_id,
+                child_channel,
+                rendered.facts_sha256,
+            ):
+                delivered += 1
+                continue
             response = await self.webhook_notifier.send_payload(
                 payload
             )
             if not getattr(response, "sent", False):
                 status = getattr(response, "status", "failure")
                 status_value = getattr(status, "value", str(status))
+                detail = (
+                    "Feishu card delivery failed "
+                    f"({status_value})"
+                )
+                self.run_store.record_delivery(
+                    self.run_id,
+                    child_channel,
+                    DeliveryStatus.FAILURE.value,
+                    artifact_id=rendered.facts_sha256,
+                    detail=detail,
+                )
                 return DeliveryResult(
                     channel="feishu",
                     status=DeliveryStatus.FAILURE,
                     facts_sha256=rendered.facts_sha256,
                     external_id=f"{delivered}/{len(payloads)}",
-                    detail=(
-                        "Feishu card delivery failed "
-                        f"({status_value})"
-                    ),
+                    detail=detail,
                 )
+            self.run_store.record_delivery(
+                self.run_id,
+                child_channel,
+                DeliveryStatus.SUCCESS.value,
+                artifact_id=rendered.facts_sha256,
+            )
             delivered += 1
         return DeliveryResult(
             channel="feishu",
@@ -235,6 +307,114 @@ class FoodDeliveryManager:
             facts_sha256=rendered.facts_sha256,
             external_id=str(delivered),
         )
+
+    async def deliver_generic_webhook(
+        self,
+        messages: Sequence[dict[str, Any]],
+        facts_sha256: str,
+    ) -> DeliveryResult:
+        """Deliver generic webhook messages with per-message checkpoints."""
+
+        if self.run_store.delivery_succeeded(
+            self.run_id, "webhook", facts_sha256
+        ):
+            return DeliveryResult(
+                channel="webhook",
+                status=DeliveryStatus.SKIPPED,
+                facts_sha256=facts_sha256,
+                detail="matching fact snapshot already delivered",
+            )
+        if self.webhook_notifier is None:
+            result = DeliveryResult(
+                channel="webhook",
+                status=DeliveryStatus.DISABLED,
+                facts_sha256=facts_sha256,
+            )
+            self._record_result(result)
+            return result
+
+        delivered = 0
+        for index, message in enumerate(messages):
+            stable_message = {
+                key: value
+                for key, value in message.items()
+                if key != "timestamp"
+            }
+            message_digest = self._payload_digest(
+                {"index": index, "message": stable_message}
+            )
+            child_channel = (
+                f"webhook:message:{message_digest[:16]}"
+            )
+            if self.run_store.delivery_succeeded(
+                self.run_id, child_channel, facts_sha256
+            ):
+                delivered += 1
+                continue
+            try:
+                response = await self.webhook_notifier.notify(
+                    message
+                )
+            except Exception as error:
+                detail = (
+                    "webhook message delivery failed "
+                    f"({type(error).__name__})"
+                )
+                self.run_store.record_delivery(
+                    self.run_id,
+                    child_channel,
+                    DeliveryStatus.FAILURE.value,
+                    artifact_id=facts_sha256,
+                    detail=detail,
+                )
+                result = DeliveryResult(
+                    channel="webhook",
+                    status=DeliveryStatus.FAILURE,
+                    facts_sha256=facts_sha256,
+                    external_id=f"{delivered}/{len(messages)}",
+                    detail=detail,
+                )
+                self._record_result(result)
+                return result
+            if not getattr(response, "sent", False):
+                status = getattr(response, "status", "failure")
+                status_value = getattr(status, "value", str(status))
+                detail = (
+                    "webhook message delivery failed "
+                    f"({status_value})"
+                )
+                self.run_store.record_delivery(
+                    self.run_id,
+                    child_channel,
+                    DeliveryStatus.FAILURE.value,
+                    artifact_id=facts_sha256,
+                    detail=detail,
+                )
+                result = DeliveryResult(
+                    channel="webhook",
+                    status=DeliveryStatus.FAILURE,
+                    facts_sha256=facts_sha256,
+                    external_id=f"{delivered}/{len(messages)}",
+                    detail=detail,
+                )
+                self._record_result(result)
+                return result
+            self.run_store.record_delivery(
+                self.run_id,
+                child_channel,
+                DeliveryStatus.SUCCESS.value,
+                artifact_id=facts_sha256,
+            )
+            delivered += 1
+
+        result = DeliveryResult(
+            channel="webhook",
+            status=DeliveryStatus.SUCCESS,
+            facts_sha256=facts_sha256,
+            external_id=str(delivered),
+        )
+        self._record_result(result)
+        return result
 
     async def _deliver_wechat(
         self,
@@ -287,3 +467,23 @@ class FoodDeliveryManager:
             ),
         )
 
+    def _record_result(self, result: DeliveryResult) -> None:
+        self.run_store.record_delivery(
+            self.run_id,
+            result.channel,
+            result.status.value,
+            artifact_id=result.facts_sha256,
+            external_id=result.external_id,
+            detail=result.detail,
+        )
+
+    @staticmethod
+    def _payload_digest(payload: Any) -> str:
+        canonical = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+        return sha256(canonical.encode("utf-8")).hexdigest()

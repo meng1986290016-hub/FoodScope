@@ -47,7 +47,9 @@ uv run python -m src.main --resume RUN_ID --redeliver
 ```
 
 只有画像、schema 版本和已完成阶段连续性一致时才能恢复。已经成功发送且
-事实哈希相同的渠道会标记为 `skipped`，防止重复发送。
+事实哈希相同的渠道会标记为 `skipped`，防止重复发送。邮件按收件人、飞书按
+卡片、通用 Webhook 按消息分别记录不可逆发送检查点；部分成功后重试只补发
+失败部分，manifest 中只保存收件人散列，不保存邮箱地址。
 
 ## 运行目录
 
@@ -58,27 +60,39 @@ uv run python -m src.main --resume RUN_ID --redeliver
 | `raw.json` | 原始候选 |
 | `normalized.json` | 统一食品行业字段 |
 | `scored.json` | AI 分类与评分 |
-| `filtered.json` | 证据准入、去重和画像筛选 |
-| `enriched.json` | 合规风险与商业机会补充 |
+| `filtered.json` | 证据准入、去重和画像筛选；含可恢复的风险提醒标记 |
+| `enriched.json` | 合规风险与商业机会补充；含隔离审计项 |
 | `summary.json` | 简报元数据 |
 | `facts.json` | 不可变事实快照 |
 | `brief.md` / `brief.html` | 从同一事实快照渲染的成品 |
-| `manifest.json` | 阶段、计数、隔离、来源指标、分发状态和哈希 |
+| `manifest.json` | 阶段、计数、隔离、来源指标、分发状态、耗时和哈希 |
 
 `facts_sha256` 应在 Markdown、HTML、邮件、飞书、微信草稿和 MCP 读取结果中
 一致。哈希不一致表示渠道不是从同一份事实生成，应停止分发并调查。
 
+manifest 还固化 `source_selection`、`source_outcomes`、`token_usage`、
+`eligible_sources`、`source_config_sha256`、`run_provenance` 和模型计价
+快照。断点恢复会从这些字段还原来源指标，并把
+本次新增 token 累加到原运行；不会因恢复而丢失或重复计算用量。模型单价未
+配置时 `estimated_cost` 为 `null`，同时列出 `unpriced_models`。
+
 ## 降级和故障隔离
 
 - 单一来源失败：记录在抓取报告，其余来源继续；
+- `core` 每次抓取，`extended` 默认两天轮换，`discovery` 默认三天轮换；
+- 当日轮换结果不足配置目标数时，按稳定顺序补齐并记录实际来源集合；
+- 首轮来源为空或失败时，最多再抓取 5 个确定性备用来源；
+- 来源抓取默认最多 8 个全局并发、同域名 2 个并发；
+- `core`、`extended`、`discovery` 分别最多尝试 3、2、1 次，并采用有界退避；
 - 单条 AI 返回无效：重试后隔离该条，不中断整批；
+- 单条深度分析失败：保留在审计快照，但不会进入 facts 或任何分发渠道；
 - 单一分发渠道失败：记录失败，其余渠道继续；
 - 官方证据缺失：法规/召回内容拒绝入选；
 - 付费墙、登录、robots 或条款限制：不绕过，改用元数据或发现查询；
 - 所有来源均失败或无成品：健康检查失败，运维人员应处理。
 
-错误详情会清理凭证和 URL 查询参数后再写入 manifest。不要把 `.env`、Webhook
-URL、API token 或 SMTP 密码复制到 issue 和运行日志。
+持久化或发送的错误只包含阶段和异常类型，不包含供应商原始文本。不要把
+`.env`、Webhook URL、API token 或 SMTP 密码复制到 issue 和运行日志。
 
 ## 指标与 14 天验收
 
@@ -91,7 +105,7 @@ URL、API token 或 SMTP 密码复制到 issue 和运行日志。
 - AI token、估算成本和目标完成时长；
 - 各渠道 `success`、`failure`、`disabled`、`skipped`。
 
-发布前至少连续运行 14 天。验收应覆盖五个画像、多个市场、来源故障、AI 无效
+发布前至少连续计划运行 14 天。验收应覆盖五个画像、多个市场、来源故障、AI 无效
 返回和渠道故障。只有真实运行周期完成后，才能确认来源稳定性和成本边界；
 离线 E2E 通过不能替代这项运营验收。
 
@@ -103,8 +117,17 @@ uv run python scripts/foodscope_source_report.py \
   --output data/trials
 ```
 
-人工复核 `data/trials/source-trial-summary.md` 后，再把最终
+只有 `run_provenance="scheduled"` 的生产运行计入验收，并且必须形成连续
+14 个业务日，同时每个来源至少要有 4 个实际抓取日；手工运行、历史回放、
+零散日期和全是轮换跳过的记录不能拼成完整周期。未达到门槛时
+报告状态为 `provisional`，来源层级和适配器建议显示为 `pending`。人工复核
+`data/trials/source-trial-summary.md` 后，再把最终
 `core`、`extended`、`discovery` 或 `disable` 结论写回静态来源包。
+轮换日未选中的来源会记录为 `skipped_rotation`：它证明平台在该生产日正常
+运行，但不计入该来源的抓取次数、成功率、候选量、token 或成本。
+
+`--healthcheck` 同样只接受 `scheduled` 且已完成摘要的运行；刚完成的手工
+回放不能掩盖计划任务已经逾期。
 
 ## 保留策略
 

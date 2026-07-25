@@ -15,7 +15,10 @@ from .base import BaseFoodAdapter
 
 class HTMLListAdapter(BaseFoodAdapter):
     async def fetch(
-        self, source: FoodSourceSpec, since: datetime
+        self,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         since = self.ensure_utc(since)
         response = await safe_request(
@@ -28,8 +31,9 @@ class HTMLListAdapter(BaseFoodAdapter):
         )
         items: list[ContentItem] = []
         for index, element in enumerate(soup.select(item_selector)):
+            self.raw_candidate_count += 1
             parsed = self._parse_element(
-                source, element, since, index
+                source, element, since, until, index
             )
             if parsed is not None:
                 items.append(parsed)
@@ -40,6 +44,7 @@ class HTMLListAdapter(BaseFoodAdapter):
         source: FoodSourceSpec,
         element: Tag,
         since: datetime,
+        until: datetime | None,
         index: int,
     ) -> ContentItem | None:
         title_node = element.select_one(
@@ -51,6 +56,8 @@ class HTMLListAdapter(BaseFoodAdapter):
         date_node = element.select_one(
             self._required_option(source, "date_selector")
         )
+        published = self._node_date(date_node, source)
+        self.note_date_result(published)
         if title_node is None or link_node is None:
             return None
         href = link_node.get(
@@ -58,12 +65,11 @@ class HTMLListAdapter(BaseFoodAdapter):
         )
         if not href:
             return None
-        published = self._node_date(date_node, source)
         if published is None:
             if not source.options.get("allow_undated", False):
                 return None
             published = datetime.now(timezone.utc)
-        if published < since:
+        if not self.in_window(published, since, until):
             return None
         content_node = (
             element.select_one(source.options["content_selector"])

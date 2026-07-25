@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+import json
 from pathlib import Path
-from typing import Optional
+from time import monotonic
+from typing import Literal, Optional
+from zoneinfo import ZoneInfo
 
 import httpx
 
 from src.ai.client import create_ai_client
-from src.ai.tokens import get_usage_snapshot
+from src.ai.tokens import TokenUsageSnapshot, get_usage_snapshot
 from src.ai.summarizer import DailySummarizer
+from src.error_utils import safe_error_detail
 from src.models import Config, ContentItem
 from src.orchestrator import (
     BalancedDigestResult,
@@ -23,7 +28,11 @@ from src.storage.manager import StorageManager
 
 from .analyzer import FoodContentAnalyzer
 from .briefing import BriefFacts, BriefMetadata, RenderedBrief
-from .delivery import DeliveryResult, FoodDeliveryManager
+from .delivery import (
+    DeliveryResult,
+    DeliveryStatus,
+    FoodDeliveryManager,
+)
 from .enricher import FoodContentEnricher
 from .event_dedup import FoodEventFingerprintStore, merge_food_events
 from .evidence import EvidencePolicy
@@ -35,7 +44,11 @@ from .run_store import FoodRunStore, RunStage
 from .scheduler import resolve_run_window
 from .selector import FoodProfileSelector, SelectionResult
 from .source_health import SourceRunMetric
-from .sources.registry import FoodSourceRegistry
+from .sources.registry import (
+    FoodSourceRegistry,
+    order_fallback_sources,
+    select_sources_for_run,
+)
 from .wechat import WeChatDraftClient
 
 
@@ -85,9 +98,14 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self._rendered_brief: RenderedBrief | None = None
         self._window_start: datetime | None = None
         self._window_end: datetime | None = None
+        self._selected_source_ids: list[str] | None = None
+        self._eligible_source_ids: list[str] | None = None
+        self._skip_source_metric_update = False
         self.delivery_results: list[DeliveryResult] = []
         self._generic_webhook_delivered = False
         self._delivery_enabled = True
+        self._token_usage_start: TokenUsageSnapshot | None = None
+        self._run_started_at = 0.0
         self.wechat_draft_client = (
             WeChatDraftClient(self.config.delivery.wechat)
             if self.config.delivery.wechat.enabled
@@ -102,6 +120,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         until: datetime | str | None = None,
         deliver: bool = True,
         resume_run_id: str | None = None,
+        run_provenance: Literal["manual", "scheduled"] = "manual",
     ) -> None:
         """Run or resume the FoodScope pipeline with an exact window."""
         self._brief_facts = None
@@ -109,6 +128,9 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self.delivery_results = []
         self._generic_webhook_delivered = False
         self._delivery_enabled = deliver
+        self._skip_source_metric_update = False
+        self._token_usage_start = get_usage_snapshot()
+        self._run_started_at = monotonic()
         resume_stage: RunStage | None = None
 
         if resume_run_id is not None:
@@ -117,6 +139,38 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             )
             manifest = self.run_store.load_manifest(
                 self.active_run_id
+            )
+            stored_selection = manifest.get("source_selection", [])
+            self._selected_source_ids = [
+                source_id
+                for source_id in stored_selection
+                if source_id in self.source_specs_by_id
+            ]
+            stored_eligible = manifest.get(
+                "eligible_sources", []
+            )
+            self._eligible_source_ids = [
+                source_id
+                for source_id in stored_eligible
+                if source_id in self.source_specs_by_id
+            ]
+            stored_source_hash = manifest.get(
+                "source_config_sha256"
+            )
+            if (
+                stored_source_hash is not None
+                and stored_source_hash
+                != self._source_config_sha256()
+            ):
+                raise ValueError(
+                    "cannot resume a run after source "
+                    "configuration changed"
+                )
+            self.last_fetch_report = (
+                self._fetch_report_from_manifest(manifest)
+            )
+            self._skip_source_metric_update = (
+                resume_stage == RunStage.SUMMARY
             )
             raw_window = manifest.get("run_window")
             if raw_window:
@@ -146,12 +200,44 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             self._window_start = window.since
             self._window_end = window.until
             self.active_run_id = self.run_store.create_run(
-                profile_id=self.profile.id
+                profile_id=self.profile.id,
+                run_provenance=run_provenance,
             )
             self.run_store.set_run_window(
                 self.active_run_id,
                 window.since,
                 window.until,
+            )
+            selected_sources = select_sources_for_run(
+                list(self.source_specs_by_id.values()),
+                business_date=datetime.fromisoformat(
+                    self._business_date(window.until)
+                ).date(),
+                minimum_sources=(
+                    self.config.collection.minimum_sources_per_run
+                ),
+                extended_rotation_days=(
+                    self.config.collection.extended_rotation_days
+                ),
+                discovery_rotation_days=(
+                    self.config.collection.discovery_rotation_days
+                ),
+            )
+            self._selected_source_ids = [
+                source.id for source in selected_sources
+            ]
+            self._eligible_source_ids = [
+                source.id
+                for source in self.source_specs_by_id.values()
+                if source.enabled
+            ]
+            self.run_store.set_source_selection(
+                self.active_run_id,
+                self._selected_source_ids,
+                eligible_source_ids=self._eligible_source_ids,
+                source_config_sha256=(
+                    self._source_config_sha256()
+                ),
             )
 
         try:
@@ -160,22 +246,40 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 deliver=deliver,
             )
         except Exception as error:
+            safe_error = safe_error_detail(
+                error, "FoodScope generation failed"
+            )
             self.console.print(
-                f"[bold red]❌ Error: {error}[/bold red]"
+                f"[bold red]❌ Error: {safe_error}[/bold red]"
             )
             if (
                 deliver
                 and self.webhook_notifier is not None
             ):
                 await self.webhook_notifier.send_failure(
-                    date=datetime.now(timezone.utc).strftime(
-                        "%Y-%m-%d"
+                    date=self._business_date(
+                        datetime.now(timezone.utc)
                     ),
-                    error_message=str(error),
+                    error_message=safe_error,
                 )
             raise
         finally:
-            self._record_source_metrics()
+            try:
+                self._record_token_usage()
+                if not self._skip_source_metric_update:
+                    self._record_source_metrics()
+            finally:
+                if self.active_run_id is not None:
+                    self.run_store.record_timing(
+                        self.active_run_id,
+                        duration_seconds=(
+                            monotonic()
+                            - self._run_started_at
+                        ),
+                        target_minutes=(
+                            self.config.delivery.target_minutes
+                        ),
+                    )
 
     async def _run_foodscope_pipeline(
         self,
@@ -211,8 +315,12 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 self.active_run_id
             )
             if deliver:
-                selected = self._load_item_stage(
-                    RunStage.FILTERED
+                selected = self._selected_items_from_facts(
+                    self._brief_facts
+                )
+                self.selection_result = self._selection_snapshot(
+                    selected,
+                    list(self._brief_facts.risk_alerts),
                 )
                 await self._deliver_summary(
                     summary=self._rendered_brief.markdown,
@@ -231,8 +339,9 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         else:
             assert self._window_start is not None
             all_items = await self.fetch_all_sources(
-                self._window_start
+                self._window_start, self._window_end
             )
+            self._persist_source_outcomes()
             all_items = [
                 item
                 for item in all_items
@@ -284,12 +393,13 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         if stage_index >= list(RunStage).index(
             RunStage.FILTERED
         ):
-            important_items = self._load_item_stage(
+            filtered_snapshot = self._load_item_stage(
                 RunStage.FILTERED
             )
-            self.selection_result = SelectionResult(
-                items=list(important_items)
+            important_items = self._restore_filtered_selection(
+                filtered_snapshot
             )
+            self.event_store.remember(filtered_snapshot)
         else:
             filtering_result = await self.filter_items(
                 analyzed_items,
@@ -321,6 +431,9 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             important_items = [
                 enriched_by_id.get(item.id, item)
                 for item in important_items
+                if not enriched_by_id.get(
+                    item.id, item
+                ).metadata.get("foodscope_isolated")
             ]
             self.selection_result = SelectionResult(
                 items=list(important_items),
@@ -328,6 +441,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                     item
                     for item in enriched
                     if item.id not in selected_ids
+                    and not item.metadata.get("foodscope_isolated")
                 ],
             )
         else:
@@ -337,9 +451,11 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             await self._on_stage(
                 "enriched", important_items
             )
+            self._exclude_isolated_selection()
+            important_items = list(self.selection_result.items)
 
-        today = datetime.now(timezone.utc).strftime(
-            "%Y-%m-%d"
+        today = self._business_date(
+            self._window_end or datetime.now(timezone.utc)
         )
         for language in self.config.ai.languages:
             summarizer = self._create_summarizer()
@@ -487,27 +603,160 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         )
 
     async def fetch_all_sources(
-        self, since
+        self,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         """Fetch legacy and FoodScope pack sources independently."""
-        parent_items = await super().fetch_all_sources(since)
+        parent_items = await super().fetch_all_sources(
+            since, until
+        )
         parent_outcomes = (
             list(self.last_fetch_report.outcomes)
             if self.last_fetch_report is not None
             else []
         )
-        sources = list(self.source_specs_by_id.values())
+        selected_ids = getattr(
+            self, "_selected_source_ids", None
+        )
+        sources = [
+            source
+            for source_id, source in self.source_specs_by_id.items()
+            if selected_ids is None or source_id in selected_ids
+        ]
         food_items: list[ContentItem] = []
         food_outcomes: list[SourceFetchOutcome] = []
         if sources:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                food_items, food_outcomes = await FoodSourceRegistry(
-                    client
-                ).fetch(sources, since)
+                registry = FoodSourceRegistry(client)
+                food_items, food_outcomes = await registry.fetch(
+                    sources, since, until
+                )
+                active_run_id = getattr(
+                    self, "active_run_id", None
+                )
+                fallback_limit = (
+                    self.config.collection.fallback_sources_per_run
+                    if (
+                        selected_ids is not None
+                        and active_run_id is not None
+                    )
+                    else 0
+                )
+                shortage = sum(
+                    outcome.status in {"empty", "failure"}
+                    for outcome in food_outcomes
+                )
+                if fallback_limit and shortage:
+                    eligible_ids = set(
+                        self._eligible_source_ids
+                        or (
+                            source.id
+                            for source
+                            in self.source_specs_by_id.values()
+                            if source.enabled
+                        )
+                    )
+                    already_selected = set(selected_ids or [])
+                    deferred = [
+                        source
+                        for source
+                        in self.source_specs_by_id.values()
+                        if source.id in eligible_ids
+                        and source.id not in already_selected
+                    ]
+                    business_date = datetime.fromisoformat(
+                        self._business_date(
+                            until
+                            or self._window_end
+                            or datetime.now(timezone.utc)
+                        )
+                    ).date()
+                    fallback_sources = order_fallback_sources(
+                        deferred,
+                        business_date=business_date,
+                    )[: min(shortage, fallback_limit)]
+                    if fallback_sources:
+                        assert isinstance(active_run_id, str)
+                        (
+                            fallback_items,
+                            fallback_outcomes,
+                        ) = await registry.fetch(
+                            fallback_sources, since, until
+                        )
+                        food_items.extend(fallback_items)
+                        food_outcomes.extend(fallback_outcomes)
+                        self._selected_source_ids = [
+                            *(selected_ids or []),
+                            *(
+                                source.id
+                                for source in fallback_sources
+                            ),
+                        ]
+                        self.run_store.set_source_selection(
+                            active_run_id,
+                            self._selected_source_ids,
+                            eligible_source_ids=(
+                                self._eligible_source_ids
+                            ),
+                            source_config_sha256=(
+                                self._source_config_sha256()
+                            ),
+                        )
         self.last_fetch_report = FetchReport(
             outcomes=parent_outcomes + food_outcomes
         )
         return parent_items + food_items
+
+    def _persist_source_outcomes(self) -> None:
+        if (
+            self.active_run_id is None
+            or self.last_fetch_report is None
+        ):
+            return
+        self.run_store.record_source_outcomes(
+            self.active_run_id,
+            [
+                {
+                    **outcome.to_dict(),
+                    "candidate_count": (
+                        outcome.candidate_count
+                        if outcome.candidate_count is not None
+                        else len(outcome.items)
+                    ),
+                }
+                for outcome in self.last_fetch_report.outcomes
+            ],
+        )
+
+    @staticmethod
+    def _fetch_report_from_manifest(
+        manifest: dict,
+    ) -> FetchReport | None:
+        outcomes: list[SourceFetchOutcome] = []
+        for row in manifest.get("source_outcomes", []):
+            status = row.get("status")
+            source_name = row.get("source")
+            if (
+                status not in {"success", "empty", "failure"}
+                or not isinstance(source_name, str)
+            ):
+                continue
+            outcomes.append(
+                SourceFetchOutcome(
+                    source_name=source_name,
+                    status=status,
+                    error=row.get("error"),
+                    candidate_count=row.get("candidate_count"),
+                    published_at_candidate_count=row.get(
+                        "published_at_candidate_count"
+                    ),
+                    published_at_parse_count=row.get(
+                        "published_at_parse_count"
+                    ),
+                )
+            )
+        return FetchReport(outcomes) if outcomes else None
 
     def _determine_time_window(
         self, force_hours: int = None
@@ -571,6 +820,10 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             )
         if run_stage == RunStage.ENRICHED and isinstance(payload, list):
             stored_payload = self._with_risk_alerts(payload)
+        elif run_stage == RunStage.FILTERED and isinstance(payload, list):
+            stored_payload = self._with_risk_alerts(
+                payload, mark_risk_alerts=True
+            )
         elif (
             run_stage == RunStage.SUMMARY
             and isinstance(payload, dict)
@@ -583,6 +836,9 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self.run_store.save_stage(
             self.active_run_id, run_stage, stored_payload
         )
+        if run_stage == RunStage.FILTERED:
+            assert isinstance(stored_payload, list)
+            self.event_store.remember(stored_payload)
 
     async def _analyze_content(
         self, items: list[ContentItem]
@@ -616,6 +872,16 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 continue
             item.metadata["foodscope_evidence_rejected"] = True
             item.metadata["foodscope_evidence_reason"] = decision.reason
+            if (
+                self.active_run_id is not None
+                and not item.metadata.get("foodscope_isolated")
+            ):
+                self.run_store.record_isolation(
+                    self.active_run_id,
+                    item_id=item.id,
+                    stage=RunStage.FILTERED,
+                    error=f"evidence rejected: {decision.reason}",
+                )
 
         balanced = (
             self.apply_balanced_digest(admitted, log=log)
@@ -641,11 +907,6 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         self.selection_result = self.selector.select(
             new_items, self.profile
         )
-        admitted = (
-            self.selection_result.items
-            + self.selection_result.risk_alerts
-        )
-        self.event_store.remember(admitted)
         return BalancedDigestResult(
             items=self.selection_result.items,
             enabled=True,
@@ -809,15 +1070,28 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             and platform not in {"feishu", "lark"}
             and not self._generic_webhook_delivered
         ):
-            await self.webhook_notifier.send_daily_summary(
+            messages = (
+                self.webhook_notifier.build_daily_summary_messages(
                 summary=self._rendered_brief.markdown,
                 important_items=important_items,
                 all_items_count=all_items_count,
                 date=date,
                 lang=lang,
                 summarizer=summarizer,
+                )
             )
-            self._generic_webhook_delivered = True
+            webhook_result = await manager.deliver_generic_webhook(
+                messages,
+                self._rendered_brief.facts_sha256,
+            )
+            self.delivery_results.append(webhook_result)
+            self._generic_webhook_delivered = (
+                webhook_result.status
+                in {
+                    DeliveryStatus.SUCCESS,
+                    DeliveryStatus.SKIPPED,
+                }
+            )
 
     def _get_food_analyzer(self) -> FoodContentAnalyzer:
         if self._food_analyzer is None:
@@ -845,15 +1119,168 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         return self._food_enricher
 
     def _with_risk_alerts(
-        self, items: list[ContentItem]
+        self,
+        items: list[ContentItem],
+        *,
+        mark_risk_alerts: bool = False,
     ) -> list[ContentItem]:
         combined = list(items)
+        if mark_risk_alerts:
+            for item in combined:
+                item.metadata.pop("foodscope_risk_alert", None)
         item_ids = {item.id for item in combined}
         for alert in self.selection_result.risk_alerts:
+            if mark_risk_alerts:
+                alert.metadata["foodscope_risk_alert"] = True
             if alert.id not in item_ids:
                 combined.append(alert)
                 item_ids.add(alert.id)
         return combined
+
+    def _restore_filtered_selection(
+        self, items: list[ContentItem]
+    ) -> list[ContentItem]:
+        risk_alerts = [
+            item
+            for item in items
+            if item.metadata.get("foodscope_risk_alert") is True
+        ]
+        regular = [
+            item
+            for item in items
+            if item.metadata.get("foodscope_risk_alert") is not True
+        ]
+        self.selection_result = self._selection_snapshot(
+            regular, risk_alerts
+        )
+        return regular
+
+    def _exclude_isolated_selection(self) -> None:
+        self.selection_result = self._selection_snapshot(
+            [
+                item
+                for item in self.selection_result.items
+                if not item.metadata.get("foodscope_isolated")
+            ],
+            [
+                item
+                for item in self.selection_result.risk_alerts
+                if not item.metadata.get("foodscope_isolated")
+            ],
+        )
+
+    @staticmethod
+    def _selected_items_from_facts(
+        facts: BriefFacts,
+    ) -> list[ContentItem]:
+        by_id: dict[str, ContentItem] = {}
+        for items in facts.sections.values():
+            for item in items:
+                by_id.setdefault(item.id, item)
+
+        def selection_order(item: ContentItem) -> int:
+            raw = item.metadata.get("selection_order", 0)
+            try:
+                return int(raw)
+            except (TypeError, ValueError):
+                return 0
+
+        return sorted(
+            by_id.values(),
+            key=selection_order,
+        )
+
+    @staticmethod
+    def _selection_snapshot(
+        items: list[ContentItem],
+        risk_alerts: list[ContentItem],
+    ) -> SelectionResult:
+        category_counts: dict[str, int] = {}
+        source_counts: dict[str, int] = {}
+        for item in items:
+            if item.food is None:
+                continue
+            category = item.food.category.value
+            category_counts[category] = (
+                category_counts.get(category, 0) + 1
+            )
+            source_counts[item.food.source_id] = (
+                source_counts.get(item.food.source_id, 0) + 1
+            )
+        return SelectionResult(
+            items=list(items),
+            risk_alerts=list(risk_alerts),
+            category_counts=category_counts,
+            source_counts=source_counts,
+        )
+
+    def _record_token_usage(self) -> None:
+        if (
+            self.active_run_id is None
+            or self._token_usage_start is None
+        ):
+            return
+        current = get_usage_snapshot()
+        baseline = self._token_usage_start
+        per_model: list[dict] = []
+        for key, usage in sorted(current.per_model.items()):
+            prior = baseline.per_model.get(key)
+            input_tokens = max(
+                0,
+                usage.input_tokens
+                - (prior.input_tokens if prior else 0),
+            )
+            output_tokens = max(
+                0,
+                usage.output_tokens
+                - (prior.output_tokens if prior else 0),
+            )
+            if input_tokens + output_tokens == 0:
+                continue
+            provider, _, model = key.partition("/")
+            per_model.append(
+                {
+                    "key": key,
+                    "provider": provider,
+                    "model": model,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                }
+            )
+        pricing = []
+        assert self.config.ai_routes is not None
+        for route_name, route in (
+            ("fast", self.config.ai_routes.fast),
+            ("analysis", self.config.ai_routes.analysis),
+        ):
+            pricing.append(
+                {
+                    "route": route_name,
+                    "provider": route.provider.value,
+                    "model": route.model,
+                    "input_cost_per_million": (
+                        route.input_cost_per_million
+                    ),
+                    "output_cost_per_million": (
+                        route.output_cost_per_million
+                    ),
+                }
+            )
+        self.run_store.record_token_usage(
+            self.active_run_id,
+            input_tokens=max(
+                0,
+                current.total_input_tokens
+                - baseline.total_input_tokens,
+            ),
+            output_tokens=max(
+                0,
+                current.total_output_tokens
+                - baseline.total_output_tokens,
+            ),
+            per_model=per_model,
+            pricing=pricing,
+        )
 
     def _record_source_metrics(self) -> None:
         if (
@@ -861,12 +1288,36 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             or self.last_fetch_report is None
         ):
             return
+        manifest = self.run_store.load_manifest(
+            self.active_run_id
+        )
+        run_provenance = manifest.get(
+            "run_provenance", "manual"
+        )
         outcomes = {
             outcome.source_name: outcome
             for outcome in self.last_fetch_report.outcomes
             if outcome.source_name in self.source_specs_by_id
         }
-        if not outcomes:
+        source_ids = (
+            sorted(
+                source_id
+                for source_id in (
+                    self._eligible_source_ids
+                    if self._eligible_source_ids is not None
+                    else [
+                        source.id
+                        for source
+                        in self.source_specs_by_id.values()
+                        if source.enabled
+                    ]
+                )
+                if source_id in self.source_specs_by_id
+            )
+            if run_provenance == "scheduled"
+            else sorted(outcomes)
+        )
+        if not source_ids:
             return
         try:
             scored = self.run_store.load_stage(
@@ -881,11 +1332,19 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             + self.selection_result.risk_alerts
         )
         total_candidates = sum(
-            len(outcome.items) for outcome in outcomes.values()
+            (
+                outcome.candidate_count
+                if outcome.candidate_count is not None
+                else len(outcome.items)
+            )
+            for outcome in outcomes.values()
         )
-        usage = get_usage_snapshot()
+        token_usage = manifest.get("token_usage") or {}
+        run_tokens = int(token_usage.get("total_tokens", 0))
+        run_cost = token_usage.get("estimated_cost")
         metrics: list[dict] = []
-        for source_id, outcome in sorted(outcomes.items()):
+        for source_id in source_ids:
+            outcome = outcomes.get(source_id)
             source = self.source_specs_by_id[source_id]
             source_scored = [
                 item
@@ -919,27 +1378,56 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 )
                 for item in source_admitted
             )
-            candidate_count = len(outcome.items)
+            candidate_count = (
+                0
+                if outcome is None
+                else (
+                    outcome.candidate_count
+                    if outcome.candidate_count is not None
+                    else len(outcome.items)
+                )
+            )
             allocated_tokens = (
                 round(
-                    usage.total_tokens
+                    run_tokens
                     * candidate_count
                     / total_candidates
                 )
-                if total_candidates
+                if outcome is not None and total_candidates
                 else 0
             )
-            cost_per_thousand = float(
-                source.options.get(
-                    "estimated_cost_per_1k_tokens", 0.0
+            allocated_cost = (
+                float(run_cost)
+                * candidate_count
+                / total_candidates
+                if (
+                    outcome is not None
+                    and run_cost is not None
+                    and total_candidates
+                )
+                else (
+                    0.0 if outcome is None else None
                 )
             )
             metric = SourceRunMetric(
                 source_id=source_id,
                 run_id=self.active_run_id,
-                fetch_status=outcome.status,
+                observed_date=datetime.fromisoformat(
+                    self._business_date(
+                        self._window_end
+                        or datetime.now(timezone.utc)
+                    )
+                ).date(),
+                run_provenance=run_provenance,
+                fetch_status=(
+                    outcome.status
+                    if outcome is not None
+                    else "skipped_rotation"
+                ),
                 published_at_parse_rate=(
-                    0.0 if outcome.status == "failure" else 1.0
+                    self._parse_rate(outcome)
+                    if outcome is not None
+                    else 0.0
                 ),
                 candidate_count=candidate_count,
                 food_relevant_count=len(relevant),
@@ -962,16 +1450,45 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 ),
                 access_mode=self._source_access_mode(source),
                 ai_tokens=allocated_tokens,
-                estimated_cost=(
-                    allocated_tokens
-                    / 1000
-                    * cost_per_thousand
-                ),
+                estimated_cost=allocated_cost,
             )
             metrics.append(metric.model_dump(mode="json"))
         self.run_store.record_source_metrics(
             self.active_run_id, metrics
         )
+
+    @staticmethod
+    def _parse_rate(outcome: SourceFetchOutcome) -> float:
+        attempts = outcome.published_at_candidate_count
+        successes = outcome.published_at_parse_count
+        if attempts is None or successes is None:
+            return 0.0 if outcome.status == "failure" else 1.0
+        if attempts <= 0:
+            return 0.0 if outcome.status == "failure" else 1.0
+        return max(0.0, min(1.0, successes / attempts))
+
+    def _business_date(self, moment: datetime) -> str:
+        if moment.tzinfo is None or moment.utcoffset() is None:
+            moment = moment.replace(tzinfo=timezone.utc)
+        zone = ZoneInfo(self.config.schedule.timezone)
+        return moment.astimezone(zone).strftime("%Y-%m-%d")
+
+    def _source_config_sha256(self) -> str:
+        payload = [
+            source.model_dump(mode="json")
+            for source in sorted(
+                self.source_specs_by_id.values(),
+                key=lambda source: source.id,
+            )
+            if source.enabled
+        ]
+        canonical = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return sha256(canonical.encode("utf-8")).hexdigest()
 
     @staticmethod
     def _source_access_mode(source) -> str:

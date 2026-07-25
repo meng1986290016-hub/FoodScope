@@ -57,18 +57,27 @@ def _render_markdown(
         "# FoodScope Source Trial Summary",
         "",
         (
-            "| Source | Runs | Fetch | Date parse | Candidates | "
+            "| Source | Status | Days | Consecutive | Attempt days | Runs | Fetch | Date parse | Candidates | "
             "Admitted | Unique | Commercial | Duplicate | Sponsored | "
             "AI tokens | Cost | Access | Tier | Adapter |"
         ),
         (
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
             "---:|---:|---|---|---|"
         ),
     ]
     for summary in summaries:
+        cost = (
+            f"{summary.estimated_cost:.4f}"
+            if summary.estimated_cost is not None
+            else "unknown"
+        )
         lines.append(
-            f"| {summary.source_id} | {summary.run_count} | "
+            f"| {summary.source_id} | {summary.trial_status} | "
+            f"{summary.trial_day_count} | "
+            f"{summary.consecutive_day_count} | "
+            f"{summary.attempt_day_count} | "
+            f"{summary.run_count} | "
             f"{summary.fetch_success_rate:.1%} | "
             f"{summary.published_at_parse_rate:.1%} | "
             f"{summary.candidate_count} | {summary.admitted_count} | "
@@ -77,7 +86,7 @@ def _render_markdown(
             f"{summary.duplicate_rate:.1%} | "
             f"{summary.sponsored_share:.1%} | "
             f"{summary.ai_tokens} | "
-            f"{summary.estimated_cost:.4f} | "
+            f"{cost} | "
             f"{', '.join(summary.access_modes)} | "
             f"{summary.recommended_collection_tier} | "
             f"{summary.recommended_adapter_mode} |"

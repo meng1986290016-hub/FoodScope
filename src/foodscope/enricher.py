@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from src.ai.client import AIClient
 from src.ai.utils import parse_json_response
+from src.error_utils import safe_error_detail
 from src.models import ContentItem
 
 from .prompts import FOOD_ENRICHMENT_SYSTEM, FOOD_ENRICHMENT_USER
@@ -75,8 +76,8 @@ class FoodContentEnricher:
 
         item.metadata["foodscope_isolated"] = True
         item.metadata["foodscope_isolation_stage"] = "enriched"
-        item.metadata["foodscope_analysis_error"] = (
-            str(last_error) if last_error else "unknown enrichment error"
+        item.metadata["foodscope_analysis_error"] = safe_error_detail(
+            last_error, "FoodScope enrichment failed"
         )
         return item
 

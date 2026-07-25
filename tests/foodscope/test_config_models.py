@@ -46,3 +46,13 @@ def test_foodscope_requires_fast_and_analysis_routes():
 
     with pytest.raises(ValueError, match="ai_routes"):
         Config.model_validate(raw)
+
+
+def test_ai_pricing_requires_input_and_output_rates_together():
+    raw = legacy_config()
+    raw["ai"]["input_cost_per_million"] = 1.25
+
+    with pytest.raises(
+        ValueError, match="must be set together"
+    ):
+        Config.model_validate(raw)

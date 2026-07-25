@@ -1,5 +1,6 @@
 """Configuration contracts for the FoodScope extension."""
 
+import math
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -15,6 +16,18 @@ class ScheduleConfig(BaseModel):
 
 class CollectionConfig(BaseModel):
     lookback_hours: int = Field(default=30, gt=0, le=720)
+    minimum_sources_per_run: int = Field(
+        default=20, ge=1, le=500
+    )
+    extended_rotation_days: int = Field(
+        default=2, ge=1, le=30
+    )
+    discovery_rotation_days: int = Field(
+        default=3, ge=1, le=30
+    )
+    fallback_sources_per_run: int = Field(
+        default=5, ge=0, le=50
+    )
 
 
 class WeChatDraftConfig(BaseModel):
@@ -70,8 +83,37 @@ class BriefProfile(BaseModel):
     def weights_sum_to_one(
         cls, value: dict[FoodCategory, float]
     ) -> dict[FoodCategory, float]:
+        if set(value) != set(FoodCategory):
+            raise ValueError(
+                "topic_weights must contain all FoodCategory values"
+            )
+        if any(
+            not math.isfinite(weight)
+            or weight < 0
+            or weight > 1
+            for weight in value.values()
+        ):
+            raise ValueError(
+                "topic_weights must be finite and between 0 and 1"
+            )
         if abs(sum(value.values()) - 1.0) > 0.0001:
             raise ValueError("topic_weights must sum to 1.0")
+        return value
+
+    @field_validator("market_weights")
+    @classmethod
+    def market_weights_are_non_negative(
+        cls, value: dict[str, float]
+    ) -> dict[str, float]:
+        if any(
+            not math.isfinite(weight)
+            or weight < 0
+            or weight > 1
+            for weight in value.values()
+        ):
+            raise ValueError(
+                "market_weights must be finite and between 0 and 1"
+            )
         return value
 
 

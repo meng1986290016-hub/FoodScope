@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from src.ai.client import AIClient
 from src.ai.utils import parse_json_response
+from src.error_utils import safe_error_detail
 from src.models import ContentItem
 
 from .models import (
@@ -16,6 +17,7 @@ from .models import (
     ProductLaunchDetails,
     RiskLevel,
 )
+from .event_dedup import canonical_url_event_key
 from .prompts import FOOD_ANALYSIS_SYSTEM, FOOD_ANALYSIS_USER
 
 
@@ -127,8 +129,8 @@ class FoodContentAnalyzer:
         item.ai_summary = item.title
         item.ai_tags = []
         item.metadata["foodscope_isolated"] = True
-        item.metadata["foodscope_analysis_error"] = (
-            str(last_error) if last_error else "unknown analysis error"
+        item.metadata["foodscope_analysis_error"] = safe_error_detail(
+            last_error, "FoodScope analysis failed"
         )
         return item
 
@@ -187,6 +189,12 @@ class FoodContentAnalyzer:
         assert result.opportunity_score is not None
         assert result.evidence_quality_score is not None
         assert result.risk_level is not None
+        event_key = result.event_key
+        if not event_key:
+            event_key = canonical_url_event_key(str(item.url))
+            item.metadata["foodscope_event_key_source"] = (
+                "canonical_url_fallback"
+            )
 
         item.food = item.food.model_copy(
             update={
@@ -202,7 +210,7 @@ class FoodContentAnalyzer:
                 "evidence_quality_score": result.evidence_quality_score,
                 "risk_level": result.risk_level,
                 "risk_reason": result.risk_reason,
-                "event_key": result.event_key,
+                "event_key": event_key,
                 "sponsored": result.sponsored,
                 "press_release": result.press_release,
                 "product_launch": result.product_launch,

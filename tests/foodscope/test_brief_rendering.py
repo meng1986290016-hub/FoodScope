@@ -59,3 +59,11 @@ def test_item_details_and_evidence_are_consistent_across_formats():
     ):
         assert expected in rendered.markdown
         assert expected in rendered.html
+
+
+def test_must_read_item_is_not_repeated_in_category_sections():
+    rendered = FoodBriefRenderer().render(load_facts())
+    title = "Example launches Protein Tea in Japan"
+
+    assert rendered.markdown.count(title) == 1
+    assert rendered.html.count(title) == 1

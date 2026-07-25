@@ -19,10 +19,26 @@ from src.models import ContentItem, SourceType
 class BaseFoodAdapter(ABC):
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
+        self.reset_metrics()
+
+    def reset_metrics(self) -> None:
+        self.raw_candidate_count = 0
+        self.date_parse_attempts = 0
+        self.date_parse_successes = 0
+
+    def note_date_result(
+        self, parsed: datetime | None
+    ) -> None:
+        self.date_parse_attempts += 1
+        if parsed is not None:
+            self.date_parse_successes += 1
 
     @abstractmethod
     async def fetch(
-        self, source: FoodSourceSpec, since: datetime
+        self,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         raise NotImplementedError
 
@@ -31,6 +47,18 @@ class BaseFoodAdapter(ABC):
         if moment.tzinfo is None:
             return moment.replace(tzinfo=timezone.utc)
         return moment.astimezone(timezone.utc)
+
+    @classmethod
+    def in_window(
+        cls,
+        moment: datetime,
+        since: datetime,
+        until: datetime | None = None,
+    ) -> bool:
+        observed = cls.ensure_utc(moment)
+        return observed >= cls.ensure_utc(since) and (
+            until is None or observed <= cls.ensure_utc(until)
+        )
 
     @classmethod
     def parse_date(cls, value: Any) -> datetime | None:

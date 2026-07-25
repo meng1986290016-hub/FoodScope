@@ -2,11 +2,52 @@
 
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 import json
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from src._file_utils import _atomic_write_text
 from src.models import ContentItem
+
+
+_TRACKING_QUERY_KEYS = {
+    "dclid",
+    "fbclid",
+    "gclid",
+    "mc_cid",
+    "mc_eid",
+    "msclkid",
+}
+
+
+def canonical_url_event_key(url: str) -> str:
+    """Return a stable fallback key after removing tracking decoration."""
+
+    parsed = urlsplit(url)
+    scheme = parsed.scheme.lower()
+    hostname = (parsed.hostname or "").lower()
+    port = parsed.port
+    if port is not None and not (
+        (scheme == "http" and port == 80)
+        or (scheme == "https" and port == 443)
+    ):
+        hostname = f"{hostname}:{port}"
+    query = urlencode(
+        sorted(
+            (key, value)
+            for key, value in parse_qsl(
+                parsed.query, keep_blank_values=True
+            )
+            if not key.lower().startswith("utm_")
+            and key.lower() not in _TRACKING_QUERY_KEYS
+        ),
+        doseq=True,
+    )
+    path = parsed.path.rstrip("/") or "/"
+    canonical = urlunsplit((scheme, hostname, path, query, ""))
+    digest = sha256(canonical.encode("utf-8")).hexdigest()
+    return f"url:{digest}"
 
 
 def merge_food_events(items: list[ContentItem]) -> list[ContentItem]:

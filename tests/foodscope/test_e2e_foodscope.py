@@ -18,8 +18,7 @@ from src.foodscope.models import (
 from src.foodscope.orchestrator import FoodScopeOrchestrator
 from src.foodscope.wechat import WeChatDraftClient
 from src.mcp.service import HorizonPipelineService
-from src.models import Config, ContentItem
-from src.orchestrator import FetchReport, SourceFetchOutcome
+from src.models import Config
 from src.services.webhook import (
     WebhookDeliveryResult,
     WebhookDeliveryStatus,
@@ -113,7 +112,10 @@ def _source_specs(feed):
         specs[source_id] = FoodSourceSpec(
             id=source_id,
             name=f"Fixture {source_id}",
-            url="https://sources.foodscope.test/feed",
+            url=(
+                "https://fixtures.foodscope.test/"
+                f"{source_id}.json"
+            ),
             adapter="json_api",
             evidence_tier=tier,
             collection_tier=CollectionTier.CORE,
@@ -121,28 +123,15 @@ def _source_specs(feed):
             markets=raw["markets"],
             languages=[raw["language"]],
             categories=[category],
+            options={
+                "title_field": "title",
+                "url_field": "url",
+                "date_field": "published_at",
+                "content_field": "content",
+                "id_field": "id",
+            },
         )
     return specs
-
-
-def _raw_items(feed):
-    return [
-        ContentItem.model_validate(
-            {
-                "id": raw["id"],
-                "source_type": "food",
-                "title": raw["title"],
-                "url": raw["url"],
-                "content": raw["content"],
-                "published_at": raw["published_at"],
-                "metadata": {
-                    "food_source_id": raw["source_id"],
-                    "language": raw["language"],
-                },
-            }
-        )
-        for raw in feed
-    ]
 
 
 def _email_html(message):
@@ -173,23 +162,48 @@ def test_offline_e2e_all_profiles_and_outputs(
             / "ai_responses/enrichment.json"
         ).read_text(encoding="utf-8")
     )
-    feed_payload = (
-        FIXTURES / "feeds/global_items.json"
-    ).read_bytes()
+    feed = json.loads(
+        (FIXTURES / "feeds/global_items.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    source_specs = _source_specs(feed)
+    source_specs["offline_failed_source"] = FoodSourceSpec(
+        id="offline_failed_source",
+        name="Offline failed source",
+        url="https://fixtures.foodscope.test/failed.json",
+        adapter="does_not_exist",
+        evidence_tier=EvidenceTier.INDUSTRY,
+        collection_tier=CollectionTier.DISCOVERY,
+        packs=["e2e"],
+        markets=["US"],
+        languages=["en"],
+        categories=[FoodCategory.COMPANY_UPDATES],
+    )
     public_requests = []
 
     def feed_handler(request: httpx.Request):
         public_requests.append(str(request.url))
-        assert request.url == (
-            httpx.URL(
-                "https://fixtures.foodscope.test/global.json"
-            )
-        )
+        source_id = Path(request.url.path).stem
+        matching = [
+            raw
+            for raw in feed
+            if raw["source_id"] == source_id
+        ]
+        assert matching
         return httpx.Response(
             200,
-            content=feed_payload,
+            json=matching,
             headers={"content-type": "application/json"},
         )
+
+    real_async_client = httpx.AsyncClient
+
+    def offline_async_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(
+            feed_handler
+        )
+        return real_async_client(*args, **kwargs)
 
     monkeypatch.setenv("OPENAI_API_KEY", "offline")
     monkeypatch.setenv("EMAIL_PASSWORD", "offline")
@@ -203,6 +217,10 @@ def test_offline_e2e_all_profiles_and_outputs(
     )
     monkeypatch.setattr(
         "src.services.email.smtplib.SMTP_SSL", FakeSMTP
+    )
+    monkeypatch.setattr(
+        "src.foodscope.orchestrator.httpx.AsyncClient",
+        offline_async_client,
     )
     observed_first = {}
     evidence_decisions = {}
@@ -231,49 +249,9 @@ def test_offline_e2e_all_profiles_and_outputs(
             config, storage
         )
 
-        async def fetch_all_sources(since):
-            async with httpx.AsyncClient(
-                transport=httpx.MockTransport(
-                    feed_handler
-                )
-            ) as client:
-                response = await client.get(
-                    "https://fixtures.foodscope.test/global.json"
-                )
-                response.raise_for_status()
-                feed = response.json()
-            items = _raw_items(feed)
-            orchestrator.last_fetch_report = FetchReport(
-                [
-                    SourceFetchOutcome(
-                        raw["source_id"],
-                        "success",
-                        items=[
-                            item
-                            for item in items
-                            if item.metadata[
-                                "food_source_id"
-                            ]
-                            == raw["source_id"]
-                        ],
-                    )
-                    for raw in feed
-                ]
-                + [
-                    SourceFetchOutcome(
-                        "offline_failed_source",
-                        "failure",
-                        error="offline fixture failure",
-                    )
-                ]
-            )
-            return items
-
-        feed = json.loads(feed_payload)
-        orchestrator.source_specs_by_id = _source_specs(
-            feed
+        orchestrator.source_specs_by_id = dict(
+            source_specs
         )
-        orchestrator.fetch_all_sources = fetch_all_sources
         orchestrator._food_analyzer = FoodContentAnalyzer(
             FixtureAIClient(analysis),
             profile_id=profile,
@@ -310,7 +288,7 @@ def test_offline_e2e_all_profiles_and_outputs(
                 },
             )
 
-        wechat_http = httpx.AsyncClient(
+        wechat_http = real_async_client(
             transport=httpx.MockTransport(
                 wechat_handler
             )
@@ -427,4 +405,6 @@ def test_offline_e2e_all_profiles_and_outputs(
         decisions == baseline
         for decisions in evidence_decisions.values()
     )
-    assert len(public_requests) == len(PROFILES)
+    assert len(public_requests) == (
+        (len(source_specs) - 1) * len(PROFILES)
+    )

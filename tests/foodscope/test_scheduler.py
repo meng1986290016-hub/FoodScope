@@ -121,7 +121,19 @@ def test_healthcheck_detects_missing_recent_and_stale_runs(
     )
     assert missing.healthy is False
 
-    run_id = store.create_run("balanced")
+    manual_id = store.create_run("balanced")
+    store.save_stage(
+        manual_id,
+        RunStage.SUMMARY,
+        {"markdown": "# manual does not satisfy health"},
+    )
+    assert check_schedule_health(
+        store.root, schedule, now
+    ).healthy is False
+
+    run_id = store.create_run(
+        "balanced", run_provenance="scheduled"
+    )
     store.save_stage(
         run_id, RunStage.SUMMARY, {"markdown": "# ready"}
     )

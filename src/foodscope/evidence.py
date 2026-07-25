@@ -25,7 +25,10 @@ OFFICIAL_CATEGORIES = {
     FoodCategory.FOOD_SAFETY_RECALLS,
 }
 
-_EXTRACT_DOMAIN = tldextract.TLDExtract(suffix_list_urls=())
+_EXTRACT_DOMAIN = tldextract.TLDExtract(
+    cache_dir=None,
+    suffix_list_urls=(),
+)
 
 
 class EvidencePolicy:

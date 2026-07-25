@@ -12,6 +12,8 @@
       "model": "gpt-4o-mini",
       "api_key_env": "OPENAI_API_KEY",
       "languages": ["zh"],
+      "input_cost_per_million": null,
+      "output_cost_per_million": null,
       "concurrency": 4,
       "timeout_seconds": 60,
       "max_attempts": 3
@@ -21,6 +23,8 @@
       "model": "gpt-4o",
       "api_key_env": "OPENAI_API_KEY",
       "languages": ["zh"],
+      "input_cost_per_million": null,
+      "output_cost_per_million": null,
       "concurrency": 2,
       "timeout_seconds": 90,
       "max_attempts": 3
@@ -46,7 +50,11 @@
     "cron": "30 6 * * *"
   },
   "collection": {
-    "lookback_hours": 30
+    "lookback_hours": 30,
+    "minimum_sources_per_run": 20,
+    "extended_rotation_days": 2,
+    "discovery_rotation_days": 3,
+    "fallback_sources_per_run": 5
   },
   "delivery": {
     "target_minutes": 60,

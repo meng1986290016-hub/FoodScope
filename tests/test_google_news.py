@@ -78,6 +78,31 @@ def test_long_window_uses_after_operator() -> None:
     assert "when:" not in q
 
 
+def test_explicit_historical_window_uses_before_and_filters_upper_bound():
+    items_xml = _item(
+        "Inside - Publisher",
+        "https://example.com/inside",
+        pub="Sat, 27 Jun 2026 12:00:00 GMT",
+    ) + _item(
+        "Outside - Publisher",
+        "https://example.com/outside",
+        pub="Sat, 27 Jun 2026 13:00:00 GMT",
+    )
+    client = _mock_client(_feed(items_xml))
+    scraper = GoogleNewsScraper(
+        GoogleNewsConfig(enabled=True, query="ai"), client
+    )
+    since = datetime(2026, 6, 27, 8, tzinfo=timezone.utc)
+    until = datetime(2026, 6, 27, 12, 30, tzinfo=timezone.utc)
+
+    items = asyncio.run(scraper.fetch(since, until))
+
+    query = client.get.call_args.kwargs["params"]["q"]
+    assert "after:2026-06-27" in query
+    assert "before:2026-06-28" in query
+    assert [item.title for item in items] == ["Inside - Publisher"]
+
+
 def test_ceid_defaults_when_unset() -> None:
     client = _mock_client(_feed(_item("Foo - Publisher", "https://example.com/a")))
     config = GoogleNewsConfig(enabled=True, query="ai", language="en", country="US")

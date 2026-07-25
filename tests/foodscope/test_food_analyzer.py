@@ -109,7 +109,13 @@ def test_bad_item_isolated_after_retries_without_failing_batch():
 
 def test_client_error_is_retried_and_isolated():
     client = StubClient(
-        [RuntimeError("provider unavailable"), RuntimeError("still down")]
+        [
+            RuntimeError("provider unavailable"),
+            RuntimeError(
+                "still down: https://provider.test/callback"
+                "?access_token=supersecret"
+            ),
+        ]
     )
     item = asyncio.run(
         FoodContentAnalyzer(client, max_attempts=2).analyze_batch([_item()])
@@ -117,7 +123,10 @@ def test_client_error_is_retried_and_isolated():
 
     assert client.calls == 2
     assert item.metadata["foodscope_isolated"] is True
-    assert item.metadata["foodscope_analysis_error"] == "still down"
+    assert item.metadata["foodscope_analysis_error"] == (
+        "FoodScope analysis failed (RuntimeError)"
+    )
+    assert "supersecret" not in json.dumps(item.metadata)
 
 
 def test_irrelevant_item_is_not_treated_as_an_analysis_failure():
@@ -167,3 +176,24 @@ def test_analysis_preserves_source_evidence_contract():
     assert analyzed.food is not None
     after = analyzed.food.model_dump(include=set(before))
     assert after == before
+
+
+def test_relevant_analysis_without_event_key_uses_canonical_url_fallback():
+    response = json.loads(_response())
+    response["event_key"] = None
+    first = _item("same?utm_source=mail")
+    second = _item("same?utm_source=social")
+
+    analyzed = asyncio.run(
+        FoodContentAnalyzer(
+            StubClient([json.dumps(response), json.dumps(response)])
+        ).analyze_batch([first, second])
+    )
+
+    assert analyzed[0].food is not None
+    assert analyzed[1].food is not None
+    assert analyzed[0].food.event_key == analyzed[1].food.event_key
+    assert analyzed[0].food.event_key.startswith("url:")
+    assert analyzed[0].metadata["foodscope_event_key_source"] == (
+        "canonical_url_fallback"
+    )

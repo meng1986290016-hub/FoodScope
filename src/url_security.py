@@ -14,6 +14,17 @@ class UnsafeURLError(ValueError):
     """Raised when a URL may target a non-public network resource."""
 
 
+def _origin(url: str) -> tuple[str, str, int]:
+    parsed = urlsplit(url)
+    scheme = parsed.scheme.lower()
+    default_port = 443 if scheme == "https" else 80
+    return (
+        scheme,
+        (parsed.hostname or "").rstrip(".").lower(),
+        parsed.port or default_port,
+    )
+
+
 def validate_http_url(url: str) -> str:
     """Validate the non-network portions of an HTTP(S) URL."""
     try:
@@ -94,7 +105,7 @@ async def safe_request(
     """Make a request after validating the initial URL and each redirect hop."""
     current_method = method.upper()
     current_url = url
-    current_kwargs = kwargs
+    current_kwargs = dict(kwargs)
 
     for redirect_count in range(max_redirects + 1):
         await validate_public_http_url(current_url)
@@ -109,7 +120,24 @@ async def safe_request(
         if redirect_count == max_redirects:
             raise UnsafeURLError("Too many redirects")
 
-        current_url = urljoin(current_url, location)
+        next_url = urljoin(current_url, location)
+        current_origin = _origin(current_url)
+        next_origin = _origin(next_url)
+        if (
+            current_origin[0] == "https"
+            and next_origin[0] == "http"
+        ):
+            raise UnsafeURLError(
+                "HTTPS redirect cannot downgrade to HTTP"
+            )
+        if next_origin != current_origin:
+            # httpx may reapply client-level auth, cookies, and headers
+            # even after caller kwargs are cleared. Reject the hop so no
+            # credential can ever reach an untrusted redirect target.
+            raise UnsafeURLError(
+                "Cross-origin redirects are not allowed"
+            )
+        current_url = next_url
         if response.status_code == 303 or (
             response.status_code in {301, 302} and current_method == "POST"
         ):

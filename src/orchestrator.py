@@ -9,6 +9,7 @@ from urllib.parse import unquote_plus, urlsplit
 import httpx
 from rich.console import Console
 
+from .error_utils import safe_error_detail
 from .models import Config, ContentItem
 from .storage.manager import StorageManager, safe_output_path
 from .services.email import EmailManager
@@ -105,6 +106,9 @@ class SourceFetchOutcome:
     status: Literal["success", "empty", "failure"]
     items: List[ContentItem] = field(default_factory=list)
     error: Optional[str] = None
+    candidate_count: Optional[int] = None
+    published_at_candidate_count: Optional[int] = None
+    published_at_parse_count: Optional[int] = None
 
     def to_dict(self) -> Dict[str, object]:
         result: Dict[str, object] = {
@@ -114,6 +118,16 @@ class SourceFetchOutcome:
         }
         if self.error is not None:
             result["error"] = self.error
+        if self.candidate_count is not None:
+            result["candidate_count"] = self.candidate_count
+        if self.published_at_candidate_count is not None:
+            result["published_at_candidate_count"] = (
+                self.published_at_candidate_count
+            )
+        if self.published_at_parse_count is not None:
+            result["published_at_parse_count"] = (
+                self.published_at_parse_count
+            )
         return result
 
 
@@ -345,13 +359,18 @@ class HorizonOrchestrator:
                     )
 
         except Exception as e:
-            self.console.print(f"[bold red]❌ Error: {e}[/bold red]")
+            safe_error = safe_error_detail(
+                e, "Horizon generation failed"
+            )
+            self.console.print(
+                f"[bold red]❌ Error: {safe_error}[/bold red]"
+            )
 
             # Send webhook failure notification if configured
             if self.webhook_notifier:
                 await self.webhook_notifier.send_failure(
                     date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                    error_message=str(e),
+                    error_message=safe_error,
                 )
 
             raise
@@ -412,7 +431,11 @@ class HorizonOrchestrator:
             since = datetime.now(timezone.utc) - timedelta(hours=hours)
         return since
 
-    async def fetch_all_sources(self, since: datetime) -> List[ContentItem]:
+    async def fetch_all_sources(
+        self,
+        since: datetime,
+        until: datetime | None = None,
+    ) -> List[ContentItem]:
         """Fetch content from all configured sources.
 
         This is a stable stage entry point for integrations such as MCP.
@@ -496,12 +519,20 @@ class HorizonOrchestrator:
             # GDELT 2.0 DOC API (key-less global news)
             if self.config.sources.gdelt and self.config.sources.gdelt.enabled:
                 gdelt_scraper = GDELTScraper(self.config.sources.gdelt, client)
-                tasks.append(self._fetch_with_progress("GDELT", gdelt_scraper, since))
+                tasks.append(
+                    self._fetch_with_progress(
+                        "GDELT", gdelt_scraper, since, until
+                    )
+                )
 
             # Google News RSS (key-less news search)
             if self.config.sources.google_news and self.config.sources.google_news.enabled:
                 gn_scraper = GoogleNewsScraper(self.config.sources.google_news, client)
-                tasks.append(self._fetch_with_progress("Google News", gn_scraper, since))
+                tasks.append(
+                    self._fetch_with_progress(
+                        "Google News", gn_scraper, since, until
+                    )
+                )
 
             # Fetch all concurrently
             outcomes = await asyncio.gather(*tasks)
@@ -515,7 +546,11 @@ class HorizonOrchestrator:
             return all_items
 
     async def _fetch_with_progress(
-        self, name: str, scraper, since: datetime
+        self,
+        name: str,
+        scraper,
+        since: datetime,
+        until: datetime | None = None,
     ) -> SourceFetchOutcome:
         """Fetch from a scraper with progress indication.
 
@@ -529,9 +564,14 @@ class HorizonOrchestrator:
         """
         self.console.print(f"🔍 Fetching from {name}...")
         try:
-            items = await scraper.fetch(since)
+            if isinstance(scraper, (GDELTScraper, GoogleNewsScraper)):
+                items = await scraper.fetch(since, until)
+            else:
+                items = await scraper.fetch(since)
         except Exception as exc:
-            error = f"{type(exc).__name__}: {exc}"
+            error = safe_error_detail(
+                exc, "Source fetch failed"
+            )
             self.console.print(f"[red]   Failed to fetch {name}: {error}[/red]")
             return SourceFetchOutcome(
                 source_name=name,

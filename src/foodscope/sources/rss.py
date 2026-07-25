@@ -18,7 +18,10 @@ from .base import BaseFoodAdapter
 
 class RSSFoodAdapter(BaseFoodAdapter):
     async def fetch(
-        self, source: FoodSourceSpec, since: datetime
+        self,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         since = self.ensure_utc(since)
         response = await safe_request(
@@ -28,8 +31,12 @@ class RSSFoodAdapter(BaseFoodAdapter):
         feed = feedparser.parse(response.content)
         items: list[ContentItem] = []
         for entry in feed.entries:
+            self.raw_candidate_count += 1
             published = self._entry_date(entry)
-            if published is None or published < since:
+            self.note_date_result(published)
+            if published is None or not self.in_window(
+                published, since, until
+            ):
                 continue
             url = self.absolute_url(
                 str(source.url),

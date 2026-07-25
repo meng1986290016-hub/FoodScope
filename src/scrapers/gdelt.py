@@ -49,8 +49,15 @@ class GDELTScraper(BaseScraper):
         """
         super().__init__({"gdelt": config}, http_client)
         self.gdelt_config = config
+        self.raw_candidate_count = 0
+        self.date_parse_attempts = 0
+        self.date_parse_successes = 0
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(
+        self,
+        since: datetime,
+        until: datetime | None = None,
+    ) -> List[ContentItem]:
         """Fetch articles from the GDELT DOC API.
 
         Args:
@@ -60,6 +67,9 @@ class GDELTScraper(BaseScraper):
         Returns:
             List[ContentItem]: Fetched content items.
         """
+        self.raw_candidate_count = 0
+        self.date_parse_attempts = 0
+        self.date_parse_successes = 0
         if not self.gdelt_config.enabled:
             return []
 
@@ -82,13 +92,15 @@ class GDELTScraper(BaseScraper):
         }
 
         # timespan takes precedence over an explicit start/end window.
-        if self.gdelt_config.timespan:
+        if self.gdelt_config.timespan and until is None:
             params["timespan"] = self.gdelt_config.timespan
         else:
             since_utc = self._ensure_utc(since)
-            now_utc = datetime.now(timezone.utc)
+            end_utc = self._ensure_utc(
+                until or datetime.now(timezone.utc)
+            )
             params["startdatetime"] = since_utc.strftime("%Y%m%d%H%M%S")
-            params["enddatetime"] = now_utc.strftime("%Y%m%d%H%M%S")
+            params["enddatetime"] = end_utc.strftime("%Y%m%d%H%M%S")
 
         try:
             response = await self.client.get(
@@ -111,8 +123,24 @@ class GDELTScraper(BaseScraper):
 
             items: List[ContentItem] = []
             for raw in articles:
+                self.raw_candidate_count += 1
+                self.date_parse_attempts += 1
+                raw_date = self._parse_seendate(
+                    str(raw.get("seendate") or "")
+                    if isinstance(raw, dict)
+                    else ""
+                )
+                if raw_date is not None:
+                    self.date_parse_successes += 1
                 item = self._raw_to_item(raw)
-                if item is not None:
+                if (
+                    item is not None
+                    and item.published_at >= self._ensure_utc(since)
+                    and (
+                        until is None
+                        or item.published_at <= self._ensure_utc(until)
+                    )
+                ):
                     items.append(item)
             return items
 

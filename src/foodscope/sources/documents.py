@@ -29,7 +29,10 @@ _MEDIA_TYPES = {
 
 class DocumentIndexAdapter(HTMLListAdapter):
     async def fetch(
-        self, source: FoodSourceSpec, since: datetime
+        self,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None = None,
     ) -> list[ContentItem]:
         since = self.ensure_utc(since)
         response = await safe_request(
@@ -40,8 +43,9 @@ class DocumentIndexAdapter(HTMLListAdapter):
         selector = self._required_option(source, "item_selector")
         items: list[ContentItem] = []
         for index, element in enumerate(soup.select(selector)):
+            self.raw_candidate_count += 1
             item = self._parse_element(
-                source, element, since, index
+                source, element, since, until, index
             )
             if item is None:
                 continue

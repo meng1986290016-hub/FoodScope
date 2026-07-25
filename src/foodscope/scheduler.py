@@ -220,6 +220,11 @@ def check_schedule_health(
                     "completed_stages", []
                 ):
                     continue
+                if (
+                    manifest.get("run_provenance")
+                    != "scheduled"
+                ):
+                    continue
                 created = datetime.fromisoformat(
                     manifest["created_at"]
                 )
@@ -243,7 +248,9 @@ def check_schedule_health(
     if latest is None:
         return ScheduleHealth(
             healthy=False,
-            detail="no completed FoodScope run found",
+            detail=(
+                "no completed scheduled FoodScope run found"
+            ),
             overdue_threshold=threshold,
         )
     if latest.astimezone(timezone.utc) < threshold_utc:
