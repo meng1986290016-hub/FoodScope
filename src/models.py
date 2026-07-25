@@ -85,6 +85,7 @@ class AIProvider(str, Enum):
     DOUBAO = "doubao"
     MINIMAX = "minimax"
     DEEPSEEK = "deepseek"
+    KIMI = "kimi"
     OLLAMA = "ollama"
 
 
@@ -131,6 +132,11 @@ AI_PROVIDER_DEFAULTS: Dict[AIProvider, Dict[str, Any]] = {
         "model": "deepseek-chat",
         "api_key_env": "DEEPSEEK_API_KEY",
         "base_url": "https://api.deepseek.com",
+    },
+    AIProvider.KIMI: {
+        "model": "moonshot-v1-8k",
+        "api_key_env": "KIMI_API_KEY",
+        "base_url": "https://api.moonshot.cn/v1",
     },
     AIProvider.OLLAMA: {
         "model": "llama3.1",

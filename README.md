@@ -128,6 +128,37 @@ uv run python -m src.main --no-deliver
 - [`docs/foodscope/profiles.md`](docs/foodscope/profiles.md)
 - [`docs/foodscope/operations.md`](docs/foodscope/operations.md)
 
+## 使用 Kimi（Moonshot）
+
+FoodScope 已把 Kimi 列为原生 provider。在 `.env` 中写入：
+
+```bash
+KIMI_API_KEY=sk-your-kimi-key
+```
+
+然后在 `data/config.json` 中使用：
+
+```json
+{
+  "ai_routes": {
+    "fast": {
+      "provider": "kimi",
+      "model": "moonshot-v1-8k",
+      "api_key_env": "KIMI_API_KEY",
+      "languages": ["zh"]
+    },
+    "analysis": {
+      "provider": "kimi",
+      "model": "moonshot-v1-128k",
+      "api_key_env": "KIMI_API_KEY",
+      "languages": ["zh"]
+    }
+  }
+}
+```
+
+Kimi 复用 OpenAI 兼容客户端，因此也支持自定义 `base_url`、温度回退和 token 统计。常见模型名：`moonshot-v1-8k`、`moonshot-v1-32k`、`moonshot-v1-128k`。
+
 ## 运行方式
 
 ```bash
