@@ -180,6 +180,9 @@ uv run python -m src.main --daemon
 # 校验配置并检查最近一次运行是否逾期
 uv run python -m src.main --healthcheck
 
+# 手动运行但标记为 scheduled（用于健康检查验收）
+uv run python -m src.main --scheduled --no-deliver
+
 # 恢复最近一次未完成运行
 uv run python -m src.main --resume latest
 

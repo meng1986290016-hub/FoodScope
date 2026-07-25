@@ -57,6 +57,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run FoodScope on its configured schedule",
     )
     parser.add_argument(
+        "--scheduled",
+        action="store_true",
+        help="Mark a manual run as scheduled for health-check accounting",
+    )
+    parser.add_argument(
         "--healthcheck",
         action="store_true",
         help="Validate config and scheduled-run freshness",
@@ -97,9 +102,14 @@ def parse_args(
         or has_explicit
         or args.resume
         or args.redeliver
+        or args.scheduled
     ):
         parser.error(
             "--daemon cannot use manual windows or resume flags"
+        )
+    if args.scheduled and args.daemon:
+        parser.error(
+            "--scheduled is redundant with --daemon"
         )
     if args.healthcheck and (
         args.hours is not None
@@ -108,6 +118,7 @@ def parse_args(
         or args.redeliver
         or args.daemon
         or args.no_deliver
+        or args.scheduled
     ):
         parser.error(
             "--healthcheck cannot be combined with run flags"
@@ -245,7 +256,9 @@ def main(argv: list[str] | None = None):
                     until=args.until,
                     deliver=not args.no_deliver,
                     run_provenance=(
-                        "scheduled" if scheduled else "manual"
+                        "scheduled"
+                        if (scheduled or args.scheduled)
+                        else "manual"
                     ),
                 )
             if scheduled:
