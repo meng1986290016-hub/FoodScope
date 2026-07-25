@@ -1,432 +1,256 @@
-<div align="center">
-<h1>🌅 Horizon</h1>
+# FoodScope Horizon — 食品行业情报雷达
 
-<p><strong>Enjoy the News itself. Leave others to Horizon</strong></p>
+FoodScope 是基于 [Horizon](https://github.com/Thysrael/Horizon) 构建的**可自托管食品行业情报扩展**。它在保留 Horizon 通用信息聚合能力的同时，为食品、饮料、配料、包装和餐饮领域增加了一整套采集、分析、去重、证据校验和简报分发的工作流。
 
-<a href="https://trendshift.io/repositories/22864?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-22864" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/22864/daily" alt="Thysrael%2FHorizon | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/22864?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-22864" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/22864/weekly?language=Python" alt="Thysrael%2FHorizon | Trendshift" width="250" height="55"/></a>
-<a href="https://hellogithub.com/repository/Thysrael/Horizon" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=7a4b606e28e4477998d35851cf4fdddf&claim_uid=rtjnLkYT7ziQJUG" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-<br>
+> **核心设计原则**：所有配置公开可审计，所有密钥只通过环境变量注入，仓库内的 JSON 文件绝不包含真实 secret。
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
-[![Tool uv](https://img.shields.io/badge/Tool-uv-4B275F?style=for-the-badge&logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
-[![Website](https://img.shields.io/badge/Website-Horizon-263238?style=for-the-badge&logo=homepage&logoColor=white)](https://www.horizon1123.top/)
-[![Daily](https://img.shields.io/github/actions/workflow/status/Thysrael/Horizon/deploy-docs.yml?branch=main&label=Daily&style=for-the-badge&logo=date-fns&logoColor=white)](https://thysrael.github.io/Horizon/)
-[![Commit](https://img.shields.io/github/commit-activity/m/Thysrael/Horizon?label=Commit&style=for-the-badge&logo=github&logoColor=white)](https://github.com/Thysrael/Horizon/commits/main)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Thysrael/Horizon/pulls)
-![Sources Welcome](https://img.shields.io/badge/sources-welcome-f97316?style=for-the-badge&logo=rss&logoColor=white)
+## 它能做什么
 
-![Claude](https://img.shields.io/badge/Claude-f0daba?style=flat-square&logo=anthropic&logoColor=black)
-![GPT](https://img.shields.io/badge/GPT-10A37F?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTIyLjI4MTkgOS44MjExYTUuOTg0NyA1Ljk4NDcgMCAwIDAtLjUxNTctNC45MTA4IDYuMDQ2MiA2LjA0NjIgMCAwIDAtNi41MDk4LTIuOUE2LjA2NTEgNi4wNjUxIDAgMCAwIDQuOTgwNyA0LjE4MThhNS45ODQ3IDUuOTg0NyAwIDAgMC0zLjk5NzcgMi45IDYuMDQ2MiA2LjA0NjIgMCAwIDAgLjc0MjcgNy4wOTY2IDUuOTggNS45OCAwIDAgMCAuNTExIDQuOTEwNyA2LjA1MSA2LjA1MSAwIDAgMCA2LjUxNDYgMi45MDAxQTUuOTg0NyA1Ljk4NDcgMCAwIDAgMTMuMjU5OSAyNGE2LjA1NTcgNi4wNTU3IDAgMCAwIDUuNzcxOC00LjIwNTggNS45ODk0IDUuOTg5NCAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDU1NyA2LjA1NTcgMCAwIDAtLjc0NzUtNy4wNzI5em0tOS4wMjIgMTIuNjA4MWE0LjQ3NTUgNC40NzU1IDAgMCAxLTIuODc2NC0xLjA0MDhsLjE0MTktLjA4MDQgNC43NzgzLTIuNzU4MmEuNzk0OC43OTQ4IDAgMCAwIC4zOTI3LS42ODEzdi02LjczNjlsMi4wMiAxLjE2ODZhLjA3MS4wNzEgMCAwIDEgLjAzOC4wNTJ2NS41ODI2YTQuNTA0IDQuNTA0IDAgMCAxLTQuNDk0NSA0LjQ5NDR6bS05LjY2MDctNC4xMjU0YTQuNDcwOCA0LjQ3MDggMCAwIDEtLjUzNDYtMy4wMTM3bC4xNDIuMDg1MiA0Ljc4MyAyLjc1ODJhLjc3MTIuNzcxMiAwIDAgMCAuNzgwNiAwbDUuODQyOC0zLjM2ODV2Mi4zMzI0YS4wODA0LjA4MDQgMCAwIDEtLjAzMzIuMDYxNUw5Ljc0IDE5Ljk1MDJhNC40OTkyIDQuNDk5MiAwIDAgMS02LjE0MDgtMS42NDY0ek0yLjM0MDggNy44OTU2YTQuNDg1IDQuNDg1IDAgMCAxIDIuMzY1NS0xLjk3MjhWMTEuNmEuNzY2NC43NjY0IDAgMCAwIC4zODc5LjY3NjVsNS44MTQ0IDMuMzU0My0yLjAyMDEgMS4xNjg1YS4wNzU3LjA3NTcgMCAwIDEtLjA3MSAwbC00LjgzMDMtMi43ODY1QTQuNTA0IDQuNTA0IDAgMCAxIDIuMzQwOCA3Ljg3MnptMTYuNTk2MyAzLjg1NThMMTMuMTAzOCA4LjM2NCAxNS4xMTkyIDcuMmEuMDc1Ny4wNzU3IDAgMCAxIC4wNzEgMGw0LjgzMDMgMi43OTEzYTQuNDk0NCA0LjQ5NDQgMCAwIDEtLjY3NjUgOC4xMDQydi01LjY3NzJhLjc5Ljc5IDAgMCAwLS40MDctLjY2N3ptMi4wMTA3LTMuMDIzMWwtLjE0Mi0uMDg1Mi00Ljc3MzUtMi43ODE4YS43NzU5Ljc3NTkgMCAwIDAtLjc4NTQgMEw5LjQwOSA5LjIyOTdWNi44OTc0YS4wNjYyLjA2NjIgMCAwIDEgLjAyODQtLjA2MTVsNC44MzAzLTIuNzg2NmE0LjQ5OTIgNC40OTkyIDAgMCAxIDYuNjgwMiA0LjY2ek04LjMwNjUgMTIuODYzbC0yLjAyLTEuMTYzOGEuMDgwNC4wODA0IDAgMCAxLS4wMzgtLjA1NjdWNi4wNzQyYTQuNDk5MiA0LjQ5OTIgMCAwIDEgNy4zNzU3LTMuNDUzN2wtLjE0Mi4wODA1TDguNzA0IDUuNDU5YS43OTQ4Ljc5NDggMCAwIDAtLjM5MjcuNjgxM3ptMS4wOTc2LTIuMzY1NGwyLjYwMi0xLjQ5OTggMi42MDY5IDEuNDk5OHYyLjk5OTRsLTIuNTk3NCAxLjQ5OTctMi42MDY3LTEuNDk5N1oiLz48L3N2Zz4=)
-![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
-![DeepSeek](https://img.shields.io/badge/DeepSeek-0A6DC2?style=flat-square&logo=deepseek&logoColor=white)
-![Doubao](https://img.shields.io/badge/Doubao-00D6C2?style=flat-square&logo=bytedance&logoColor=white)
-![MiniMax](https://img.shields.io/badge/MiniMax-FF6F00?style=flat-square&logo=minimax&logoColor=white)
-![OpenClaw](https://img.shields.io/badge/OpenClaw-C83232?style=flat-square&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWxhYmVsPSJQaXhlbCBsb2JzdGVyIj4KICA8cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9Im5vbmUiLz4KICAKICA8ZyBmaWxsPSIjM2EwYTBkIj4KICAgIDxyZWN0IHg9IjEiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjMiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjgiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjMiIHk9IjkiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjQiIHk9IjIiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjQiIHk9IjEwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSI1IiB5PSIyIiB3aWR0aD0iNiIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIxMSIgeT0iMiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMTIiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjEyIiB5PSI5IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIxMyIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMTMiIHk9IjgiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjE0IiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIzIi8+CiAgICA8cmVjdCB4PSI1IiB5PSIxMSIgd2lkdGg9IjYiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNCIgeT0iMTIiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjExIiB5PSIxMiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMyIgeT0iMTMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjEyIiB5PSIxMyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNSIgeT0iMTQiIHdpZHRoPSI2IiBoZWlnaHQ9IjEiLz4KICA8L2c+CgogIAogIDxnIGZpbGw9IiNmZjRmNDAiPgogICAgPHJlY3QgeD0iNSIgeT0iMyIgd2lkdGg9IjYiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMyIgeT0iNSIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjMiIHk9IjYiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIzIiB5PSI3IiB3aWR0aD0iMTAiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNCIgeT0iOCIgd2lkdGg9IjgiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNSIgeT0iOSIgd2lkdGg9IjYiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iNSIgeT0iMTIiIHdpZHRoPSI2IiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjYiIHk9IjEzIiB3aWR0aD0iNCIgaGVpZ2h0PSIxIi8+CiAgPC9nPgoKICAKICA8ZyBmaWxsPSIjZmY3NzVmIj4KICAgIDxyZWN0IHg9IjEiIHk9IjYiIHdpZHRoPSIyIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjIiIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIi8+CiAgICA8cmVjdCB4PSIxMyIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iMTMiIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICA8L2c+CgogIAogIDxnIGZpbGw9IiMwODEwMTYiPgogICAgPHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogICAgPHJlY3QgeD0iOSIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPgogIDwvZz4KICA8ZyBmaWxsPSIjZjVmYmZmIj4KICAgIDxyZWN0IHg9IjYiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICAgIDxyZWN0IHg9IjkiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4KICA8L2c+Cjwvc3ZnPgoK)
-![Ollama](https://img.shields.io/badge/Ollama-FFFFFF?style=flat-square&logo=Ollama&logoColor=black)
+- **定向抓取** — 从法规机构、行业媒体、新品数据库、科研机构和多语言新闻中抓取食品相关信号
+- **跨语言去重** — 把同一事件的中、英、日、韩等多语言报道合并为一条事实
+- **结构化分析** — 用两条独立 AI 路由分别完成“快速筛选”和“深度分析”，输出可机读的食品情报字段
+- **证据准入** — 法规、标准、召回、食品安全声称必须有官方证据；否则会被隔离并审计
+- **画像驱动** — 内置 `balanced`、`market`、`new_products`、`rd`、`compliance` 五个简报画像，一键切换信息偏向
+- **多频道分发** — 生成 Markdown/HTML 归档，并可投递到邮件、飞书/Lark、微信公众号草稿、通用 Webhook 和 MCP 客户端
+- **可恢复运行** — 每个阶段原子落盘，支持断点续跑和重发
 
-📡 Your own AI-powered news radar. Generates daily briefings in English & Chinese. | 构建你专属的 AI 新闻雷达
+## 快速开始
 
-[📖 Live Demo](https://thysrael.github.io/Horizon/) · [📋 Configuration Guide](https://thysrael.github.io/Horizon/configuration) · [简体中文](README_zh.md) · [日本語](README_ja.md)
-
-</div>
-
-## FoodScope Industry Edition
-
-This fork adds an optional, self-hosted food-industry workflow under
-`src/foodscope/`. Set `foodscope.enabled` in `data/config.json` to use
-configurable source packs and the default `balanced` briefing profile. Both AI
-routes and every delivery credential are selected by environment-variable name;
-committed JSON contains no secret values. Legacy Horizon mode remains the
-default when FoodScope is disabled.
+需要 Python 3.11+ 和 [uv](https://docs.astral.sh/uv/)。
 
 ```bash
+# 1. 安装依赖
+uv sync --extra dev
+
+# 2. 复制配置模板
 cp data/config.foodscope.example.json data/config.json
 cp .env.example .env
-uv sync --extra dev
+
+# 3. 在 .env 中至少填入一个 AI 密钥
+#    OPENAI_API_KEY=sk-...
+
+# 4. 首次只生成归档，不向外分发
 uv run python -m src.main --no-deliver
 ```
 
-Operators can change the timezone, cron schedule, lookback window, source-pack
-mix, individual source overrides, and any of five briefing profiles. Verify the
-local archive first, then explicitly enable email, Feishu/Lark, or WeChat draft
-delivery.
+运行完成后检查 `data/runs/<run_id>/brief.md` 和 `brief.html`。确认内容符合预期后，再移除 `--no-deliver` 启用正式分发。
 
-[Configuration](docs/foodscope/configuration.md) ·
-[Source packs](docs/foodscope/source-packs.md) ·
-[Profiles](docs/foodscope/profiles.md) ·
-[Operations](docs/foodscope/operations.md) ·
-[Contributing](docs/foodscope/contributing.md)
+## 核心概念
 
-## Screenshots
+### 简报画像（Profiles）
 
-<table>
-<tr>
-<td width="50%">
-<p align="center"><strong>Ranked Daily Briefing</strong></p>
-<img src="docs/assets/overview_en.png" alt="Daily Overview" />
-</td>
-<td width="50%">
-<p align="center"><strong>Context, Summary & Discussion</strong></p>
-<img src="docs/assets/one_news_en.png" alt="News Detail" />
-</td>
-</tr>
-</table>
+画像决定同一批事实如何排序和取舍，不改变原始抓取结果。内置画像位于 `data/foodscope/profiles/`：
 
-<details>
-<summary><strong>More Screenshots</strong></summary>
-<br>
-<table>
-<tr>
-<td width="33.33%">
-<p align="center"><strong>Terminal Output</strong></p>
-<img src="docs/assets/terminal_log.png" alt="Terminal Output" />
-</td>
-<td width="33.33%">
-<p align="center"><strong>Feishu Notification</strong></p>
-<img src="docs/assets/feishu_en.png" alt="Feishu Notification" />
-</td>
-<td width="33.33%">
-<p align="center"><strong>Email Delivery</strong></p>
-<img src="docs/assets/email.png" alt="Email Delivery" />
-</td>
-</tr>
-</table>
-</details>
+| 画像 | 适合谁 | 主要倾向 |
+| --- | --- | --- |
+| `balanced` | 管理层、综合情报读者 | 八类主题平衡，商业信息占比 ≥ 70% |
+| `market` | 市场、品牌、战略团队 | 消费趋势、零售餐饮、公司动态 |
+| `new_products` | 新品、品牌、创新团队 | 新品上市、产品创新、包装与消费信号 |
+| `rd` | 研发、配方、技术团队 | 原料技术、加工包装、科研 |
+| `compliance` | 法规、质量、合规团队 | 法规标准、召回与风险预警 |
 
-## Why Horizon?
+切换画像：
 
-Good news is scattered; bad news is endless. Horizon gives you a personal first pass over Hacker News, Reddit, Telegram, RSS, and GitHub: it fetches, deduplicates, scores, filters, and enriches stories with background context and community discussion.
-
-But Horizon is not just another summarizer. AI is great at reducing noise, but news still needs human taste: the sources you trust, the comments that change how you read a story, and the hidden gems only people can share. Horizon keeps that human layer in the loop with customizable sources, thresholds, models, languages, delivery channels, comment summaries, and a community source hub.
-
-## Features
-
-- **📡 Watch Your Own Sources** — Track Hacker News, RSS, Reddit, Telegram, Twitter/X, GitHub releases or user activity, and OpenBB financial news watchlists in one pipeline
-- **🤖 Turn Noise Into a Reading List** — Score each item from 0-10 with Claude, GPT, Gemini, DeepSeek, Doubao, MiniMax, Ollama, or any OpenAI-compatible API
-- **🔗 Merge Repeated Stories** — Deduplicate the same story across platforms before it reaches your briefing
-- **🔍 Understand the Background** — Add web-researched context for unfamiliar concepts, companies, projects, and technical terms
-- **💬 Read the Conversation** — Collect and summarize community comments from Hacker News, Reddit, and other supported sources
-- **🌐 Publish in Two Languages** — Generate English and Chinese daily briefings from the same source set
-- **📝 Ship a Daily Site** — Publish generated Markdown as a GitHub Pages daily briefing site
-- **📧 Deliver by Email** — Run a self-hosted SMTP/IMAP newsletter with automatic subscribe and unsubscribe handling
-- **🔔 Push to Chat or Automations** — Send templated results to Feishu/Lark, DingTalk, Slack, Discord, or custom webhook endpoints
-- **🧙 Start From Your Interests** — Use the setup wizard to generate a personalized source configuration
-- **⚙️ Tune the Radar** — Customize sources, thresholds, models, languages, and delivery channels from one JSON config
-
-## How It Works
-
-```mermaid
-%%{init: {
-  "theme": "base",
-  "themeVariables": {
-    "fontFamily": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-    "fontSize": "18px",
-    "primaryTextColor": "#2d2a3e",
-    "primaryBorderColor": "#e0dbd3",
-    "lineColor": "#7c7891",
-    "tertiaryColor": "#faf8f5",
-    "clusterBkg": "#f3f0eb",
-    "clusterBorder": "#e0dbd3"
-  }
-}}%%
-flowchart LR
-    classDef config fill:#fbbf24,stroke:#d4a017,color:#2d2a3e,stroke-width:1.5px;
-    classDef source fill:#ede7fb,stroke:#6d4aaa,color:#2d2a3e,stroke-width:1.5px;
-    classDef process fill:#ffe8db,stroke:#e0652e,color:#2d2a3e,stroke-width:1.5px;
-    classDef output fill:#f9d7e5,stroke:#be185d,color:#2d2a3e,stroke-width:1.5px;
-
-    config["⚙️ Config<br/>sources, thresholds, models, outputs"]
-
-    subgraph sources["Configured Sources"]
-        rss["📡 RSS"]
-        hn["📰 Hacker News"]
-        reddit["💬 Reddit"]
-        telegram["✈️ Telegram"]
-        twitter["🐦 Twitter / X"]
-        github["🐙 GitHub"]
-        openbb["💹 OpenBB"]
-    end
-
-    fetch["📥 Fetch"]
-    dedup["🧹 Deduplicate"]
-    score["🤖 AI Score & Filter"]
-    enrich["🔎 Enrich"]
-    summary["📝 Summarize"]
-
-    subgraph outputs["Outputs"]
-        direction TB
-        site["🌐 Pages"]
-        email["📧 Email"]
-        webhook["🔔 Webhooks"]
-        mcp["🧩 MCP"]
-    end
-
-    config --> fetch
-    rss --> fetch
-    hn --> fetch
-    reddit --> fetch
-    telegram --> fetch
-    twitter --> fetch
-    github --> fetch
-    openbb --> fetch
-
-    fetch --> dedup --> score --> enrich --> summary
-    config --> score
-    config --> summary
-    config --> outputs
-
-    summary --> site
-    summary --> email
-    summary --> webhook
-    summary --> mcp
-
-    class config config
-    class rss,hn,reddit,telegram,twitter,github,openbb source
-    class fetch,dedup,score,enrich,summary process
-    class site,email,webhook,mcp output
-```
-
-1. **Define** — Configure sources, thresholds, models, languages, and delivery from one JSON config.
-2. **Fetch** — Pull latest content from all configured sources concurrently.
-3. **Deduplicate** — Merge items pointing to the same story or URL across platforms.
-4. **Score & Filter** — Use AI to rank items and keep only those above your threshold.
-5. **Enrich** — Search the web for background context and collect community discussion for important items.
-6. **Summarize** — Generate a structured Markdown briefing with summaries, tags, and references.
-7. **Deliver** — Publish the result to GitHub Pages, email, webhooks such as Feishu, MCP, or local files.
-
-## Quick Start
-
-### 1. Install
-
-**Option A: Local Installation**
-
-```bash
-git clone https://github.com/Thysrael/Horizon.git
-cd Horizon
-
-# Install with uv (recommended)
-uv sync
-
-# Install test/development extras when needed
-uv sync --extra dev
-
-# Or with pip
-pip install -e .
-```
-
-`dev` is currently defined as an optional extra in `pyproject.toml`, so use `uv sync --extra dev` for pytest and other development dependencies.
-
-If you want the optional OpenBB financial-news source, install its extra too:
-
-```bash
-uv sync --extra openbb
-```
-
-If `openbb` pulls packages without wheels on your machine, install the SDK manually with binaries only:
-
-```bash
-uv pip install --only-binary=:all: openbb openbb-benzinga
-```
-
-**Option B: Docker**
-
-```bash
-git clone https://github.com/Thysrael/Horizon.git
-cd Horizon
-
-# Configure environment
-cp .env.example .env
-cp data/config.example.json data/config.json
-# Edit .env and data/config.json with your API keys and preferences
-
-# Run with Docker Compose
-docker compose run --rm horizon
-
-# Or run with custom time window
-docker compose run --rm horizon --hours 48
-```
-
-### 2. Configure
-
-**Option A: Interactive wizard (recommended)**
-
-```bash
-uv run horizon-wizard
-```
-
-The wizard asks about your interests (e.g. "LLM inference", "嵌入式", "web security") and auto-generates `data/config.json`.
-
-**Option B: Manual configuration**
-
-```bash
-cp .env.example .env          # Add your API keys
-cp data/config.example.json data/config.json  # Customize your sources
-```
-
-Minimal manual configuration:
-
-```jsonc
+```json
 {
-  "ai": {
-    "provider": "openai",
-    "model": "gpt-4",
-    "api_key_env": "OPENAI_API_KEY"
-  },
-  "sources": {
-    "rss": [
-      { "name": "Simon Willison", "url": "https://simonwillison.net/atom/everything/" }
+  "foodscope": {
+    "profile": "new_products"
+  }
+}
+```
+
+也可以复制内置画像后自行调整权重，或使用 `foodscope.profile_path` 指向自定义文件。
+
+### 来源包（Source Packs）
+
+来源包是经过筛选的来源集合，位于 `data/foodscope/source_packs/`：
+
+| 来源包 | 侧重点 |
+| --- | --- |
+| `official_evidence` | 法规、标准、食品安全与召回的一手证据 |
+| `global_industry` | 全球食品行业媒体和企业动态 |
+| `product_launches` | 新品、配方、品牌与上市信息 |
+| `ingredients_rd` | 原料、科研与食品技术 |
+| `packaging_processing` | 包装、标签、加工和制造 |
+| `retail_foodservice` | 零售、餐饮和渠道 |
+| `research_data` | 研究机构、市场与消费数据 |
+| `japan` / `korea` / `southeast_asia` | 区域市场包 |
+| `discovery_queries` | 多语言发现查询 |
+| `x_watch` | 经筛选的 X 观察名单，默认全部关闭 |
+
+配置示例：
+
+```json
+{
+  "foodscope": {
+    "source_packs": [
+      "official_evidence",
+      "global_industry",
+      "product_launches"
     ]
-  },
-  "filtering": {
-    "ai_score_threshold": 6.0
   }
 }
 ```
 
-**Balanced digest (optional)**
+同一来源若出现在多个包中会自动按 ID 合并。使用 `source_overrides` 可以关闭或覆盖单个来源，而不必复制整个来源包。
 
-Limit the final digest size and prevent one category from dominating the
-results. Categories come from source configuration such as
-`sources.rss[].category`.
+### 证据等级与采集层级
 
-```jsonc
-{
-  "filtering": {
-    "ai_score_threshold": 6.0,
-    "max_items": 20,
-    "category_groups": {
-      "ai": {
-        "limit": 5,
-        "categories": ["ai-news", "ai-tools", "machine-learning"]
-      },
-      "finance": {
-        "limit": 5,
-        "categories": ["finance", "business", "equities"]
-      }
-    },
-    "default_group": "other",
-    "default_group_limit": 3
-  }
-}
-```
+- **证据等级**：`primary`（一手官方） > `industry`（行业媒体） > `discovery`（发现查询） > `weak_signal`
+- **采集层级**：`core` 每次运行，`extended` 默认两天轮换，`discovery` 默认三天轮换
 
-Group limits are applied after AI score filtering and before enrichment. If
-`category_groups` and `max_items` are omitted, filtering behaves as before.
+法规、召回、食品安全类内容若证据等级不足，会被拒绝入选并记录到隔离审计。
 
-`api_key_env` must be the name of an environment variable, not the API key
-itself. Put the real secret in `.env`:
+## 配置说明
 
-```bash
-OPENAI_API_KEY=sk-your-key
-```
+`data/config.json` 是唯一权威非密钥配置。关键字段：
 
-For Gemini, use `GOOGLE_API_KEY`:
+| 路径 | 作用 | 默认值 |
+| --- | --- | --- |
+| `foodscope.enabled` | 启用 FoodScope 工作流 | `false` |
+| `foodscope.profile` | 当前画像 ID | `balanced` |
+| `foodscope.source_packs` | 加载的来源包 | 见示例 |
+| `ai_routes.fast` | 候选内容快速分析 | — |
+| `ai_routes.analysis` | 入选内容深度分析 | — |
+| `schedule.timezone` | IANA 时区 | `Asia/Shanghai` |
+| `schedule.cron` | 五段 cron | `30 6 * * *` |
+| `collection.lookback_hours` | 回看时长 | `30` |
+| `collection.minimum_sources_per_run` | 当日来源目标数 | `20` |
+| `delivery.target_minutes` | 目标完成时长 | `60` |
+| `delivery.wechat.enabled` | 微信公众号草稿 | `false` |
 
-```jsonc
-{
-  "ai": {
-    "provider": "gemini",
-    "model": "gemini-2.0-flash",
-    "api_key_env": "GOOGLE_API_KEY"
-  }
-}
-```
+两条 AI 路由都支持独立设置 `provider`、`model`、`concurrency`、`timeout_seconds`、`max_attempts` 和价格。未配置价格时仍会统计 token，但成本显示为 `unknown`。
 
-Any string value in `data/config.json` can reference environment variables with `${VAR_NAME}`. This is useful for values such as `ai.base_url`, private RSS feed URLs, webhook endpoints, or custom header templates.
+详细说明见：
 
-For the full reference, see the [Configuration Guide](docs/configuration.md).
+- [`docs/foodscope/configuration.md`](docs/foodscope/configuration.md)
+- [`docs/foodscope/source-packs.md`](docs/foodscope/source-packs.md)
+- [`docs/foodscope/profiles.md`](docs/foodscope/profiles.md)
+- [`docs/foodscope/operations.md`](docs/foodscope/operations.md)
 
-### 3. Run
-
-#### Local Installation
+## 运行方式
 
 ```bash
-uv run horizon           # Run with default 24h window
-uv run horizon --hours 48  # Fetch from last 48 hours
+# 手动运行，只归档不投递
+uv run python -m src.main --no-deliver
+
+# 临时回看过去 12 小时
+uv run python -m src.main --hours 12 --no-deliver
+
+# 精确时间窗（可重复回放）
+uv run python -m src.main \
+  --since 2026-07-23T00:00:00+08:00 \
+  --until 2026-07-24T06:00:00+08:00 \
+  --no-deliver
+
+# 按配置持续调度
+uv run python -m src.main --daemon
+
+# 校验配置并检查最近一次运行是否逾期
+uv run python -m src.main --healthcheck
+
+# 恢复最近一次未完成运行
+uv run python -m src.main --resume latest
+
+# 恢复并重新分发
+uv run python -m src.main --resume RUN_ID --redeliver
 ```
 
-#### With Docker
+守护进程使用非阻塞文件锁，重复启动会以退出码 75 结束，避免并发运行。
+
+## 运行产物
+
+每次运行保存在 `data/runs/<run_id>/`：
+
+| 文件 | 含义 |
+| --- | --- |
+| `raw.json` | 原始候选 |
+| `normalized.json` | 统一食品行业字段 |
+| `scored.json` | AI 分类与评分 |
+| `filtered.json` | 证据准入、去重和画像筛选 |
+| `enriched.json` | 深度分析与隔离审计 |
+| `facts.json` | 不可变事实快照 |
+| `brief.md` / `brief.html` | 从同一事实快照渲染的成品 |
+| `manifest.json` | 阶段、计数、来源指标、分发状态和哈希 |
+
+## 交付渠道
+
+- **本地归档**：`brief.md` / `brief.html`
+- **邮件**：自托管 SMTP/IMAP newsletter
+- **飞书/Lark**：Card JSON 2.0，长内容自动拆卡
+- **微信公众号**：只创建草稿，不自动群发
+- **通用 Webhook**：Slack、Discord、DingTalk 等
+- **MCP**：通过 MCP resources 读取运行状态和简报
+
+各渠道相互隔离，一个渠道失败不会阻断其余渠道。已经成功发送且事实哈希相同的渠道会标记为 `skipped`，防止重复发送。
+
+## 开发与测试
 
 ```bash
-docker compose run --rm horizon           # Run with default 24h window
-docker compose run --rm horizon --hours 48  # Fetch from last 48 hours
+# 运行全部测试
+uv run pytest
+
+# 类型检查
+uv run mypy src/foodscope
+
+# 代码风格检查
+uv run ruff check src/foodscope tests/foodscope
 ```
 
-The generated report will be saved to `data/summaries/`.
+当前测试套件包含 554 个用例，覆盖配置模型、来源适配器、情报流水线、去重、证据校验、画像选择、运行存储、恢复、分发和 MCP。
 
-### 4. Automate (Optional)
+## 项目结构
 
-Horizon works great as a **GitHub Actions** cron job. See [`.github/workflows/daily-summary.yml`](.github/workflows/daily-summary.yml) for a ready-to-use workflow that generates and deploys your daily briefing to GitHub Pages automatically.
+```
+src/
+  foodscope/          # FoodScope 核心包
+    models.py         # 食品情报数据模型
+    config.py         # FoodScope 配置模型
+    loaders.py        # 画像与来源包加载
+    normalizer.py     # 内容标准化
+    event_dedup.py    # 跨语言事件去重
+    analyzer.py       # AI 快速分析
+    enricher.py       # AI 深度 enrichment
+    evidence.py       # 证据策略
+    selector.py       # 画像选择与排序
+    run_store.py      # 阶段化运行存储
+    scheduler.py      # 时间窗口与调度
+    orchestrator.py   # 主控流程
+    rendering.py      # Markdown/HTML 渲染
+    delivery.py       # 分发管理
+    sources/          # 来源适配器
+    templates/        # 简报模板
+  ...                 # Horizon 原始模块
+data/
+  foodscope/
+    profiles/         # 内置画像
+    source_packs/     # 内置来源包
+docs/
+  foodscope/          # FoodScope 文档
+tests/
+  foodscope/          # FoodScope 测试
+```
 
-## Supported Sources
+## 14 天运营验收
 
-| Source | What it fetches | Comments |
-|--------|----------------|----------|
-| **Hacker News** | Top stories by score | Yes (top N comments) |
-| **RSS / Atom** | Any RSS or Atom feed | — |
-| **Reddit** | Subreddits + user posts | Yes (top N comments) |
-| **Telegram** | Public channel messages | — |
-| **Twitter / X** | Tweets from specific users | Yes (top N replies) |
-| **GitHub** | User events & repo releases | — |
-| **OpenBB** | Financial company news by watchlist/provider | — |
+发布到生产前，建议至少连续计划运行 14 天，覆盖五个画像、多个市场、来源故障、AI 无效返回和渠道故障。只有真实运行周期完成后，才能确认来源稳定性和成本边界。
 
-## Where Your Briefing Goes
+周期结束后生成每源汇总：
 
-Horizon can publish or deliver the generated briefing in several ways:
+```bash
+uv run python scripts/foodscope_source_report.py \
+  --runs data/runs \
+  --output data/trials
+```
 
-| Channel | What it does |
-|---------|--------------|
-| **GitHub Pages Daily Site** | Copies generated Markdown into `docs/` so GitHub Pages can publish a daily-updated briefing site |
-| **Email Subscription** | Sends the daily briefing to subscribers and handles subscribe/unsubscribe requests through SMTP/IMAP |
-| **Webhook Notification** | Pushes success or failure results to Feishu/Lark, DingTalk, Slack, Discord, or any custom webhook endpoint |
-| **MCP Server** | Exposes Horizon pipeline steps as tools so AI assistants can fetch, score, filter, enrich, summarize, and run the full workflow |
+## 许可证
 
-For setup details, see the [Configuration Guide](docs/configuration.md). For MCP tool references and client setup, see [`src/mcp/README.md`](src/mcp/README.md) and [`src/mcp/integration.md`](src/mcp/integration.md).
+FoodScope 保留上游 Horizon 的 MIT 许可证和版权声明。Horizon 相关代码版权归原作者所有；FoodScope 特有的画像、来源包、提示词、schema 和模板位于 `src/foodscope/` 和 `data/foodscope/` 下，同样遵循 MIT 许可证。
 
-## Supported By
+## 相关链接
 
-Horizon is an open-source project maintained in spare time. If you'd like to support the project or be listed here, feel free to [open an issue](https://github.com/Thysrael/Horizon/issues/new) or [email me](mailto:thysrael@163.com).
-
-| Supporter | Details |
-|-----------|---------|
-| [<img src="docs/assets/compshare-logo.png" alt="Compshare / 优云智算" width="220" />](https://www.compshare.cn/?ytag=GPU_YY_git_Horizon) | Compshare currently supports Horizon. Compshare is UCloud's AI cloud platform, offering cost-effective monthly and pay-as-you-go domestic model agent plans starting from RMB 49/month, as well as stable officially relayed overseas models. It supports Claude Code, Codex, and API usage, with enterprise-grade high concurrency, 24/7 technical support, and self-service invoicing.<br><br>Register through their [link](https://www.compshare.cn/?ytag=GPU_YY_git_Horizon) to receive a free RMB 5 trial credit. |
-
-## Documentation
-
-| Guide | Description |
-|-------|-------------|
-| [Configuration](docs/configuration.md) | AI providers, sources, filtering, email, webhook, GitHub Pages, and MCP setup |
-| [Scoring](docs/scoring.md) | How Horizon evaluates and ranks news items |
-| [Scrapers](docs/scrapers.md) | Source scraper details and extension notes |
-| [Extractors](docs/extractors.md) | Full article extraction for RSS sources |
-| [MCP Tools](src/mcp/README.md) | Tool reference for MCP-compatible clients |
-
-## Project Status
-
-Horizon already supports the full daily briefing loop: multi-source collection, AI scoring, deduplication, enrichment, comment summaries, bilingual generation, GitHub Pages publishing, email delivery, webhook delivery, Docker deployment, MCP integration, and the setup wizard.
-
-Planned improvements:
-
-- More source types, such as Discord
-- Custom scoring prompts per source
-- Publish releases on GitHub
-- Publish the package to PyPI for `pip install`
-
-## Contributing
-
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for code, documentation, and source-sharing guidelines.
-
-### Share Sources
-
-Want to share valuable source discoveries with the Horizon community? Please submit them through **[horizon1123.top](https://horizon1123.top)**.
-
-## Acknowledgements
-
-- Special thanks to [LINUX.DO](https://linux.do/) for providing a promotion platform.
-- Special thanks to [HelloGitHub](https://hellogithub.com/) for valuable guidance and suggestions.
-- Special thanks to [AIGC Link](https://xhslink.com/m/80ngts127cA) for the promotions on XiaoHongShu.
-
-## License
-
-[MIT](LICENSE)
+- [Horizon 上游](https://github.com/Thysrael/Horizon)
+- [FoodScope 配置指南](docs/foodscope/configuration.md)
+- [FoodScope 来源包](docs/foodscope/source-packs.md)
+- [FoodScope 画像](docs/foodscope/profiles.md)
+- [FoodScope 运维](docs/foodscope/operations.md)
