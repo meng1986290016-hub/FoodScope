@@ -164,13 +164,15 @@ def test_registry_propagates_exact_until_to_adapter(monkeypatch):
 
     async def run():
         async with httpx.AsyncClient() as client:
-            await FoodSourceRegistry(client).fetch(
+            return await FoodSourceRegistry(client).fetch(
                 [rss_source("windowed")], since, until
             )
 
-    asyncio.run(run())
+    _, outcomes = asyncio.run(run())
 
     assert observed == [(since, until)]
+    assert outcomes[0].window_since == since.isoformat()
+    assert outcomes[0].window_until == until.isoformat()
 
 
 def test_registry_bounds_global_and_per_domain_concurrency(monkeypatch):

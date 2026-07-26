@@ -22,15 +22,19 @@
       ],
       "name": "FoodNavigator",
       "options": {
-        "content_selector": "p",
         "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "detail_content_selector": ".b-article-body",
+        "exclude_text_pattern": "(?i)Paid for by",
+        "item_selector": "article.card",
+        "link_selector": ".card-text-headline a",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "require_content": true,
+        "title_selector": ".card-text-headline a",
         "trial_initial_grade": "A",
         "trial_note": "综合性强；需识别合作内容",
-        "trial_signals": "新品、配料、消费、企业"
+        "trial_signals": "新品、配料、消费、企业",
+        "url_include_pattern": "/Article/"
       },
       "packs": [
         "global_industry"
@@ -38,7 +42,7 @@
       "url": "https://www.foodnavigator.com/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends"
@@ -55,12 +59,7 @@
       ],
       "name": "Food Business News",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "商业信号密集",
         "trial_signals": "新品、公司、市场、烘焙"
@@ -68,7 +67,7 @@
       "packs": [
         "global_industry"
       ],
-      "url": "https://www.foodbusinessnews.net/"
+      "url": "https://www.foodbusinessnews.net/rss/2"
     },
     {
       "adapter": "html_list",
@@ -357,15 +356,22 @@
       ],
       "name": "Food & Drink Technology",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
+        "date_selector": ".meta",
+        "date_text_pattern": "posted\\s+(.+)",
+        "detail_content_selector": ".articleContent",
+        "detail_date_jsonld_field": "datePublished",
         "item_selector": "article",
-        "link_selector": "a[href]",
+        "link_selector": ".articleExcerpt h2 a, .articleExcerpt h3 a",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "max_detail_date_fetches": 20,
+        "prefer_detail_date": true,
+        "require_content": true,
+        "title_selector": ".articleExcerpt h2 a, .articleExcerpt h3 a",
         "trial_initial_grade": "B",
         "trial_note": "需控制供应商稿比例",
-        "trial_signals": "加工、包装、配料、企业"
+        "trial_signals": "加工、包装、配料、企业",
+        "url_include_pattern": "/news/"
       },
       "packs": [
         "global_industry"

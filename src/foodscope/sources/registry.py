@@ -198,6 +198,12 @@ class FoodSourceRegistry:
                             published_at_parse_count=(
                                 adapter.date_parse_successes
                             ),
+                            window_since=since.isoformat(),
+                            window_until=(
+                                until.isoformat()
+                                if until is not None
+                                else None
+                            ),
                         ),
                     )
                 except Exception as error:
@@ -221,6 +227,12 @@ class FoodSourceRegistry:
                     ),
                     published_at_parse_count=(
                         adapter.date_parse_successes
+                    ),
+                    window_since=since.isoformat(),
+                    window_until=(
+                        until.isoformat()
+                        if until is not None
+                        else None
                     ),
                 ),
             )

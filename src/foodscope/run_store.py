@@ -128,6 +128,8 @@ class FoodRunStore:
             "candidate_count",
             "published_at_candidate_count",
             "published_at_parse_count",
+            "window_since",
+            "window_until",
         }
         sanitized = [
             {

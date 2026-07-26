@@ -103,3 +103,48 @@ def test_builtin_profile_id_must_match_file_name(tmp_path):
         load_profile(
             FoodScopeConfig(profile="balanced", profile_dir=tmp_path)
         )
+
+
+def test_first_direct_source_batch_uses_verified_entries_and_selectors():
+    sources = {
+        source.id: source
+        for source in load_source_packs(
+            FoodScopeConfig(
+                source_packs=[
+                    "global_industry",
+                    "ingredients_rd",
+                    "product_launches",
+                ]
+            )
+        )
+    }
+
+    assert sources["M002"].adapter == "rss"
+    assert sources["M002"].url == (
+        "https://www.foodbusinessnews.net/rss/2"
+    )
+    assert sources["M030"].adapter == "rss"
+    assert sources["M030"].url == (
+        "https://www.bakingbusiness.com/rss/topic/1227-news"
+    )
+    for source_id in ("M001", "M019", "M035"):
+        assert sources[source_id].options["item_selector"] == (
+            "article.card"
+        )
+        assert sources[source_id].options["detail_content_selector"] == (
+            ".b-article-body"
+        )
+        assert sources[source_id].options["require_content"] is True
+    assert sources["M017"].options["date_text_pattern"] == (
+        r"posted\s+(.+)"
+    )
+    assert sources["M017"].options["url_include_pattern"] == (
+        r"/news/"
+    )
+    assert sources["M017"].options["detail_content_selector"] == (
+        ".articleContent"
+    )
+    assert sources["M017"].options["prefer_detail_date"] is True
+    assert sources["M017"].options["detail_date_jsonld_field"] == (
+        "datePublished"
+    )

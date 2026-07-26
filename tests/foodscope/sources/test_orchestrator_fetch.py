@@ -183,15 +183,20 @@ def test_foodscope_fetch_uses_bounded_deferred_fallback(
     )
 
 
-def test_foodscope_fetch_expands_lookback_when_initial_window_is_sparse(
+def test_foodscope_fetch_expands_only_empty_direct_source(
     monkeypatch,
 ):
-    source = rss_source("food")
+    busy_source = rss_source("busy")
+    empty_source = rss_source("empty")
+    busy_item = item("busy-item", "Busy")
     expanded_item = item("expanded-item", "Expanded")
     orchestrator = object.__new__(FoodScopeOrchestrator)
-    orchestrator.source_specs_by_id = {"food": source}
-    orchestrator._selected_source_ids = ["food"]
-    orchestrator._eligible_source_ids = ["food"]
+    orchestrator.source_specs_by_id = {
+        "busy": busy_source,
+        "empty": empty_source,
+    }
+    orchestrator._selected_source_ids = ["busy", "empty"]
+    orchestrator._eligible_source_ids = ["busy", "empty"]
     orchestrator.active_run_id = "run-id"
     initial_since = datetime(
         2026, 7, 24, 18, tzinfo=timezone.utc
@@ -200,6 +205,9 @@ def test_foodscope_fetch_expands_lookback_when_initial_window_is_sparse(
     expanded_since = datetime(
         2026, 7, 19, tzinfo=timezone.utc
     )
+    middle_since = datetime(
+        2026, 7, 23, tzinfo=timezone.utc
+    )
     orchestrator._window_start = initial_since
     orchestrator._window_end = until
     orchestrator.config = SimpleNamespace(
@@ -207,16 +215,14 @@ def test_foodscope_fetch_expands_lookback_when_initial_window_is_sparse(
             fallback_sources_per_run=0,
             adaptive_lookback_enabled=True,
             adaptive_lookback_min_candidates=1,
-            adaptive_lookback_hours=[168],
+            adaptive_lookback_hours=[72, 168],
         ),
         schedule=SimpleNamespace(timezone="Asia/Shanghai"),
     )
-    recorded_windows = []
     orchestrator.run_store = SimpleNamespace(
         set_source_selection=lambda *args, **kwargs: None,
-        set_run_window=lambda *args: recorded_windows.append(args),
     )
-    observed_since = []
+    observed = []
 
     async def parent_fetch(self, since, until=None):
         self.last_fetch_report = FetchReport([])
@@ -227,22 +233,45 @@ def test_foodscope_fetch_expands_lookback_when_initial_window_is_sparse(
             pass
 
         async def fetch(self, sources, since, until=None):
-            observed_since.append(since)
+            source_ids = [source.id for source in sources]
+            observed.append((source_ids, since))
             if since <= expanded_since:
                 return [expanded_item], [
                     SourceFetchOutcome(
-                        "food",
+                        "empty",
                         "success",
                         items=[expanded_item],
                         candidate_count=1,
+                        window_since=since.isoformat(),
+                        window_until=until.isoformat(),
                     )
                 ]
-            return [], [
+            if source_ids == ["empty"]:
+                return [], [
+                    SourceFetchOutcome(
+                        "empty",
+                        "empty",
+                        candidate_count=0,
+                        window_since=since.isoformat(),
+                        window_until=until.isoformat(),
+                    )
+                ]
+            return [busy_item], [
                 SourceFetchOutcome(
-                    "food",
+                    "busy",
+                    "success",
+                    items=[busy_item],
+                    candidate_count=1,
+                    window_since=since.isoformat(),
+                    window_until=until.isoformat(),
+                ),
+                SourceFetchOutcome(
+                    "empty",
                     "empty",
                     candidate_count=0,
-                )
+                    window_since=since.isoformat(),
+                    window_until=until.isoformat(),
+                ),
             ]
 
     monkeypatch.setattr(
@@ -258,10 +287,79 @@ def test_foodscope_fetch_expands_lookback_when_initial_window_is_sparse(
         orchestrator.fetch_all_sources(initial_since, until)
     )
 
-    assert fetched == [expanded_item]
-    assert observed_since == [initial_since, expanded_since]
-    assert orchestrator._window_start == expanded_since
-    assert recorded_windows == [("run-id", expanded_since, until)]
+    assert fetched == [busy_item, expanded_item]
+    assert observed == [
+        (["busy", "empty"], initial_since),
+        (["empty"], middle_since),
+        (["empty"], expanded_since),
+    ]
+    assert orchestrator._window_start == initial_since
+    outcomes = {
+        outcome.source_name: outcome
+        for outcome in orchestrator.last_fetch_report.outcomes
+    }
+    assert outcomes["busy"].window_since == initial_since.isoformat()
+    assert outcomes["empty"].window_since == expanded_since.isoformat()
+
+
+def test_foodscope_fetch_does_not_expand_failed_direct_source(monkeypatch):
+    source = rss_source("failed")
+    orchestrator = object.__new__(FoodScopeOrchestrator)
+    orchestrator.source_specs_by_id = {"failed": source}
+    orchestrator._selected_source_ids = ["failed"]
+    orchestrator._eligible_source_ids = ["failed"]
+    orchestrator.active_run_id = None
+    orchestrator.config = SimpleNamespace(
+        collection=SimpleNamespace(
+            fallback_sources_per_run=0,
+            adaptive_lookback_enabled=True,
+            adaptive_lookback_min_candidates=1,
+            adaptive_lookback_hours=[72, 168],
+        ),
+        evidence=SimpleNamespace(
+            resolve_original_urls=False,
+            allow_aggregator_fallback=True,
+        ),
+    )
+    calls = []
+
+    async def parent_fetch(self, since, until=None):
+        self.last_fetch_report = FetchReport([])
+        return []
+
+    class FakeRegistry:
+        def __init__(self, http_client):
+            pass
+
+        async def fetch(self, sources, since, until=None):
+            calls.append([source.id for source in sources])
+            return [], [
+                SourceFetchOutcome(
+                    "failed",
+                    "failure",
+                    error="blocked",
+                    window_since=since.isoformat(),
+                    window_until=until.isoformat(),
+                )
+            ]
+
+    monkeypatch.setattr(
+        "src.orchestrator.HorizonOrchestrator.fetch_all_sources",
+        parent_fetch,
+    )
+    monkeypatch.setattr(
+        "src.foodscope.orchestrator.FoodSourceRegistry",
+        FakeRegistry,
+    )
+
+    asyncio.run(
+        orchestrator.fetch_all_sources(
+            datetime(2026, 7, 24, 18, tzinfo=timezone.utc),
+            datetime(2026, 7, 26, tzinfo=timezone.utc),
+        )
+    )
+
+    assert calls == [["failed"]]
 
 
 def test_foodscope_fetch_resolves_discovery_urls_before_returning(

@@ -51,6 +51,59 @@ PACK_NAMES = {
     "product_launches": "全球食品新品雷达",
 }
 
+_WILLIAM_REED_OPTIONS = {
+    "detail_content_selector": ".b-article-body",
+    "date_selector": "time",
+    "exclude_text_pattern": "(?i)Paid for by",
+    "item_selector": "article.card",
+    "link_selector": ".card-text-headline a",
+    "max_detail_content_fetches": 20,
+    "require_content": True,
+    "title_selector": ".card-text-headline a",
+    "url_include_pattern": "/Article/",
+}
+
+_DIRECT_SOURCE_OVERRIDES: dict[str, dict[str, Any]] = {
+    "M001": {"options": _WILLIAM_REED_OPTIONS},
+    "M002": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.foodbusinessnews.net/rss/2",
+    },
+    "M017": {
+        "options": {
+            "date_selector": ".meta",
+            "date_text_pattern": r"posted\s+(.+)",
+            "detail_content_selector": ".articleContent",
+            "detail_date_jsonld_field": "datePublished",
+            "item_selector": "article",
+            "link_selector": (
+                ".articleExcerpt h2 a, .articleExcerpt h3 a"
+            ),
+            "max_detail_content_fetches": 20,
+            "max_detail_date_fetches": 20,
+            "prefer_detail_date": True,
+            "require_content": True,
+            "title_selector": (
+                ".articleExcerpt h2 a, .articleExcerpt h3 a"
+            ),
+            "url_include_pattern": "/news/",
+        }
+    },
+    "M019": {"options": _WILLIAM_REED_OPTIONS},
+    "M030": {
+        "adapter": "rss",
+        "options": {},
+        "url": (
+            "https://www.bakingbusiness.com/rss/topic/1227-news"
+        ),
+    },
+    "M035": {
+        "options": _WILLIAM_REED_OPTIONS,
+        "url": "https://www.confectionerynews.com/News/",
+    },
+}
+
 _CANDIDATE_ROW = re.compile(
     r"^\|\s*(M\d{3})\s*\|\s*"
     r"\[([^\]]+)\]\((https?://[^)]+)\)\s*\|\s*"
@@ -218,7 +271,13 @@ def _source_record(
         categories = list(
             dict.fromkeys(["product_innovation"] + categories)
         )
-    return {
+    trial_options = {
+        "max_content_chars": 1200,
+        "trial_initial_grade": candidate["initial_grade"],
+        "trial_note": candidate["note"],
+        "trial_signals": candidate["signals"],
+    }
+    record = {
         "adapter": "html_list",
         "categories": categories,
         "collection_tier": "extended",
@@ -233,15 +292,27 @@ def _source_record(
             "date_selector": "time",
             "item_selector": "article",
             "link_selector": "a[href]",
-            "max_content_chars": 1200,
             "title_selector": "h1, h2, h3",
-            "trial_initial_grade": candidate["initial_grade"],
-            "trial_note": candidate["note"],
-            "trial_signals": candidate["signals"],
+            **trial_options,
         },
         "packs": [pack_id],
         "url": candidate["url"],
     }
+    override = _DIRECT_SOURCE_OVERRIDES.get(candidate["id"])
+    if override is None:
+        return record
+    record.update(
+        {
+            key: value
+            for key, value in override.items()
+            if key != "options"
+        }
+    )
+    record["options"] = {
+        **trial_options,
+        **override.get("options", {}),
+    }
+    return record
 
 
 def _write_manifest(

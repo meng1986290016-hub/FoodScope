@@ -21,15 +21,19 @@
       ],
       "name": "BeverageDaily",
       "options": {
-        "content_selector": "p",
         "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "detail_content_selector": ".b-article-body",
+        "exclude_text_pattern": "(?i)Paid for by",
+        "item_selector": "article.card",
+        "link_selector": ".card-text-headline a",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "require_content": true,
+        "title_selector": ".card-text-headline a",
         "trial_initial_grade": "A",
         "trial_note": "与 M001 同集团，需跨站去重",
-        "trial_signals": "饮料新品、品牌、消费"
+        "trial_signals": "饮料新品、品牌、消费",
+        "url_include_pattern": "/Article/"
       },
       "packs": [
         "ingredients_rd"
@@ -232,7 +236,7 @@
       "url": "https://www.dairyfoods.com/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "ingredients_technology",
@@ -250,12 +254,7 @@
       ],
       "name": "Baking Business",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "与 M031 同域名，接入时可合并",
         "trial_signals": "烘焙新品、企业、配料"
@@ -263,7 +262,7 @@
       "packs": [
         "ingredients_rd"
       ],
-      "url": "https://www.bakingbusiness.com/"
+      "url": "https://www.bakingbusiness.com/rss/topic/1227-news"
     },
     {
       "adapter": "html_list",
@@ -383,20 +382,24 @@
       ],
       "name": "ConfectioneryNews",
       "options": {
-        "content_selector": "p",
         "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "detail_content_selector": ".b-article-body",
+        "exclude_text_pattern": "(?i)Paid for by",
+        "item_selector": "article.card",
+        "link_selector": ".card-text-headline a",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "require_content": true,
+        "title_selector": ".card-text-headline a",
         "trial_initial_grade": "B",
         "trial_note": "与 M001 同集团，需去重",
-        "trial_signals": "糖果巧克力、配料、消费"
+        "trial_signals": "糖果巧克力、配料、消费",
+        "url_include_pattern": "/Article/"
       },
       "packs": [
         "ingredients_rd"
       ],
-      "url": "https://www.confectionerynews.com/"
+      "url": "https://www.confectionerynews.com/News/"
     },
     {
       "adapter": "html_list",
