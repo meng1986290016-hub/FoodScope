@@ -203,9 +203,20 @@ def test_create_chained_client_uses_provider_defaults_without_leaking_base_url()
             if entry.provider == config.provider
             else defaults["base_url"]
         )
+        expected_temperature = (
+            config.temperature
+            if entry.provider == config.provider
+            else defaults.get("temperature", config.temperature)
+        )
+        expected_extra_body = (
+            config.extra_body
+            if entry.provider == config.provider
+            else defaults.get("extra_body", config.extra_body)
+        )
         assert entry.base_url == expected_base_url
-        assert entry.temperature == config.temperature
+        assert entry.temperature == expected_temperature
         assert entry.max_tokens == config.max_tokens
+        assert entry.extra_body == expected_extra_body
         assert entry.throttle_sec == config.throttle_sec
         assert entry.analysis_concurrency == config.analysis_concurrency
         assert entry.enrichment_concurrency == config.enrichment_concurrency

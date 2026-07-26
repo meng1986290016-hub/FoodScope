@@ -27,7 +27,13 @@ from src.orchestrator import (
 from src.storage.manager import StorageManager
 
 from .analyzer import FoodContentAnalyzer
-from .briefing import BriefFacts, BriefMetadata, RenderedBrief
+from .briefing import (
+    BriefFacts,
+    BriefMetadata,
+    RenderedBrief,
+    partition_brief_items,
+)
+from .config import EvidenceConfig
 from .delivery import (
     DeliveryResult,
     DeliveryStatus,
@@ -35,9 +41,12 @@ from .delivery import (
 )
 from .enricher import FoodContentEnricher
 from .event_dedup import FoodEventFingerprintStore, merge_food_events
-from .evidence import EvidencePolicy
+from .evidence import (
+    EvidenceDecision,
+    EvidencePolicy,
+    summarize_evidence_decisions,
+)
 from .loaders import load_profile, load_source_packs
-from .models import FoodCategory
 from .normalizer import normalize_item
 from .rendering import FoodBriefRenderer
 from .run_store import FoodRunStore, RunStage
@@ -49,6 +58,7 @@ from .sources.registry import (
     order_fallback_sources,
     select_sources_for_run,
 )
+from .sources.original_url import OriginalUrlResolver
 from .wechat import WeChatDraftClient
 
 
@@ -88,7 +98,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             / "foodscope"
             / "event-fingerprints.json"
         )
-        self.evidence_policy = EvidencePolicy()
+        self.evidence_policy = EvidencePolicy(config.evidence)
         self.selector = FoodProfileSelector(self.evidence_policy)
         self.selection_result = SelectionResult(items=[])
         self.active_run_id: Optional[str] = None
@@ -202,6 +212,7 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
             self.active_run_id = self.run_store.create_run(
                 profile_id=self.profile.id,
                 run_provenance=run_provenance,
+                evidence_mode=self.evidence_policy.config.mode,
             )
             self.run_store.set_run_window(
                 self.active_run_id,
@@ -619,90 +630,188 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         selected_ids = getattr(
             self, "_selected_source_ids", None
         )
-        sources = [
-            source
-            for source_id, source in self.source_specs_by_id.items()
-            if selected_ids is None or source_id in selected_ids
-        ]
         food_items: list[ContentItem] = []
         food_outcomes: list[SourceFetchOutcome] = []
-        if sources:
+
+        def selected_sources() -> list:
+            current_selected_ids = getattr(
+                self, "_selected_source_ids", selected_ids
+            )
+            return [
+                source
+                for source_id, source in self.source_specs_by_id.items()
+                if (
+                    current_selected_ids is None
+                    or source_id in current_selected_ids
+                )
+            ]
+
+        if selected_sources():
             async with httpx.AsyncClient(timeout=30.0) as client:
                 registry = FoodSourceRegistry(client)
-                food_items, food_outcomes = await registry.fetch(
-                    sources, since, until
-                )
-                active_run_id = getattr(
-                    self, "active_run_id", None
-                )
-                fallback_limit = (
-                    self.config.collection.fallback_sources_per_run
-                    if (
-                        selected_ids is not None
-                        and active_run_id is not None
+
+                async def fetch_food_window(
+                    window_since: datetime,
+                ) -> tuple[
+                    list[ContentItem],
+                    list[SourceFetchOutcome],
+                ]:
+                    current_sources = selected_sources()
+                    items, outcomes = await registry.fetch(
+                        current_sources, window_since, until
                     )
-                    else 0
-                )
-                shortage = sum(
-                    outcome.status in {"empty", "failure"}
-                    for outcome in food_outcomes
-                )
-                if fallback_limit and shortage:
-                    eligible_ids = set(
-                        self._eligible_source_ids
-                        or (
-                            source.id
+                    active_run_id = getattr(
+                        self, "active_run_id", None
+                    )
+                    fallback_limit = (
+                        self.config.collection.fallback_sources_per_run
+                        if (
+                            selected_ids is not None
+                            and active_run_id is not None
+                        )
+                        else 0
+                    )
+                    shortage = sum(
+                        outcome.status in {"empty", "failure"}
+                        for outcome in outcomes
+                    )
+                    if fallback_limit and shortage:
+                        eligible_ids = set(
+                            self._eligible_source_ids
+                            or (
+                                source.id
+                                for source
+                                in self.source_specs_by_id.values()
+                                if source.enabled
+                            )
+                        )
+                        already_selected_ids = list(
+                            (
+                                getattr(
+                                    self,
+                                    "_selected_source_ids",
+                                    selected_ids or [],
+                                )
+                                or []
+                            )
+                        )
+                        already_selected = set(already_selected_ids)
+                        deferred = [
+                            source
                             for source
                             in self.source_specs_by_id.values()
-                            if source.enabled
-                        )
-                    )
-                    already_selected = set(selected_ids or [])
-                    deferred = [
-                        source
-                        for source
-                        in self.source_specs_by_id.values()
-                        if source.id in eligible_ids
-                        and source.id not in already_selected
-                    ]
-                    business_date = datetime.fromisoformat(
-                        self._business_date(
-                            until
-                            or self._window_end
-                            or datetime.now(timezone.utc)
-                        )
-                    ).date()
-                    fallback_sources = order_fallback_sources(
-                        deferred,
-                        business_date=business_date,
-                    )[: min(shortage, fallback_limit)]
-                    if fallback_sources:
-                        assert isinstance(active_run_id, str)
-                        (
-                            fallback_items,
-                            fallback_outcomes,
-                        ) = await registry.fetch(
-                            fallback_sources, since, until
-                        )
-                        food_items.extend(fallback_items)
-                        food_outcomes.extend(fallback_outcomes)
-                        self._selected_source_ids = [
-                            *(selected_ids or []),
-                            *(
-                                source.id
-                                for source in fallback_sources
-                            ),
+                            if source.id in eligible_ids
+                            and source.id not in already_selected
                         ]
-                        self.run_store.set_source_selection(
-                            active_run_id,
-                            self._selected_source_ids,
-                            eligible_source_ids=(
-                                self._eligible_source_ids
-                            ),
-                            source_config_sha256=(
-                                self._source_config_sha256()
-                            ),
+                        business_date = datetime.fromisoformat(
+                            self._business_date(
+                                until
+                                or self._window_end
+                                or datetime.now(timezone.utc)
+                            )
+                        ).date()
+                        fallback_sources = order_fallback_sources(
+                            deferred,
+                            business_date=business_date,
+                        )[: min(shortage, fallback_limit)]
+                        if fallback_sources:
+                            assert isinstance(active_run_id, str)
+                            (
+                                fallback_items,
+                                fallback_outcomes,
+                            ) = await registry.fetch(
+                                fallback_sources, window_since, until
+                            )
+                            items.extend(fallback_items)
+                            outcomes.extend(fallback_outcomes)
+                            self._selected_source_ids = [
+                                *already_selected_ids,
+                                *(
+                                    source.id
+                                    for source in fallback_sources
+                                ),
+                            ]
+                            self.run_store.set_source_selection(
+                                active_run_id,
+                                self._selected_source_ids,
+                                eligible_source_ids=(
+                                    self._eligible_source_ids
+                                ),
+                                source_config_sha256=(
+                                    self._source_config_sha256()
+                                ),
+                            )
+                    return items, outcomes
+
+                food_items, food_outcomes = await fetch_food_window(
+                    since
+                )
+                raw_config = getattr(self, "config", None)
+                collection = getattr(raw_config, "collection", None)
+                min_candidates = int(
+                    getattr(
+                        collection,
+                        "adaptive_lookback_min_candidates",
+                        0,
+                    )
+                )
+                if (
+                    getattr(
+                        collection,
+                        "adaptive_lookback_enabled",
+                        False,
+                    )
+                    and len(food_items) < min_candidates
+                ):
+                    window_end = (
+                        until
+                        or self._window_end
+                        or datetime.now(timezone.utc)
+                    )
+                    current_since = since.astimezone(timezone.utc)
+                    for hours in getattr(
+                        collection,
+                        "adaptive_lookback_hours",
+                        [],
+                    ):
+                        expanded_since = window_end - timedelta(
+                            hours=hours
                         )
+                        if (
+                            expanded_since.astimezone(timezone.utc)
+                            >= current_since
+                        ):
+                            continue
+                        (
+                            food_items,
+                            food_outcomes,
+                        ) = await fetch_food_window(expanded_since)
+                        self._window_start = expanded_since
+                        active_run_id = getattr(
+                            self, "active_run_id", None
+                        )
+                        if active_run_id is not None:
+                            self.run_store.set_run_window(
+                                active_run_id,
+                                expanded_since,
+                                window_end,
+                            )
+                        if len(food_items) >= min_candidates:
+                            break
+                evidence_config = getattr(
+                    getattr(self, "config", None),
+                    "evidence",
+                    EvidenceConfig(),
+                )
+                await OriginalUrlResolver(
+                    client,
+                    enabled=evidence_config.resolve_original_urls,
+                ).resolve_items(
+                    food_items,
+                    allow_aggregator_fallback=(
+                        evidence_config.allow_aggregator_fallback
+                    ),
+                )
         self.last_fetch_report = FetchReport(
             outcomes=parent_outcomes + food_outcomes
         )
@@ -865,8 +974,16 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         """Merge industry events and admit them through evidence rules."""
         merged = merge_food_events(items)
         admitted: list[ContentItem] = []
+        decisions: list[EvidenceDecision] = []
         for item in merged:
             decision = self.evidence_policy.evaluate(item)
+            decisions.append(decision)
+            item.metadata["foodscope_admission_mode"] = (
+                self.evidence_policy.config.mode
+            )
+            item.metadata["foodscope_admission_reason"] = (
+                decision.reason
+            )
             if decision.accepted:
                 admitted.append(item)
                 continue
@@ -882,6 +999,33 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                     stage=RunStage.FILTERED,
                     error=f"evidence rejected: {decision.reason}",
                 )
+        admission_summary = summarize_evidence_decisions(
+            self.evidence_policy.config.mode,
+            decisions,
+        )
+        if self.active_run_id is not None:
+            self.run_store.record_evidence_admission(
+                self.active_run_id,
+                admission_summary,
+            )
+        if log:
+            accepted = sum(
+                int(value)
+                for key, value in admission_summary.items()
+                if key.startswith("accepted_")
+            )
+            rejected = len(decisions) - accepted
+            reason_counts = "; ".join(
+                f"{key}={value}"
+                for key, value in admission_summary.items()
+                if key != "mode"
+            )
+            self.console.print(
+                "[dim]Evidence admission: "
+                f"mode={admission_summary['mode']}; "
+                f"accepted={accepted}; rejected={rejected}; "
+                f"{reason_counts}[/dim]"
+            )
 
         balanced = (
             self.apply_balanced_digest(admitted, log=log)
@@ -944,15 +1088,9 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 self.selection_result.risk_alerts
             )
         ]
-        sections = {
-            category.value: [
-                item
-                for item in selected
-                if item.food is not None
-                and item.food.category == category
-            ]
-            for category in FoodCategory
-        }
+        must_read, news = partition_brief_items(
+            selected, risk_alerts
+        )
         manifest = self.run_store.load_manifest(
             self.active_run_id
         )
@@ -993,9 +1131,10 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                     for outcome in source_outcomes
                 ),
             ),
-            risk_alerts=risk_alerts,
-            must_read=selected[:5],
-            sections=sections,
+            risk_alerts=[],
+            must_read=must_read,
+            news=news,
+            sections={},
             observations=[],
         )
         self._rendered_brief = FoodBriefRenderer().render(
@@ -1174,6 +1313,12 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
         facts: BriefFacts,
     ) -> list[ContentItem]:
         by_id: dict[str, ContentItem] = {}
+        for item in (
+            facts.risk_alerts
+            + facts.must_read
+            + facts.news
+        ):
+            by_id.setdefault(item.id, item)
         for items in facts.sections.values():
             for item in items:
                 by_id.setdefault(item.id, item)

@@ -32,13 +32,18 @@
 - `max_per_source`：防止单一媒体占据简报；
 - `exploration_slots`：为低权重主题保留的探索位；
 - `commercial_min_ratio`：综合画像的最低商业信息比例；
-- `minimum_score`：常规条目的最低基础分；
+- `minimum_score`：常规条目的最低基础分；内置画像默认为 `0.0`，
+  让证据合格内容参与最多条目数和单一来源上限的竞争；
 - `risk_override_min`：达到该风险级别时进入风险提醒，不受常规分数限制；
 - `topic_weights`：八个食品主题权重，总和必须为 `1.0`；
 - `market_weights`：目标市场的额外排序权重。
 
 排序基于重要性、画像相关性、商业机会和证据质量，再乘以主题与市场权重。
 画像只负责优先级，不会让缺少必要证据的内容绕过准入规则。
+
+最终简报用未乘主题和市场权重的综合基础分分栏：大于等于 `6.0` 的内容进入
+“今日必读”，小于 `6.0` 的内容进入“今日新闻”。主题和市场权重仍用于两个
+栏目内部的排序。
 
 ## 创建自定义画像
 
@@ -71,7 +76,7 @@ cp data/foodscope/profiles/market.json data/foodscope/profiles/my_market.json
   "max_per_source": 3,
   "exploration_slots": 2,
   "commercial_min_ratio": 0.45,
-  "minimum_score": 6.0,
+  "minimum_score": 0.0,
   "risk_override_min": "high",
   "topic_weights": {
     "regulations_standards": 0.08,
@@ -99,7 +104,7 @@ cp data/foodscope/profiles/market.json data/foodscope/profiles/my_market.json
 
 1. 先换画像，确认内容结构是否更贴近角色；
 2. 再调整来源包，修正市场或信息类型覆盖；
-3. 最后微调主题/市场权重和最低分；
+3. 最后微调主题/市场权重；只有需要主动丢弃低分内容时才提高最低分；
 4. 保留探索位，避免长期被既有偏好锁死；
 5. 对高风险提醒和官方证据规则保持谨慎，不用画像权重替代合规判断。
 

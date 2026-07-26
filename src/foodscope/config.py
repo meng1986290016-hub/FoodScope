@@ -16,6 +16,13 @@ class ScheduleConfig(BaseModel):
 
 class CollectionConfig(BaseModel):
     lookback_hours: int = Field(default=30, gt=0, le=720)
+    adaptive_lookback_enabled: bool = True
+    adaptive_lookback_min_candidates: int = Field(
+        default=5, ge=0, le=500
+    )
+    adaptive_lookback_hours: list[int] = Field(
+        default_factory=lambda: [72, 168]
+    )
     minimum_sources_per_run: int = Field(
         default=20, ge=1, le=500
     )
@@ -28,6 +35,23 @@ class CollectionConfig(BaseModel):
     fallback_sources_per_run: int = Field(
         default=5, ge=0, le=50
     )
+
+    @field_validator("adaptive_lookback_hours")
+    @classmethod
+    def adaptive_lookback_hours_are_bounded(
+        cls, value: list[int]
+    ) -> list[int]:
+        if any(hours <= 0 or hours > 720 for hours in value):
+            raise ValueError(
+                "adaptive_lookback_hours must be between 1 and 720"
+            )
+        return sorted(set(value))
+
+
+class EvidenceConfig(BaseModel):
+    mode: Literal["loose", "strict"] = "loose"
+    resolve_original_urls: bool = True
+    allow_aggregator_fallback: bool = True
 
 
 class WeChatDraftConfig(BaseModel):
@@ -73,7 +97,7 @@ class BriefProfile(BaseModel):
     max_per_source: int = Field(default=3, gt=0)
     exploration_slots: int = Field(default=2, ge=0)
     commercial_min_ratio: float = Field(default=0.0, ge=0, le=1)
-    minimum_score: float = Field(default=6.0, ge=0, le=10)
+    minimum_score: float = Field(default=0.0, ge=0, le=10)
     risk_override_min: RiskLevel = RiskLevel.HIGH
     topic_weights: dict[FoodCategory, float]
     market_weights: dict[str, float] = Field(default_factory=dict)
@@ -126,6 +150,7 @@ class FoodScopeConfig(BaseModel):
             "official_evidence",
             "global_industry",
             "product_launches",
+            "discovery_queries",
         ]
     )
     source_pack_dir: Path = Path("data/foodscope/source_packs")

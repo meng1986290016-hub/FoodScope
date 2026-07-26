@@ -118,6 +118,67 @@ def test_html_list_uses_configured_selectors():
     assert items[0].content == "A permitted short listing description."
 
 
+def test_html_list_uses_detail_page_date_when_listing_is_undated():
+    html_source = source(
+        "html_detail_date",
+        "html_list",
+        url="https://93.184.216.34/list.html",
+        options={
+            "item_selector": "article.news",
+            "title_selector": "h2",
+            "link_selector": "h2 a",
+            "date_selector": "time",
+            "content_selector": ".dek",
+            "detail_date_selector": (
+                "meta[property='article:published_time']"
+            ),
+            "detail_date_attribute": "content",
+            "max_detail_date_fetches": 2,
+        },
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/list.html":
+            return httpx.Response(
+                200,
+                text=(
+                    "<article class='news'>"
+                    "<h2><a href='/detail.html'>Detail dated launch</a></h2>"
+                    "<p class='dek'>A listing without a visible date.</p>"
+                    "</article>"
+                ),
+            )
+        if request.url.path == "/detail.html":
+            return httpx.Response(
+                200,
+                text=(
+                    "<html><head>"
+                    "<meta property='article:published_time' "
+                    "content='2026-07-25T08:00:00Z'>"
+                    "</head><body></body></html>"
+                ),
+            )
+        raise AssertionError(f"unexpected path {request.url.path}")
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+        ) as client:
+            return await HTMLListAdapter(client).fetch(
+                html_source, SINCE
+            )
+
+    items = asyncio.run(run())
+
+    assert [item.title for item in items] == [
+        "Detail dated launch"
+    ]
+    assert str(items[0].url) == "https://93.184.216.34/detail.html"
+    assert items[0].published_at == datetime(
+        2026, 7, 25, 8, tzinfo=timezone.utc
+    )
+
+
 def test_document_index_emits_metadata_without_full_document_body():
     document_source = source(
         "document_fixture",

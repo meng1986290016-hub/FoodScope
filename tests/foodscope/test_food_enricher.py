@@ -34,8 +34,14 @@ def _response() -> str:
     return (FIXTURE_DIR / "enrichment_response.json").read_text()
 
 
-def test_valid_enrichment_populates_six_actionable_fields():
+def test_valid_enrichment_populates_only_factual_fields():
     item = _item()
+    assert item.food is not None
+    item.food.why_it_matters_zh = "旧的意义"
+    item.food.rd_significance_zh = "旧的研发意义"
+    item.food.opportunity_signal_zh = "旧的机会"
+    item.food.risk_signal_zh = "旧的风险"
+    item.food.recommended_action_zh = "旧的建议"
 
     enriched = asyncio.run(
         FoodContentEnricher(StubClient([_response()])).enrich([item])
@@ -45,11 +51,16 @@ def test_valid_enrichment_populates_six_actionable_fields():
     assert enriched.food.what_happened_zh.startswith(
         "Example 在日本推出"
     )
-    assert "跨品类创新" in enriched.food.why_it_matters_zh
-    assert "稳定性与口感" in enriched.food.rd_significance_zh
-    assert "中国品牌" in enriched.food.opportunity_signal_zh
-    assert "目标市场规则" in enriched.food.risk_signal_zh
-    assert "小规模配方" in enriched.food.recommended_action_zh
+    assert enriched.food.key_facts_zh == [
+        "产品规格为 350 毫升。",
+        "首发市场为日本。",
+        "首发渠道为零售渠道。",
+    ]
+    assert enriched.food.why_it_matters_zh == ""
+    assert enriched.food.rd_significance_zh == ""
+    assert enriched.food.opportunity_signal_zh == ""
+    assert enriched.food.risk_signal_zh == ""
+    assert enriched.food.recommended_action_zh == ""
 
 
 def test_malformed_response_retries_then_succeeds():
@@ -78,7 +89,7 @@ def test_failed_item_is_isolated_while_other_item_completes():
     assert failed.metadata["foodscope_isolated"] is True
     assert failed.metadata["foodscope_isolation_stage"] == "enriched"
     assert completed.food is not None
-    assert completed.food.recommended_action_zh
+    assert completed.food.key_facts_zh
     assert client.calls == 4
 
 

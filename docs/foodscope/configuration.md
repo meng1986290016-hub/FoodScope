@@ -22,23 +22,63 @@ uv run python -m src.main --no-deliver
 | `foodscope.enabled` | 切换 FoodScope 工作流 | `false` |
 | `foodscope.profile` | 内置画像 ID | `balanced` |
 | `foodscope.profile_path` | 自定义画像文件；设置后优先于 ID | `null` |
-| `foodscope.source_packs` | 按顺序加载的来源包 ID | 官方、行业媒体、新品 |
+| `foodscope.source_packs` | 按顺序加载的来源包 ID | 官方、行业媒体、新品、发现查询 |
 | `foodscope.source_pack_dir` | 来源包目录 | `data/foodscope/source_packs` |
 | `foodscope.profile_dir` | 内置画像目录 | `data/foodscope/profiles` |
 | `foodscope.source_overrides` | 按来源 ID 覆盖字段 | `{}` |
 | `schedule.timezone` | IANA 时区 | `Asia/Shanghai` |
 | `schedule.cron` | 五段 cron 表达式 | `30 6 * * *` |
 | `collection.lookback_hours` | 每次回看时长 | 1–720 小时 |
+| `collection.adaptive_lookback_enabled` | 候选不足时是否自动扩展回看窗口 | `true` |
+| `collection.adaptive_lookback_min_candidates` | 触发扩窗的最低候选数 | `5` |
+| `collection.adaptive_lookback_hours` | 扩窗候选小时数，按升序尝试 | `[72, 168]` |
 | `collection.minimum_sources_per_run` | 当日来源不足时补齐的目标数 | `20` |
 | `collection.extended_rotation_days` | 扩展源轮换周期 | `2` 天 |
 | `collection.discovery_rotation_days` | 发现源轮换周期 | `3` 天 |
 | `collection.fallback_sources_per_run` | 首轮空/失败后的备用来源上限 | `5` |
+| `evidence.mode` | 非官方类别三级证据的准入模式 | `loose` 或 `strict`，默认 `loose` |
+| `evidence.resolve_original_urls` | 尝试解析聚合链接的原媒体 URL | `true` |
+| `evidence.allow_aggregator_fallback` | 原文解析失败后允许可归属媒体的聚合链接 | `true` |
 | `delivery.target_minutes` | 目标完成时长，用于观测 | 正整数 |
 
 `ai_routes.fast` 用于候选内容的快速分析，`ai_routes.analysis` 用于入选内容的
-深度分析。两条路由都支持独立模型、并发数、超时和重试次数。可按实际合同
-价格设置 `input_cost_per_million` 与 `output_cost_per_million`；两者必须同时
-填写。未配置价格时 token 仍会统计，但成本显示为 `unknown`，不会误报为零。
+深度分析。两条路由都支持独立模型、温度、OpenAI 兼容扩展参数
+`extra_body`、并发数、超时和重试次数。可按实际合同价格设置
+`input_cost_per_million` 与 `output_cost_per_million`；两者必须同时填写。
+未配置价格时 token 仍会统计，但成本显示为 `unknown`，不会误报为零。
+
+默认宽松证据配置：
+
+```json
+{
+  "evidence": {
+    "mode": "loose",
+    "resolve_original_urls": true,
+    "allow_aggregator_fallback": true
+  }
+}
+```
+
+宽松模式允许非官方类别的单一、可识别媒体报道通过证据准入。严格模式要求
+原始出处或两个独立来源。法规、标准、召回和食品安全始终要求官方证据，
+`mode` 不能绕过这一硬门槛。原始链接解析失败不会中断运行；只有媒体名称
+可识别且允许聚合回退时，聚合结果才可能继续准入。
+
+Kimi 新模型可使用 `kimi-k2.6` 并关闭 thinking，以降低每日候选分析成本：
+
+```json
+{
+  "provider": "kimi",
+  "model": "kimi-k2.6",
+  "api_key_env": "KIMI_API_KEY",
+  "temperature": 0.6,
+  "extra_body": {
+    "thinking": {
+      "type": "disabled"
+    }
+  }
+}
+```
 
 来源层级决定抓取频率：`core` 每次运行，`extended` 和 `discovery` 分别按上述
 周期稳定轮换。如果轮换后低于 `minimum_sources_per_run`，系统优先从扩展源、
@@ -46,6 +86,11 @@ uv run python -m src.main --no-deliver
 备用波次，数量不超过 `fallback_sources_per_run`。实际来源 ID、运行时启用
 名册及来源配置指纹都会写入本次 manifest；恢复运行继续使用同一选择，来源
 配置已经变化时拒绝恢复，避免历史日期被新来源污染。
+
+食品行业内容存在明显低频和周末断流。若首轮 FoodScope 候选低于
+`adaptive_lookback_min_candidates`，系统会保持同一批来源和备用策略，依次把
+回看窗口扩展到 `adaptive_lookback_hours` 中配置的小时数；扩展后的窗口会写回
+本次 run manifest，后续 raw 过滤、事实快照和简报元数据都使用同一窗口。
 
 ## 用户调整抓取时间
 
@@ -59,6 +104,9 @@ uv run python -m src.main --no-deliver
   },
   "collection": {
     "lookback_hours": 36,
+    "adaptive_lookback_enabled": true,
+    "adaptive_lookback_min_candidates": 5,
+    "adaptive_lookback_hours": [72, 168],
     "minimum_sources_per_run": 20,
     "extended_rotation_days": 2,
     "discovery_rotation_days": 3,

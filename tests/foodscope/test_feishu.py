@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 from src.foodscope.briefing import BriefFacts
 from src.foodscope.feishu import build_feishu_brief_payload
 from src.foodscope.rendering import FoodBriefRenderer
+from tests.foodscope.test_brief_rendering import factual_facts
 from src.models import WebhookConfig
 from src.services.webhook import (
     WebhookDeliveryStatus,
@@ -25,7 +26,7 @@ def _facts():
 
 
 def test_feishu_cards_preserve_links_hash_and_collapsed_sections():
-    facts = _facts()
+    facts = factual_facts()
     rendered = FoodBriefRenderer().render(facts)
 
     payloads = build_feishu_brief_payload(facts, rendered)
@@ -37,8 +38,8 @@ def test_feishu_cards_preserve_links_hash_and_collapsed_sections():
     serialized = json.dumps(
         first, ensure_ascii=False, separators=(",", ":")
     )
-    assert "重大风险提醒" in serialized
     assert "今日必读" in serialized
+    assert "今日新闻" in serialized
     assert "https://official.example/recall" in serialized
     assert rendered.facts_sha256 in serialized
 
@@ -47,7 +48,11 @@ def test_feishu_cards_preserve_links_hash_and_collapsed_sections():
         for payload in payloads
     )
     assert "collapsible_panel" in all_serialized
-    assert "产品创新与新品" in all_serialized
+    assert "发生了什么" in all_serialized
+    assert "关键事实" in all_serialized
+    assert "FoodNavigator" in all_serialized
+    assert "2026-07-24 12:00（北京时间）" in all_serialized
+    assert "建议动作" not in all_serialized
     assert "https://media.example/protein-tea" in all_serialized
     assert all(
         rendered.facts_sha256
@@ -68,7 +73,12 @@ def test_feishu_cards_split_before_25000_code_points():
         )
         many.append(item)
     expanded = facts.model_copy(
-        update={"sections": {"product_innovation": many}},
+        update={
+            "risk_alerts": [],
+            "must_read": many,
+            "news": [],
+            "sections": {},
+        },
         deep=True,
     )
     rendered = FoodBriefRenderer().render(expanded)
@@ -126,4 +136,3 @@ def test_webhook_send_payload_posts_exact_json(monkeypatch):
     assert call.kwargs["headers"]["Content-Type"] == (
         "application/json"
     )
-

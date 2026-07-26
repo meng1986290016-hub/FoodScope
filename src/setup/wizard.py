@@ -99,8 +99,9 @@ def configure_ai() -> Optional[AIConfig]:
         model=model,
         base_url=base_url or None,
         api_key_env=api_key_env,
-        temperature=0.3,
+        temperature=provider_defaults.get("temperature", 0.3),
         max_tokens=8192,
+        extra_body=provider_defaults.get("extra_body", {}),
         languages=lang_list,
     )
 

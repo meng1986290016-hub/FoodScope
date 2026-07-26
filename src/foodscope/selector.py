@@ -310,6 +310,12 @@ class FoodProfileSelector:
     ) -> None:
         food = candidate.item.food
         assert food is not None
+        candidate.item.metadata["foodscope_base_score"] = round(
+            candidate.base_rank, 4
+        )
+        candidate.item.metadata["foodscope_final_score"] = round(
+            candidate.final_rank, 4
+        )
         food.selection_reason = (
             f"profile={profile.id}; "
             f"importance={food.importance_score:.2f}; "

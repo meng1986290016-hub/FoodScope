@@ -37,7 +37,21 @@ def test_foodscope_defaults_to_balanced_profile():
     assert config.foodscope.profile == "balanced"
     assert config.schedule.timezone == "Asia/Shanghai"
     assert config.collection.lookback_hours == 30
+    assert config.collection.adaptive_lookback_hours == [72, 168]
+    assert config.collection.adaptive_lookback_min_candidates == 5
     assert config.delivery.target_minutes == 60
+    assert config.evidence.mode == "loose"
+    assert config.evidence.resolve_original_urls is True
+    assert config.evidence.allow_aggregator_fallback is True
+    assert "discovery_queries" in config.foodscope.source_packs
+
+
+def test_foodscope_rejects_unknown_evidence_mode():
+    raw = legacy_config()
+    raw["evidence"] = {"mode": "permissive"}
+
+    with pytest.raises(ValueError, match="mode"):
+        Config.model_validate(raw)
 
 
 def test_foodscope_requires_fast_and_analysis_routes():

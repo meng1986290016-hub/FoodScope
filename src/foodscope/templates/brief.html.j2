@@ -2,27 +2,17 @@
 {% set food = item.food %}
 <article style="margin:18px 0;padding:18px;border:1px solid #d9e2dc;border-radius:12px;background:#ffffff;">
   <h3 style="margin:0 0 8px;font-size:20px;line-height:1.45;">
-    <a href="{{ (food.original_source_url or item.url)|safe_url }}" style="color:#176b45;text-decoration:none;">{{ item.metadata.get("title_zh") or item.title }}</a>
+    <a href="{{ item|source_url }}" style="color:#176b45;text-decoration:none;">{{ item.metadata.get("title_zh") or item.title }}</a>
   </h3>
   <p style="margin:0 0 10px;color:#66736c;font-size:13px;"><strong>原文标题：</strong>{{ item.title }}</p>
-  <p style="margin:0 0 12px;line-height:1.75;"><strong>三句摘要：</strong>{{ item.metadata.get("summary_zh") or item.ai_summary or item.title }}</p>
   <ul style="margin:0;padding-left:20px;line-height:1.75;">
     <li><strong>发生了什么：</strong>{{ food.what_happened_zh }}</li>
-    <li><strong>对中国企业的意义：</strong>{{ food.why_it_matters_zh }}</li>
-    {% if food.rd_significance_zh %}<li><strong>研发意义：</strong>{{ food.rd_significance_zh }}</li>{% endif %}
-    <li><strong>机会信号：</strong>{{ food.opportunity_signal_zh }}</li>
-    {% if food.risk_signal_zh %}<li><strong>风险信号：</strong>{{ food.risk_signal_zh }}</li>{% endif %}
-    <li><strong>建议动作：</strong>{{ food.recommended_action_zh }}</li>
+    {% if food.key_facts_zh %}<li><strong>关键事实：</strong><ul>{% for fact in food.key_facts_zh %}<li>{{ fact }}</li>{% endfor %}</ul></li>{% endif %}
     <li><strong>市场 / 分类：</strong>{{ food.markets|join(", ") }} / {{ food.category.value|category_label }}</li>
-    <li><strong>标签：</strong>{{ item|item_tags|join(", ") }}</li>
-    <li><strong>证据：</strong>evidence tier {{ food.evidence_tier }}；{{ food.selection_reason }}</li>
+    {% if item|item_tags %}<li><strong>标签：</strong>{{ item|item_tags|join(", ") }}</li>{% endif %}
+    <li><strong>原始来源：</strong><a href="{{ item|source_url }}">{{ item|source_label }}</a></li>
+    <li><strong>发布日期：</strong>{{ item.published_at|published_beijing }}</li>
   </ul>
-  <p style="margin:12px 0 0;font-size:13px;"><strong>原始来源：</strong><a href="{{ (food.original_source_url or item.url)|safe_url }}">{{ food.original_source_url or item.url }}</a></p>
-  {% if food.evidence_urls %}
-  <p style="margin:6px 0 0;font-size:13px;"><strong>证据链接：</strong>
-    {% for url in food.evidence_urls %}<a href="{{ url|safe_url }}">{{ url }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
-  </p>
-  {% endif %}
 </article>
 {%- endmacro %}
 <!doctype html>
@@ -37,15 +27,12 @@
       <p style="margin:4px 0;">覆盖窗口：{{ facts.metadata.window_start.isoformat() }} 至 {{ facts.metadata.window_end.isoformat() }}</p>
       <p style="margin:4px 0;">抓取 {{ facts.metadata.fetched_count }} · 候选 {{ facts.metadata.candidate_count }} · 入选 {{ facts.metadata.selected_count }} · 隔离 {{ facts.metadata.isolated_count }} · 来源成功 {{ facts.metadata.source_success_count }} / 失败 {{ facts.metadata.source_failure_count }}</p>
     </header>
-    {% if facts.risk_alerts %}
-    <section><h2 style="margin:28px 0 12px;color:#a52929;">重大风险提醒</h2>{% for item in facts.risk_alerts %}{{ item_card(item) }}{% endfor %}</section>
+    {% if must_read %}
+    <section><h2 style="margin:28px 0 12px;">今日必读</h2>{% for item in must_read %}{{ item_card(item) }}{% endfor %}</section>
     {% endif %}
-    {% if facts.must_read %}
-    <section><h2 style="margin:28px 0 12px;">今日必读</h2>{% for item in facts.must_read %}{{ item_card(item) }}{% endfor %}</section>
+    {% if news %}
+    <section><h2 style="margin:28px 0 12px;">今日新闻</h2>{% for item in news %}{{ item_card(item) }}{% endfor %}</section>
     {% endif %}
-    {% for section in sections %}
-    <section><h2 style="margin:28px 0 12px;">{{ section.label }}</h2>{% for item in section["items"] %}{{ item_card(item) }}{% endfor %}</section>
-    {% endfor %}
     {% if facts.observations %}
     <section style="margin-top:28px;padding:18px;border-radius:12px;background:#e8f1ec;"><h2 style="margin-top:0;">观察与待验证信号</h2><ul>{% for observation in facts.observations %}<li>{{ observation }}</li>{% endfor %}</ul></section>
     {% endif %}

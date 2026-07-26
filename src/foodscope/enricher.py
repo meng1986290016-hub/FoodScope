@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.ai.client import AIClient
 from src.ai.utils import parse_json_response
@@ -15,12 +15,10 @@ from .prompts import FOOD_ENRICHMENT_SYSTEM, FOOD_ENRICHMENT_USER
 
 
 class FoodEnrichmentResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     what_happened_zh: str
-    why_it_matters_zh: str
-    rd_significance_zh: str = ""
-    opportunity_signal_zh: str
-    risk_signal_zh: str = ""
-    recommended_action_zh: str
+    key_facts_zh: list[str]
 
 
 class FoodContentEnricher:
@@ -118,8 +116,9 @@ class FoodContentEnricher:
                 "FoodScope enrichment requires food intelligence"
             )
         food.what_happened_zh = result.what_happened_zh
-        food.why_it_matters_zh = result.why_it_matters_zh
-        food.rd_significance_zh = result.rd_significance_zh
-        food.opportunity_signal_zh = result.opportunity_signal_zh
-        food.risk_signal_zh = result.risk_signal_zh
-        food.recommended_action_zh = result.recommended_action_zh
+        food.key_facts_zh = result.key_facts_zh
+        food.why_it_matters_zh = ""
+        food.rd_significance_zh = ""
+        food.opportunity_signal_zh = ""
+        food.risk_signal_zh = ""
+        food.recommended_action_zh = ""

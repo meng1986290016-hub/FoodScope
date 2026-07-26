@@ -218,6 +218,7 @@ class OpenAIClient(AIClient):
         self.model = config.model
         self.temperature = config.temperature
         self.max_tokens = config.max_tokens
+        self.extra_body = dict(config.extra_body)
         self.provider = config.provider.value
         # Some newer models (e.g. Claude Opus 4.7 on Bedrock Converse) reject
         # `temperature`. We learn this on first 400 and stop sending it.
@@ -332,6 +333,8 @@ class OpenAIClient(AIClient):
             request_kwargs["temperature"] = temperature
         if self.provider not in self._NO_RESPONSE_FORMAT:
             request_kwargs["response_format"] = {"type": "json_object"}
+        if self.extra_body:
+            request_kwargs["extra_body"] = self.extra_body
         completions = cast(
             Any, self.client.chat.completions
         )
@@ -667,13 +670,24 @@ def _create_chained_client(config: AIConfig) -> ChainedAIClient:
 
         defaults = AI_PROVIDER_DEFAULTS.get(provider, {})
         base_url = config.base_url if provider == config.provider else defaults.get("base_url")
+        temperature = (
+            config.temperature
+            if provider == config.provider
+            else defaults.get("temperature", config.temperature)
+        )
+        extra_body = (
+            config.extra_body
+            if provider == config.provider
+            else defaults.get("extra_body", config.extra_body)
+        )
         cfg = AIConfig(
             provider=provider,
             model=defaults.get("model", config.model),
             api_key_env=defaults.get("api_key_env", config.api_key_env),
             base_url=base_url,
-            temperature=config.temperature,
+            temperature=temperature,
             max_tokens=config.max_tokens,
+            extra_body=extra_body,
             throttle_sec=config.throttle_sec,
             analysis_concurrency=config.analysis_concurrency,
             enrichment_concurrency=config.enrichment_concurrency,

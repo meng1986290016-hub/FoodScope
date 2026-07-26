@@ -9,6 +9,7 @@ from pydantic import BaseModel, HttpUrl, Field, field_validator, model_validator
 from .foodscope.config import (
     CollectionConfig,
     DeliveryConfig,
+    EvidenceConfig,
     FoodScopeConfig,
     ScheduleConfig,
 )
@@ -134,9 +135,11 @@ AI_PROVIDER_DEFAULTS: Dict[AIProvider, Dict[str, Any]] = {
         "base_url": "https://api.deepseek.com",
     },
     AIProvider.KIMI: {
-        "model": "moonshot-v1-8k",
+        "model": "kimi-k2.6",
         "api_key_env": "KIMI_API_KEY",
         "base_url": "https://api.moonshot.cn/v1",
+        "temperature": 0.6,
+        "extra_body": {"thinking": {"type": "disabled"}},
     },
     AIProvider.OLLAMA: {
         "model": "llama3.1",
@@ -156,6 +159,7 @@ class AIConfig(BaseModel):
     api_key_env: str
     temperature: float = 0.3
     max_tokens: int = 4096
+    extra_body: Dict[str, Any] = Field(default_factory=dict)
     throttle_sec: float = 0.0
     analysis_concurrency: int = 1
     enrichment_concurrency: int = 1
@@ -553,6 +557,7 @@ class Config(BaseModel):
     ai_routes: Optional[AIRoutesConfig] = None
     schedule: ScheduleConfig = Field(default_factory=ScheduleConfig)
     collection: CollectionConfig = Field(default_factory=CollectionConfig)
+    evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
     delivery: DeliveryConfig = Field(default_factory=DeliveryConfig)
 
     @model_validator(mode="after")

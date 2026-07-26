@@ -8,7 +8,7 @@ FoodScope 是基于 [Horizon](https://github.com/Thysrael/Horizon) 构建的**�
 
 - **定向抓取** — 从法规机构、行业媒体、新品数据库、科研机构和多语言新闻中抓取食品相关信号
 - **跨语言去重** — 把同一事件的中、英、日、韩等多语言报道合并为一条事实
-- **结构化分析** — 用两条独立 AI 路由分别完成“快速筛选”和“深度分析”，输出可机读的食品情报字段
+- **结构化分析** — 用两条独立 AI 路由分别完成评分分类和事实提炼，只生成“发生了什么”及原文明示的关键事实
 - **证据准入** — 法规、标准、召回、食品安全声称必须有官方证据；否则会被隔离并审计
 - **画像驱动** — 内置 `balanced`、`market`、`new_products`、`rd`、`compliance` 五个简报画像，一键切换信息偏向
 - **多频道分发** — 生成 Markdown/HTML 归档，并可投递到邮件、飞书/Lark、微信公众号草稿、通用 Webhook 和 MCP 客户端
@@ -115,11 +115,17 @@ uv run python -m src.main --no-deliver
 | `schedule.timezone` | IANA 时区 | `Asia/Shanghai` |
 | `schedule.cron` | 五段 cron | `30 6 * * *` |
 | `collection.lookback_hours` | 回看时长 | `30` |
+| `collection.adaptive_lookback_hours` | 候选不足时自动扩展窗口 | `[72, 168]` |
 | `collection.minimum_sources_per_run` | 当日来源目标数 | `20` |
+| `evidence.mode` | 商业发现资讯准入模式 | `loose` |
 | `delivery.target_minutes` | 目标完成时长 | `60` |
 | `delivery.wechat.enabled` | 微信公众号草稿 | `false` |
 
-两条 AI 路由都支持独立设置 `provider`、`model`、`concurrency`、`timeout_seconds`、`max_attempts` 和价格。未配置价格时仍会统计 token，但成本显示为 `unknown`。
+两条 AI 路由都支持独立设置 `provider`、`model`、`temperature`、`extra_body`、`concurrency`、`timeout_seconds`、`max_attempts` 和价格。未配置价格时仍会统计 token，但成本显示为 `unknown`。
+
+默认 `evidence.mode="loose"`：新品、市场、原料技术、包装、零售餐饮和企业
+动态允许单一、可识别媒体来源进入简报。改为 `"strict"` 可恢复原始出处或
+两个独立来源要求。法规、标准、召回和食品安全在两种模式下都必须有官方证据。
 
 详细说明见：
 
@@ -143,21 +149,33 @@ KIMI_API_KEY=sk-your-kimi-key
   "ai_routes": {
     "fast": {
       "provider": "kimi",
-      "model": "moonshot-v1-8k",
+      "model": "kimi-k2.6",
       "api_key_env": "KIMI_API_KEY",
+      "temperature": 0.6,
+      "extra_body": {
+        "thinking": {
+          "type": "disabled"
+        }
+      },
       "languages": ["zh"]
     },
     "analysis": {
       "provider": "kimi",
-      "model": "moonshot-v1-128k",
+      "model": "kimi-k2.6",
       "api_key_env": "KIMI_API_KEY",
+      "temperature": 0.6,
+      "extra_body": {
+        "thinking": {
+          "type": "disabled"
+        }
+      },
       "languages": ["zh"]
     }
   }
 }
 ```
 
-Kimi 复用 OpenAI 兼容客户端，因此也支持自定义 `base_url`、温度回退和 token 统计。常见模型名：`moonshot-v1-8k`、`moonshot-v1-32k`、`moonshot-v1-128k`。
+Kimi 复用 OpenAI 兼容客户端，因此也支持自定义 `base_url`、温度回退、`extra_body` 和 token 统计。当前默认使用 `kimi-k2.6` 并关闭 thinking，适合每日简报这类稳定结构化分析；部分旧账号仍可能看到 `moonshot-v1-*`，但新账号或新版 endpoint 通常应优先使用 `kimi-k2.6` / `kimi-k3`。
 
 ## 运行方式
 
@@ -202,10 +220,13 @@ uv run python -m src.main --resume RUN_ID --redeliver
 | `normalized.json` | 统一食品行业字段 |
 | `scored.json` | AI 分类与评分 |
 | `filtered.json` | 证据准入、去重和画像筛选 |
-| `enriched.json` | 深度分析与隔离审计 |
+| `enriched.json` | 事件说明、关键事实与隔离审计 |
 | `facts.json` | 不可变事实快照 |
 | `brief.md` / `brief.html` | 从同一事实快照渲染的成品 |
 | `manifest.json` | 阶段、计数、来源指标、分发状态和哈希 |
+
+简报按综合基础分分为“今日必读”（大于等于 6 分）和“今日新闻”
+（小于 6 分）。每条展示可点击的原始来源名称及北京时间发布日期。
 
 ## 交付渠道
 
@@ -231,7 +252,7 @@ uv run mypy src/foodscope
 uv run ruff check src/foodscope tests/foodscope
 ```
 
-当前测试套件包含 554 个用例，覆盖配置模型、来源适配器、情报流水线、去重、证据校验、画像选择、运行存储、恢复、分发和 MCP。
+当前测试套件包含 598 个用例，覆盖配置模型、来源适配器、情报流水线、去重、证据校验、画像选择、运行存储、恢复、分发和 MCP。
 
 ## 项目结构
 

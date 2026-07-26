@@ -118,6 +118,23 @@ def test_base_rank_controls_minimum_score_gate():
     assert result.rejected == [inflated_by_topic]
 
 
+def test_admitted_low_score_item_keeps_structured_brief_scores():
+    item = scored_item("news", importance=5.5)
+
+    result = FoodProfileSelector().select(
+        [item],
+        profile(
+            "balanced",
+            minimum_score=0.0,
+            exploration_slots=0,
+        ),
+    )
+
+    assert result.items == [item]
+    assert item.metadata["foodscope_base_score"] == 5.5
+    assert item.metadata["foodscope_final_score"] == 6.6
+
+
 def test_source_cap_and_tie_breakers_are_deterministic():
     items = [
         scored_item(

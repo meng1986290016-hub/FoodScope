@@ -26,6 +26,11 @@ uv run python -m src.main --healthcheck
 `collection.lookback_hours` 决定。守护进程使用非阻塞文件锁；第二个实例会以
 退出码 75 结束，避免重复运行。
 
+如果 FoodScope 首轮候选数低于 `collection.adaptive_lookback_min_candidates`，
+系统会在同一次 run 内按 `collection.adaptive_lookback_hours` 自动扩大回看窗口。
+扩窗后的时间范围会写入 manifest；因此健康检查、恢复运行和最终简报都能看到
+真实使用的抓取窗口。扩窗只解决低频断流，不会改变来源选择名册。
+
 ## 中断恢复和重新分发
 
 每个阶段都原子落盘。恢复最近未完成运行：
@@ -61,7 +66,7 @@ uv run python -m src.main --resume RUN_ID --redeliver
 | `normalized.json` | 统一食品行业字段 |
 | `scored.json` | AI 分类与评分 |
 | `filtered.json` | 证据准入、去重和画像筛选；含可恢复的风险提醒标记 |
-| `enriched.json` | 合规风险与商业机会补充；含隔离审计项 |
+| `enriched.json` | “发生了什么”和原文明示关键事实；含隔离审计项 |
 | `summary.json` | 简报元数据 |
 | `facts.json` | 不可变事实快照 |
 | `brief.md` / `brief.html` | 从同一事实快照渲染的成品 |
@@ -76,6 +81,14 @@ manifest 还固化 `source_selection`、`source_outcomes`、`token_usage`、
 本次新增 token 累加到原运行；不会因恢复而丢失或重复计算用量。模型单价未
 配置时 `estimated_cost` 为 `null`，同时列出 `unpriced_models`。
 
+`evidence_admission` 记录本次使用的 `loose`/`strict` 模式，以及权威来源、
+多来源、单一来源、聚合回退和各类拒绝原因的数量。这些统计仅用于运行诊断
+和审计，不作为简报正文标签展示。
+
+最终简报按综合基础分分为“今日必读”（大于等于 6 分）和“今日新闻”
+（小于 6 分）。每条只生成事件说明和原文明确支持的关键事实，并展示可点击
+的原始来源名称及北京时间发布日期。
+
 ## 降级和故障隔离
 
 - 单一来源失败：记录在抓取报告，其余来源继续；
@@ -88,6 +101,7 @@ manifest 还固化 `source_selection`、`source_outcomes`、`token_usage`、
 - 单条深度分析失败：保留在审计快照，但不会进入 facts 或任何分发渠道；
 - 单一分发渠道失败：记录失败，其余渠道继续；
 - 官方证据缺失：法规/召回内容拒绝入选；
+- 聚合原文解析失败：记录失败类型；宽松模式可按配置使用可归属媒体的聚合链接；
 - 付费墙、登录、robots 或条款限制：不绕过，改用元数据或发现查询；
 - 所有来源均失败或无成品：健康检查失败，运维人员应处理。
 

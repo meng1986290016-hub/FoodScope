@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
+
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from src.ai.summarizer import _escape_markdown, _safe_url
 from src.models import ContentItem
 
-from .briefing import BriefFacts, RenderedBrief
+from .briefing import (
+    BriefFacts,
+    RenderedBrief,
+    partition_brief_items,
+)
 from .models import FoodCategory
 
 
@@ -40,6 +48,33 @@ def _item_tags(item: ContentItem) -> list[str]:
     )
 
 
+def source_url(item: ContentItem) -> str:
+    candidate = (
+        item.food.original_source_url
+        if item.food is not None
+        and item.food.original_source_url
+        else str(item.url)
+    )
+    return _safe_url(candidate) or ""
+
+
+def source_label(item: ContentItem) -> str:
+    for key in ("discovered_source_name", "source_name"):
+        value = item.metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    if item.author and item.author.strip():
+        return item.author.strip()
+    hostname = urlsplit(source_url(item)).hostname or "原文"
+    return hostname.removeprefix("www.")
+
+
+def published_beijing(value: datetime) -> str:
+    return value.astimezone(ZoneInfo("Asia/Shanghai")).strftime(
+        "%Y-%m-%d %H:%M（北京时间）"
+    )
+
+
 class FoodBriefRenderer:
     def __init__(self) -> None:
         loader = PackageLoader("src.foodscope", "templates")
@@ -67,36 +102,28 @@ class FoodBriefRenderer:
                     "safe_url": lambda value: _safe_url(value) or "",
                     "category_label": _category_label,
                     "item_tags": _item_tags,
+                    "source_url": source_url,
+                    "source_label": source_label,
+                    "published_beijing": published_beijing,
                 }
             )
 
     def render(self, facts: BriefFacts) -> RenderedBrief:
         facts_hash = facts.fact_hash()
-        featured_ids = {
-            item.id
-            for item in facts.risk_alerts + facts.must_read
-        }
-        sections = [
-            {
-                "id": section_id,
-                "label": CATEGORY_LABELS.get(
-                    section_id, section_id
-                ),
-                "items": [
-                    item
-                    for item in items
-                    if item.id not in featured_ids
-                ],
-            }
-            for section_id, items in facts.sections.items()
-            if any(
-                item.id not in featured_ids for item in items
-            )
+        section_items = [
+            item
+            for items in facts.sections.values()
+            for item in items
         ]
+        must_read, news = partition_brief_items(
+            facts.must_read + facts.news + section_items,
+            facts.risk_alerts,
+        )
         context = {
             "facts": facts,
             "facts_hash": facts_hash,
-            "sections": sections,
+            "must_read": must_read,
+            "news": news,
         }
         markdown = self.markdown_environment.get_template(
             "brief.md.j2"

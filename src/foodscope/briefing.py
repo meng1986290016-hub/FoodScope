@@ -38,9 +38,8 @@ class BriefFacts(BaseModel):
     schema_version: str = "1.0"
     metadata: BriefMetadata
     risk_alerts: list[ContentItem] = Field(default_factory=list)
-    must_read: list[ContentItem] = Field(
-        default_factory=list, max_length=5
-    )
+    must_read: list[ContentItem] = Field(default_factory=list)
+    news: list[ContentItem] = Field(default_factory=list)
     sections: dict[str, list[ContentItem]] = Field(
         default_factory=dict
     )
@@ -98,6 +97,66 @@ class BriefFacts(BaseModel):
         return hashlib.sha256(
             self.canonical_json().encode("utf-8")
         ).hexdigest()
+
+
+def _numeric_metadata(
+    item: ContentItem, key: str, default: float
+) -> float:
+    value = item.metadata.get(key, default)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _base_score(item: ContentItem) -> float:
+    if item.food is None:
+        return 0.0
+    default = (
+        0.35 * item.food.importance_score
+        + 0.25 * item.food.profile_relevance_score
+        + 0.20 * item.food.opportunity_score
+        + 0.20 * item.food.evidence_quality_score
+    )
+    return _numeric_metadata(
+        item, "foodscope_base_score", default
+    )
+
+
+def partition_brief_items(
+    items: list[ContentItem],
+    risk_alerts: list[ContentItem],
+    *,
+    must_read_score: float = 6.0,
+) -> tuple[list[ContentItem], list[ContentItem]]:
+    """Return deduplicated score-ordered must-read and news items."""
+    unique: dict[str, ContentItem] = {}
+    for item in risk_alerts + items:
+        unique.setdefault(item.id, item)
+    ordered = sorted(
+        unique.values(),
+        key=lambda item: (
+            -_numeric_metadata(
+                item,
+                "foodscope_final_score",
+                _base_score(item),
+            ),
+            -item.published_at.timestamp(),
+            str(item.url),
+        ),
+    )
+    return (
+        [
+            item
+            for item in ordered
+            if _base_score(item) >= must_read_score
+        ],
+        [
+            item
+            for item in ordered
+            if _base_score(item) < must_read_score
+        ],
+    )
 
 
 class RenderedBrief(BaseModel):

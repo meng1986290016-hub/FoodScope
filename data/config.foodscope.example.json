@@ -37,6 +37,7 @@
       "official_evidence",
       "global_industry",
       "product_launches",
+      "discovery_queries",
       "x_watch"
     ],
     "source_pack_dir": "data/foodscope/source_packs",
@@ -51,10 +52,18 @@
   },
   "collection": {
     "lookback_hours": 30,
+    "adaptive_lookback_enabled": true,
+    "adaptive_lookback_min_candidates": 5,
+    "adaptive_lookback_hours": [72, 168],
     "minimum_sources_per_run": 20,
     "extended_rotation_days": 2,
     "discovery_rotation_days": 3,
     "fallback_sources_per_run": 5
+  },
+  "evidence": {
+    "mode": "loose",
+    "resolve_original_urls": true,
+    "allow_aggregator_fallback": true
   },
   "delivery": {
     "target_minutes": 60,
