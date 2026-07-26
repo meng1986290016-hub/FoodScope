@@ -748,20 +748,10 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                 )
                 raw_config = getattr(self, "config", None)
                 collection = getattr(raw_config, "collection", None)
-                min_candidates = int(
-                    getattr(
-                        collection,
-                        "adaptive_lookback_min_candidates",
-                        0,
-                    )
-                )
-                if (
-                    getattr(
-                        collection,
-                        "adaptive_lookback_enabled",
-                        False,
-                    )
-                    and len(food_items) < min_candidates
+                if getattr(
+                    collection,
+                    "adaptive_lookback_enabled",
+                    False,
                 ):
                     window_end = (
                         until
@@ -769,11 +759,31 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                         or datetime.now(timezone.utc)
                     )
                     current_since = since.astimezone(timezone.utc)
+                    outcome_positions = {
+                        outcome.source_name: index
+                        for index, outcome in enumerate(food_outcomes)
+                    }
+                    retry_ids = {
+                        outcome.source_name
+                        for outcome in food_outcomes
+                        if (
+                            outcome.status == "empty"
+                            and (
+                                source := self.source_specs_by_id.get(
+                                    outcome.source_name
+                                )
+                            )
+                            is not None
+                            and source.adapter != "discovery_query"
+                        )
+                    }
                     for hours in getattr(
                         collection,
                         "adaptive_lookback_hours",
                         [],
                     ):
+                        if not retry_ids:
+                            break
                         expanded_since = window_end - timedelta(
                             hours=hours
                         )
@@ -782,22 +792,35 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                             >= current_since
                         ):
                             continue
+                        retry_sources = [
+                            source
+                            for source_id, source
+                            in self.source_specs_by_id.items()
+                            if source_id in retry_ids
+                        ]
                         (
-                            food_items,
-                            food_outcomes,
-                        ) = await fetch_food_window(expanded_since)
-                        self._window_start = expanded_since
-                        active_run_id = getattr(
-                            self, "active_run_id", None
+                            expanded_items,
+                            expanded_outcomes,
+                        ) = await registry.fetch(
+                            retry_sources,
+                            expanded_since,
+                            until,
                         )
-                        if active_run_id is not None:
-                            self.run_store.set_run_window(
-                                active_run_id,
-                                expanded_since,
-                                window_end,
+                        food_items.extend(expanded_items)
+                        retry_ids = set()
+                        for outcome in expanded_outcomes:
+                            position = outcome_positions.get(
+                                outcome.source_name
                             )
-                        if len(food_items) >= min_candidates:
-                            break
+                            if position is None:
+                                outcome_positions[
+                                    outcome.source_name
+                                ] = len(food_outcomes)
+                                food_outcomes.append(outcome)
+                            else:
+                                food_outcomes[position] = outcome
+                            if outcome.status == "empty":
+                                retry_ids.add(outcome.source_name)
                 evidence_config = getattr(
                     getattr(self, "config", None),
                     "evidence",
@@ -863,6 +886,8 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
                     published_at_parse_count=row.get(
                         "published_at_parse_count"
                     ),
+                    window_since=row.get("window_since"),
+                    window_until=row.get("window_until"),
                 )
             )
         return FetchReport(outcomes) if outcomes else None

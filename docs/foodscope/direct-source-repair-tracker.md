@@ -4,8 +4,8 @@
 
 | ID | 来源 | 来源包 | 当前问题 / 处理方式 | 状态 | 验证证据 |
 |---|---|---|---|---|---|
-| M001 | [FoodNavigator](https://www.foodnavigator.com/) | 全球行业、新品 | 首页能解析日期但30小时窗口产出0；改为 William Reed 站群解析 | 修复中 | 待真实探测 |
-| M002 | [Food Business News](https://www.foodbusinessnews.net/) | 全球行业、新品 | 首页请求失败；已确认官方RSS入口 | 修复中 | 待RSS探测 |
+| M001 | [FoodNavigator](https://www.foodnavigator.com/) | 全球行业、新品 | William Reed 卡片解析、推广过滤、详情正文 | 已解决 | 2026-07-27 探测168小时得11篇；[样例](https://www.foodnavigator.com/Article/2026/07/24/eggcelerator-lab-and-founder-cohort-helps-egg-businesses-grow/)，标题/时间/正文通过 |
+| M002 | [Food Business News](https://www.foodbusinessnews.net/) | 全球行业、新品 | 改用官方 [FBN Best News RSS](https://www.foodbusinessnews.net/rss/2) | 已解决 | 2026-07-27 探测168小时得7篇；[样例](https://www.foodbusinessnews.net/articles/30721-the-vita-coco-co-acquires-copra-inc)，标题/时间/摘要通过 |
 | M003 | [FoodBev Media](https://www.foodbev.com/blog) | 全球行业、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M004 | [Food Dive](https://www.fooddive.com/) | 全球行业、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M005 | [Just Food](https://www.just-food.com/) | 全球行业 | 尚未核查稳定入口与访问限制 | 待核查 | — |
@@ -14,19 +14,19 @@
 | M009 | [Food Manufacturing](https://www.foodmanufacturing.com/) | 全球行业 | 最近运行HTTP失败 | 待核查 | — |
 | M011 | [Prepared Foods](https://www.preparedfoods.com/) | 全球行业 | 最近运行HTTP失败 | 待核查 | — |
 | M012 | [IFT Food Technology](https://www.ift.org/foodtechnology/) | 全球行业 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M017 | [Food & Drink Technology](https://www.foodanddrinktechnology.com/) | 全球行业 | 找到30个卡片但日期解析为0；解析 `posted` 日期 | 修复中 | 待真实探测 |
-| M019 | [BeverageDaily](https://www.beveragedaily.com/) | 原料研发、新品 | 能解析日期但30小时窗口产出0；改为 William Reed 站群解析 | 修复中 | 待真实探测 |
+| M017 | [Food & Drink Technology](https://www.foodanddrinktechnology.com/) | 全球行业 | 新闻卡片、`posted` 日期、详情 JSON-LD 时间及正文 | 已解决 | 2026-07-27 探测168小时得12篇；[样例](https://www.foodanddrinktechnology.com/news/68922/process-complexity-holding-back-innovation/)，精确时间与正文通过 |
+| M019 | [BeverageDaily](https://www.beveragedaily.com/) | 原料研发、新品 | William Reed 卡片解析、推广过滤、详情正文 | 已解决 | 2026-07-27 探测168小时得7篇；[样例](https://www.beveragedaily.com/Article/2026/07/23/shandy-shack-unveils-brand-refresh-to-drive-growth-in-fruit-beer-category/)，标题/时间/正文通过 |
 | M020 | [NutraIngredients](https://www.nutraingredients.com/) | 原料研发 | 尚未核查；可能复用 William Reed 站群解析 | 待核查 | — |
 | M021 | [Food Ingredients First](https://www.foodingredientsfirst.com/) | 原料研发、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M022 | [Nutrition Insight](https://www.nutritioninsight.com/) | 原料研发 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M024 | [Ingredients Insight](https://www.ingredients-insight.com/) | 原料研发 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M026 | [Nutritional Outlook](https://www.nutritionaloutlook.com/) | 原料研发 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M028 | [Dairy Foods](https://www.dairyfoods.com/) | 原料研发 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M030 | [Baking Business](https://www.bakingbusiness.com/) | 原料研发、新品 | 首页请求失败；已确认官方RSS入口 | 修复中 | 待RSS探测 |
+| M030 | [Baking Business](https://www.bakingbusiness.com/) | 原料研发、新品 | 改用官方 [News RSS](https://www.bakingbusiness.com/rss/topic/1227-news) | 已解决 | 2026-07-27 探测168小时得30篇；[样例](https://www.bakingbusiness.com/articles/66636-bimbo-sales-profit-gains-accelerate-in-quarter)，标题/时间/摘要通过 |
 | M032 | [MEAT+POULTRY](https://www.meatpoultry.com/) | 原料研发 | 尚未核查；可能复用 Sosland RSS | 待核查 | — |
 | M033 | [SeafoodSource](https://www.seafoodsource.com/) | 原料研发 | 尚未核查稳定入口与访问限制 | 待核查 | — |
 | M034 | [The Packer](https://www.thepacker.com/) | 原料研发 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M035 | [ConfectioneryNews](https://www.confectionerynews.com/News/) | 原料研发、新品 | 能解析日期但30小时窗口产出0；改为 William Reed 站群解析 | 修复中 | 待真实探测 |
+| M035 | [ConfectioneryNews](https://www.confectionerynews.com/News/) | 原料研发、新品 | William Reed 卡片解析、推广过滤、详情正文 | 已解决 | 2026-07-27 探测168小时得10篇；[样例](https://www.confectionerynews.com/Article/2026/07/24/lindt-sued-over-alleged-child-labour-in-cocoa-supply-chain/)，标题/时间/正文通过 |
 | M036 | [DairyReporter](https://www.dairyreporter.com/) | 原料研发 | 尚未核查；可能复用 William Reed 站群解析 | 待核查 | — |
 | M039 | [Green Queen](https://www.greenqueen.com.hk/) | 包装加工 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M040 | [FoodHack](https://www.foodhack.global/) | 包装加工 | 尚未核查稳定入口与访问限制 | 待核查 | — |
@@ -63,9 +63,9 @@
 
 | ID | 入口验证 | 自动化测试 | 真实近期文章 | 日期正确 | 正文可读 | 最终状态 |
 |---|---|---|---|---|---|---|
-| M001 | 待完成 | 待完成 | 待完成 | 待完成 | 待完成 | 修复中 |
-| M002 | 官方RSS已发现 | 待完成 | 待完成 | 待完成 | 待完成 | 修复中 |
-| M017 | 公开列表已发现 | 待完成 | 待完成 | 待完成 | 待完成 | 修复中 |
-| M019 | 公开列表已发现 | 待完成 | 待完成 | 待完成 | 待完成 | 修复中 |
-| M030 | 官方RSS已发现 | 待完成 | 待完成 | 待完成 | 待完成 | 修复中 |
-| M035 | 公开新闻页已发现 | 待完成 | 待完成 | 待完成 | 待完成 | 修复中 |
+| M001 | 公开首页 | 通过 | 11篇 | 通过 | 通过 | 已解决 |
+| M002 | 官方RSS | 通过 | 7篇 | 通过 | RSS摘要 | 已解决 |
+| M017 | 公开首页+详情JSON-LD | 通过 | 12篇 | 通过 | 通过 | 已解决 |
+| M019 | 公开首页 | 通过 | 7篇 | 通过 | 通过 | 已解决 |
+| M030 | 官方RSS | 通过 | 30篇 | 通过 | RSS摘要 | 已解决 |
+| M035 | 公开新闻页 | 通过 | 10篇 | 通过 | 通过 | 已解决 |

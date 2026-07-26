@@ -62,7 +62,9 @@ def test_generated_media_contracts_are_safe_and_runnable():
         for source in _load(PACK_DIR / f"{pack_id}.json").sources
     ]
 
-    assert all(source.adapter == "html_list" for source in sources)
+    assert all(
+        source.adapter in {"html_list", "rss"} for source in sources
+    )
     assert all(source.enabled for source in sources)
     assert all(
         source.evidence_tier == EvidenceTier.INDUSTRY
@@ -72,7 +74,16 @@ def test_generated_media_contracts_are_safe_and_runnable():
         source.collection_tier == CollectionTier.EXTENDED
         for source in sources
     )
-    assert all(source.options["item_selector"] for source in sources)
+    assert all(
+        source.options.get("item_selector")
+        for source in sources
+        if source.adapter == "html_list"
+    )
+    assert all(
+        "/rss" in source.url
+        for source in sources
+        if source.adapter == "rss"
+    )
     assert all(source.categories for source in sources)
     assert "reddit" not in json.dumps(
         [source.model_dump(mode="json") for source in sources]

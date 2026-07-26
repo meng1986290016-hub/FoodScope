@@ -109,6 +109,8 @@ class SourceFetchOutcome:
     candidate_count: Optional[int] = None
     published_at_candidate_count: Optional[int] = None
     published_at_parse_count: Optional[int] = None
+    window_since: Optional[str] = None
+    window_until: Optional[str] = None
 
     def to_dict(self) -> Dict[str, object]:
         result: Dict[str, object] = {
@@ -128,6 +130,10 @@ class SourceFetchOutcome:
             result["published_at_parse_count"] = (
                 self.published_at_parse_count
             )
+        if self.window_since is not None:
+            result["window_since"] = self.window_since
+        if self.window_until is not None:
+            result["window_until"] = self.window_until
         return result
 
 

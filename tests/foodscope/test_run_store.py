@@ -217,6 +217,8 @@ def test_source_outcomes_and_token_usage_survive_resume(tmp_path):
                 "candidate_count": 2,
                 "published_at_candidate_count": 2,
                 "published_at_parse_count": 1,
+                "window_since": "2026-07-23T00:00:00+00:00",
+                "window_until": "2026-07-24T00:00:00+00:00",
                 "ignored": "not persisted",
             }
         ],
@@ -269,6 +271,8 @@ def test_source_outcomes_and_token_usage_survive_resume(tmp_path):
             "candidate_count": 2,
             "published_at_candidate_count": 2,
             "published_at_parse_count": 1,
+            "window_since": "2026-07-23T00:00:00+00:00",
+            "window_until": "2026-07-24T00:00:00+00:00",
         }
     ]
     assert manifest["token_usage"]["input_tokens"] == 120
