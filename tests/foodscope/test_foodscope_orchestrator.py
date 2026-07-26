@@ -774,12 +774,12 @@ def test_filtered_resume_restores_risk_alert_partition(
             storage.data_dir / "runs" / run_id / "facts.json"
         ).read_text(encoding="utf-8")
     )
-    assert [entry["id"] for entry in facts["risk_alerts"]] == [
-        alert.id
-    ]
-    assert alert.id not in {
+    assert facts["risk_alerts"] == []
+    assert {
         entry["id"] for entry in facts["must_read"]
-    }
+    } == {regular.id, alert.id}
+    assert facts["news"] == []
+    assert facts["sections"] == {}
 
 
 def test_event_memory_is_written_only_after_filtered_stage_commit(
@@ -828,6 +828,10 @@ def test_evidence_rejection_is_recorded_in_isolation_audit(tmp_path):
     )
     run_id = orchestrator.run_store.create_run("balanced")
     orchestrator.active_run_id = run_id
+    messages = []
+    orchestrator.console = SimpleNamespace(
+        print=lambda message: messages.append(message)
+    )
 
     result = asyncio.run(
         orchestrator.filter_items(
@@ -836,7 +840,21 @@ def test_evidence_rejection_is_recorded_in_isolation_audit(tmp_path):
     )
 
     assert result.items == []
+    assert rejected.metadata["foodscope_admission_mode"] == "loose"
+    assert rejected.metadata["foodscope_admission_reason"] == (
+        "official evidence required"
+    )
     manifest = orchestrator.run_store.load_manifest(run_id)
+    assert manifest["evidence_admission"][
+        "rejected_official_evidence_required"
+    ] == 1
+    assert any(
+        "Evidence admission" in message for message in messages
+    )
+    assert any(
+        "rejected_official_evidence_required=1" in message
+        for message in messages
+    )
     assert manifest["isolation"] == [
         {
             "item_id": rejected.id,

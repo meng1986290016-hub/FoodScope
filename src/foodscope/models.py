@@ -81,6 +81,7 @@ class FoodIntelligence(BaseModel):
     risk_level: RiskLevel
     risk_reason: str = ""
     what_happened_zh: str = ""
+    key_facts_zh: list[str] = Field(default_factory=list)
     why_it_matters_zh: str = ""
     rd_significance_zh: str = ""
     opportunity_signal_zh: str = ""

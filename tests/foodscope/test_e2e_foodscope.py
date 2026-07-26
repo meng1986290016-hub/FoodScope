@@ -346,11 +346,7 @@ def test_offline_e2e_all_profiles_and_outputs(
                 orchestrator.active_run_id
             )
         )
-        selected = [
-            item
-            for items in facts.sections.values()
-            for item in items
-        ]
+        selected = facts.must_read + facts.news
         event_keys = [
             item.food.event_key for item in selected
         ]
@@ -360,7 +356,7 @@ def test_offline_e2e_all_profiles_and_outputs(
             == 2
             for item in selected
         )
-        for item in selected + facts.risk_alerts:
+        for item in selected:
             if item.food.category in {
                 FoodCategory.REGULATIONS_STANDARDS,
                 FoodCategory.FOOD_SAFETY_RECALLS,
@@ -371,7 +367,7 @@ def test_offline_e2e_all_profiles_and_outputs(
         )
         evidence_decisions[profile] = {
             item.food.event_key
-            for item in selected + facts.risk_alerts
+            for item in selected
         }
         facts_hash = rendered.facts_sha256
         assert facts_hash in rendered.markdown

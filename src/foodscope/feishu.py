@@ -5,11 +5,18 @@ from __future__ import annotations
 import json
 from typing import Any, Iterable
 
-from src.ai.summarizer import _safe_url
 from src.models import ContentItem
 
-from .briefing import BriefFacts, RenderedBrief
-from .rendering import CATEGORY_LABELS
+from .briefing import (
+    BriefFacts,
+    RenderedBrief,
+    partition_brief_items,
+)
+from .rendering import (
+    published_beijing,
+    source_label,
+    source_url,
+)
 
 
 FEISHU_BODY_LIMIT = 25_000
@@ -25,12 +32,7 @@ def _plain(content: str) -> dict[str, str]:
 
 
 def _source_url(item: ContentItem) -> str:
-    candidate = (
-        item.food.original_source_url
-        if item.food is not None
-        else str(item.url)
-    )
-    return _safe_url(candidate) or ""
+    return source_url(item)
 
 
 def _title(item: ContentItem) -> str:
@@ -51,28 +53,24 @@ def _item_detail(item: ContentItem) -> str:
     food = item.food
     lines = [
         f"**{_linked_title(item)}**",
-        str(
-            item.metadata.get("summary_zh")
-            or item.ai_summary
-            or item.title
-        ),
         f"- 发生了什么：{food.what_happened_zh}",
-        f"- 对中国企业的意义：{food.why_it_matters_zh}",
     ]
-    if food.rd_significance_zh:
+    if food.key_facts_zh:
         lines.append(
-            f"- 研发意义：{food.rd_significance_zh}"
+            "- 关键事实：\n"
+            + "\n".join(
+                f"  - {fact}" for fact in food.key_facts_zh
+            )
         )
     lines.extend(
         [
-            f"- 机会信号：{food.opportunity_signal_zh}",
-            f"- 风险信号：{food.risk_signal_zh}",
-            f"- 建议动作：{food.recommended_action_zh}",
             (
-                "- 市场 / 证据："
+                "- 市场 / 分类："
                 f"{', '.join(food.markets)} / "
-                f"tier {food.evidence_tier}"
+                f"{food.category.value}"
             ),
+            f"- 原始来源：[{source_label(item)}]({_source_url(item)})",
+            f"- 发布日期：{published_beijing(item.published_at)}",
         ]
     )
     return "\n".join(line for line in lines if line)
@@ -281,12 +279,23 @@ def build_feishu_brief_payload(
         f"隔离 {metadata.isolated_count} 条"
     )
     overview_elements: list[dict[str, Any]] = [overview]
-    risk = _item_list("重大风险提醒", facts.risk_alerts)
-    must_read = _item_list("今日必读", facts.must_read)
-    if risk is not None:
-        overview_elements.append(risk)
-    if must_read is not None:
-        overview_elements.append(must_read)
+    section_items = [
+        item
+        for items in facts.sections.values()
+        for item in items
+    ]
+    must_read_items, news_items = partition_brief_items(
+        facts.must_read + facts.news + section_items,
+        facts.risk_alerts,
+    )
+    must_read_list = _item_list(
+        "今日必读", must_read_items
+    )
+    news_list = _item_list("今日新闻", news_items)
+    if must_read_list is not None:
+        overview_elements.append(must_read_list)
+    if news_list is not None:
+        overview_elements.append(news_list)
     if facts.observations:
         overview_elements.append(
             _markdown(
@@ -302,14 +311,14 @@ def build_feishu_brief_payload(
         title=f"FoodScope {metadata.date} 总览",
         elements=overview_elements,
         facts_hash=rendered.facts_sha256,
-        template="red" if facts.risk_alerts else "green",
+        template="green",
     )
-    for section_id, items in facts.sections.items():
+    for label, items in (
+        ("今日必读", must_read_items),
+        ("今日新闻", news_items),
+    ):
         if not items:
             continue
-        label = CATEGORY_LABELS.get(
-            section_id, section_id
-        )
         section_content = "\n\n---\n\n".join(
             _item_detail(item) for item in items
         )
@@ -324,4 +333,3 @@ def build_feishu_brief_payload(
             )
         )
     return payloads
-

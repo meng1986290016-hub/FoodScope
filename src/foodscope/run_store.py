@@ -7,9 +7,10 @@ from enum import StrEnum
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
+from src.foodscope.evidence import summarize_evidence_decisions
 from src.models import ContentItem
 
 
@@ -46,10 +47,15 @@ class FoodRunStore:
         profile_id: str,
         *,
         run_provenance: str = "manual",
+        evidence_mode: Literal["loose", "strict"] = "loose",
     ) -> str:
         if run_provenance not in {"manual", "scheduled"}:
             raise ValueError(
                 "run_provenance must be manual or scheduled"
+            )
+        if evidence_mode not in {"loose", "strict"}:
+            raise ValueError(
+                "evidence_mode must be loose or strict"
             )
         now = self._now()
         run_id = (
@@ -80,6 +86,11 @@ class FoodRunStore:
                 "source_metrics": [],
                 "deliveries": {},
                 "timing": {},
+                "evidence_admission": (
+                    summarize_evidence_decisions(
+                        evidence_mode, []
+                    )
+                ),
             },
         )
         return run_id
@@ -128,6 +139,32 @@ class FoodRunStore:
         ]
         manifest = self.load_manifest(run_id)
         manifest["source_outcomes"] = sanitized
+        manifest["updated_at"] = self._now()
+        self._write_manifest(run_id, manifest)
+
+    def record_evidence_admission(
+        self,
+        run_id: str,
+        summary: dict[str, str | int],
+    ) -> None:
+        """Persist one deterministic evidence-admission summary."""
+        mode = summary.get("mode")
+        if mode not in {"loose", "strict"}:
+            raise ValueError(
+                "evidence admission mode must be loose or strict"
+            )
+        sanitized: dict[str, str | int] = {"mode": str(mode)}
+        for key, value in summary.items():
+            if key == "mode":
+                continue
+            count = int(value)
+            if count < 0:
+                raise ValueError(
+                    "evidence admission counts cannot be negative"
+                )
+            sanitized[str(key)] = count
+        manifest = self.load_manifest(run_id)
+        manifest["evidence_admission"] = sanitized
         manifest["updated_at"] = self._now()
         self._write_manifest(run_id, manifest)
 

@@ -5,7 +5,7 @@
   "max_per_source": 3,
   "exploration_slots": 2,
   "commercial_min_ratio": 0.0,
-  "minimum_score": 6.0,
+  "minimum_score": 0.0,
   "risk_override_min": "high",
   "topic_weights": {
     "product_innovation": 0.15,

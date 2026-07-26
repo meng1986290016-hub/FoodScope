@@ -81,3 +81,72 @@ def test_discovery_query_dispatches_enabled_providers_as_food_items():
         if item.metadata["discovery_provider"] == "gdelt"
     )
     assert gdelt.metadata["resolved_original_url"] == str(gdelt.url)
+
+
+def test_discovery_query_limits_gdelt_provider_concurrency(
+    monkeypatch,
+):
+    active = 0
+    max_active = 0
+    release = asyncio.Event()
+    entered = asyncio.Event()
+
+    class SlowGDELTAdapter:
+        def __init__(self, client):
+            self.raw_candidate_count = 0
+            self.date_parse_attempts = 0
+            self.date_parse_successes = 0
+
+        async def fetch(self, source, since, until=None):
+            nonlocal active, max_active
+            active += 1
+            max_active = max(max_active, active)
+            entered.set()
+            await release.wait()
+            active -= 1
+            return []
+
+    monkeypatch.setitem(
+        __import__(
+            "src.foodscope.sources.discovery_query",
+            fromlist=["PROVIDERS"],
+        ).PROVIDERS,
+        "gdelt",
+        SlowGDELTAdapter,
+    )
+    query_source = source(
+        "en_product_launch",
+        "discovery_query",
+        options={
+            "providers": ["gdelt"],
+            "query": '(food OR beverage) "new product"',
+            "max_candidates_after_dedup": 12,
+        },
+    )
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(200, text="")
+            )
+        ) as client:
+            first = asyncio.create_task(
+                DiscoveryQueryAdapter(client).fetch(
+                    query_source,
+                    datetime(2026, 7, 24, tzinfo=timezone.utc),
+                )
+            )
+            await entered.wait()
+            second = asyncio.create_task(
+                DiscoveryQueryAdapter(client).fetch(
+                    query_source,
+                    datetime(2026, 7, 24, tzinfo=timezone.utc),
+                )
+            )
+            await asyncio.sleep(0)
+            release.set()
+            await asyncio.gather(first, second)
+
+    asyncio.run(run())
+
+    assert max_active == 1

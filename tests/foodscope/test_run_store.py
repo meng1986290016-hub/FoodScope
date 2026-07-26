@@ -63,6 +63,31 @@ def test_manifest_tracks_stage_counts_and_isolation(tmp_path):
     ]
     assert manifest["errors"] == []
     assert manifest["token_usage"] == {}
+    assert manifest["evidence_admission"] == {
+        "mode": "loose",
+        "accepted_authoritative": 0,
+        "accepted_corroborated": 0,
+        "accepted_single_source": 0,
+        "accepted_aggregator_fallback": 0,
+        "rejected_not_relevant": 0,
+        "rejected_official_evidence_required": 0,
+        "rejected_unknown_publisher": 0,
+        "rejected_strict_evidence": 0,
+        "rejected_other": 0,
+    }
+
+
+def test_new_manifest_records_configured_evidence_mode(tmp_path):
+    store = FoodRunStore(tmp_path)
+
+    run_id = store.create_run(
+        profile_id="balanced",
+        evidence_mode="strict",
+    )
+
+    assert store.load_manifest(run_id)["evidence_admission"][
+        "mode"
+    ] == "strict"
 
 
 def test_stage_and_manifest_writes_leave_no_temporary_sibling(tmp_path):
@@ -130,6 +155,30 @@ def test_source_metrics_are_idempotent_per_run_and_source(tmp_path):
     assert store.load_manifest(run_id)["source_metrics"] == [
         updated
     ]
+
+
+def test_evidence_admission_summary_is_persisted_idempotently(
+    tmp_path,
+):
+    store = FoodRunStore(tmp_path)
+    run_id = store.create_run(profile_id="balanced")
+    first = {
+        "mode": "loose",
+        "accepted_single_source": 2,
+        "rejected_official_evidence_required": 1,
+    }
+    updated = {
+        "mode": "loose",
+        "accepted_single_source": 3,
+        "rejected_official_evidence_required": 1,
+    }
+
+    store.record_evidence_admission(run_id, first)
+    store.record_evidence_admission(run_id, updated)
+
+    assert store.load_manifest(run_id)["evidence_admission"] == (
+        updated
+    )
 
 
 def test_source_selection_is_ordered_deduplicated_and_persisted(

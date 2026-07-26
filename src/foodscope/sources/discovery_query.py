@@ -17,6 +17,23 @@ PROVIDERS: dict[str, type[BaseFoodAdapter]] = {
     "google_news": GoogleNewsFoodAdapter,
     "gdelt": GDELTFoodAdapter,
 }
+_PROVIDER_CONCURRENCY_LIMITS = {"gdelt": 1}
+_PROVIDER_SEMAPHORES: dict[
+    tuple[str, int], asyncio.Semaphore
+] = {}
+
+
+def _provider_semaphore(name: str) -> asyncio.Semaphore | None:
+    limit = _PROVIDER_CONCURRENCY_LIMITS.get(name)
+    if limit is None:
+        return None
+    loop = asyncio.get_running_loop()
+    key = (name, id(loop))
+    semaphore = _PROVIDER_SEMAPHORES.get(key)
+    if semaphore is None:
+        semaphore = asyncio.Semaphore(limit)
+        _PROVIDER_SEMAPHORES[key] = semaphore
+    return semaphore
 
 
 class DiscoveryQueryAdapter(BaseFoodAdapter):
@@ -32,26 +49,27 @@ class DiscoveryQueryAdapter(BaseFoodAdapter):
                 "discovery_query requires non-empty providers"
             )
         adapters = [
-            PROVIDERS[name](self.client)
+            (name, PROVIDERS[name](self.client))
             for name in provider_names
         ]
         results = await asyncio.gather(
             *(
-                adapter.fetch(
-                    source, since, until
+                self._fetch_provider(
+                    name, adapter, source, since, until
                 )
-                for adapter in adapters
+                for name, adapter in adapters
             ),
             return_exceptions=True,
         )
         self.raw_candidate_count = sum(
-            adapter.raw_candidate_count for adapter in adapters
+            adapter.raw_candidate_count for _, adapter in adapters
         )
         self.date_parse_attempts = sum(
-            adapter.date_parse_attempts for adapter in adapters
+            adapter.date_parse_attempts for _, adapter in adapters
         )
         self.date_parse_successes = sum(
-            adapter.date_parse_successes for adapter in adapters
+            adapter.date_parse_successes
+            for _, adapter in adapters
         )
         provider_errors = [
             result
@@ -82,3 +100,17 @@ class DiscoveryQueryAdapter(BaseFoodAdapter):
             source.options.get("max_candidates_after_dedup", 12)
         )
         return deduplicated[: max(0, limit)]
+
+    async def _fetch_provider(
+        self,
+        name: str,
+        adapter: BaseFoodAdapter,
+        source: FoodSourceSpec,
+        since: datetime,
+        until: datetime | None,
+    ) -> list[ContentItem]:
+        semaphore = _provider_semaphore(name)
+        if semaphore is None:
+            return await adapter.fetch(source, since, until)
+        async with semaphore:
+            return await adapter.fetch(source, since, until)

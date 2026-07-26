@@ -31,6 +31,32 @@ def test_configure_ai_allows_ollama_without_api_key(monkeypatch):
     )
 
 
+def test_configure_ai_uses_kimi_provider_defaults(monkeypatch):
+    def answer(prompt, *args, **kwargs):
+        if prompt == "AI provider":
+            return "kimi"
+        if prompt.startswith("Base URL"):
+            return ""
+        return kwargs.get("default", "")
+
+    monkeypatch.setattr(wizard.Prompt, "ask", answer)
+    monkeypatch.setattr(wizard.console, "print", lambda *args, **kwargs: None)
+    monkeypatch.setenv("KIMI_API_KEY", "test-key")
+
+    config = wizard.configure_ai()
+
+    assert config == AIConfig(
+        provider=AIProvider.KIMI,
+        model="kimi-k2.6",
+        base_url=None,
+        api_key_env="KIMI_API_KEY",
+        temperature=0.6,
+        max_tokens=8192,
+        languages=["zh", "en"],
+        extra_body={"thinking": {"type": "disabled"}},
+    )
+
+
 def test_ai_recommendations_available_for_ollama_without_api_key():
     config = AIConfig(
         provider=AIProvider.OLLAMA,

@@ -41,10 +41,11 @@ class DocumentIndexAdapter(HTMLListAdapter):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         selector = self._required_option(source, "item_selector")
+        self._detail_date_fetches = 0
         items: list[ContentItem] = []
         for index, element in enumerate(soup.select(selector)):
             self.raw_candidate_count += 1
-            item = self._parse_element(
+            item = await self._parse_element(
                 source, element, since, until, index
             )
             if item is None:
