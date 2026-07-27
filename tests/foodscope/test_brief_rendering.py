@@ -112,6 +112,27 @@ def test_items_are_not_repeated_across_score_sections():
     assert rendered.html.count(title) == 1
 
 
+def test_markdown_keeps_quotes_readable_without_double_encoded_entities():
+    facts = factual_facts()
+    quoted = facts.must_read[0]
+    quoted.metadata["title_zh"] = '推出"国家代表泡菜"'
+    assert quoted.food is not None
+    quoted.food.what_happened_zh = (
+        "企业推出&quot;国家代表泡菜&quot;。"
+    )
+    quoted.food.key_facts_zh = [
+        "韩文名称为&#x27;대표 김치&#x27;。"
+    ]
+
+    rendered = FoodBriefRenderer().render(facts)
+
+    assert '"国家代表泡菜"' in rendered.markdown
+    assert "'대표 김치'" in rendered.markdown
+    assert "&quot;" not in rendered.markdown
+    assert "&#x27;" not in rendered.markdown
+    assert "&\\#x27;" not in rendered.markdown
+
+
 def test_legacy_category_only_items_remain_renderable():
     facts = load_facts()
     legacy_item = facts.must_read[1]

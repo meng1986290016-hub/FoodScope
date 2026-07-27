@@ -40,7 +40,11 @@ from .delivery import (
     FoodDeliveryManager,
 )
 from .enricher import FoodContentEnricher
-from .event_dedup import FoodEventFingerprintStore, merge_food_events
+from .event_dedup import (
+    FoodEventFingerprintStore,
+    merge_food_events,
+    merge_similar_food_events,
+)
 from .evidence import (
     EvidenceDecision,
     EvidencePolicy,
@@ -998,6 +1002,8 @@ class FoodScopeOrchestrator(HorizonOrchestrator):
     ) -> FilteringPipelineResult:
         """Merge industry events and admit them through evidence rules."""
         merged = merge_food_events(items)
+        if topic_dedup:
+            merged = merge_similar_food_events(merged)
         admitted: list[ContentItem] = []
         decisions: list[EvidenceDecision] = []
         for item in merged:

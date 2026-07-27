@@ -165,7 +165,7 @@ def test_generate_summary_escapes_untrusted_text_in_all_output_contexts():
     assert "](javascript:" not in result
     assert "](data:text/html" not in result
     assert "&lt;script&gt;" in result
-    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in result
+    assert '&lt;img src=x onerror="alert\\(1\\)"&gt;' in result
 
 
 def test_generate_summary_rejects_unsafe_urls_and_quote_injection():

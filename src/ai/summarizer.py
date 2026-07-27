@@ -17,7 +17,8 @@ _URL_SAFE_CHARS = ":/?#[]@!$&'*,;=~%+"
 
 def _escape_markdown(value: object) -> str:
     """Render untrusted text literally while retaining its readable content."""
-    escaped = html.escape(str(value), quote=True)
+    readable = html.unescape(str(value))
+    escaped = html.escape(readable, quote=False)
     escaped = _MARKDOWN_SPECIAL.sub(r"\\\1", escaped)
     return _MARKDOWN_BLOCK_START.sub(r"\1\\\2", escaped)
 

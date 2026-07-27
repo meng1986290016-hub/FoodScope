@@ -2,9 +2,12 @@
 
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from hashlib import sha256
+import html
 import json
 from pathlib import Path
+import unicodedata
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from src._file_utils import _atomic_write_text
@@ -63,46 +66,169 @@ def merge_food_events(items: list[ContentItem]) -> list[ContentItem]:
 
     merged: list[ContentItem] = []
     for event_key in sorted(grouped):
-        candidates = sorted(
-            grouped[event_key],
-            key=lambda candidate: (
-                candidate.food.evidence_tier if candidate.food else 99,
-                -(
-                    candidate.food.evidence_quality_score
-                    if candidate.food
-                    else 0
-                ),
-                str(candidate.url),
-            ),
-        )
-        primary = candidates[0]
-        assert primary.food is not None
-        primary.metadata["event_sources"] = [
-            {
-                "source_id": candidate.food.source_id,
-                "title": candidate.title,
-                "url": str(candidate.url),
-                "language": candidate.metadata.get("language"),
-            }
-            for candidate in candidates
-            if candidate.food is not None
-        ]
-        primary.food.evidence_urls = sorted(
-            set(
-                primary.food.evidence_urls
-                + [str(candidate.url) for candidate in candidates]
-            )
-        )
-        primary.food.official_evidence_urls = sorted(
-            {
-                url
-                for candidate in candidates
-                if candidate.food is not None
-                for url in candidate.food.official_evidence_urls
-            }
-        )
-        merged.append(primary)
+        merged.append(_merge_event_group(grouped[event_key]))
     return merged + unkeyed
+
+
+def _merge_event_group(
+    candidates: list[ContentItem],
+) -> ContentItem:
+    ordered = sorted(
+        candidates,
+        key=lambda candidate: (
+            candidate.food.evidence_tier if candidate.food else 99,
+            -(
+                candidate.food.evidence_quality_score
+                if candidate.food
+                else 0
+            ),
+            str(candidate.url),
+        ),
+    )
+    primary = ordered[0]
+    assert primary.food is not None
+    event_sources: list[dict] = []
+    seen_sources: set[tuple[str, str]] = set()
+    for candidate in ordered:
+        if candidate.food is None:
+            continue
+        existing = candidate.metadata.get("event_sources")
+        sources = (
+            existing
+            if isinstance(existing, list) and existing
+            else [
+                {
+                    "source_id": candidate.food.source_id,
+                    "title": candidate.title,
+                    "url": str(candidate.url),
+                    "language": candidate.metadata.get("language"),
+                }
+            ]
+        )
+        for source in sources:
+            if not isinstance(source, dict):
+                continue
+            identity = (
+                str(source.get("source_id", "")),
+                str(source.get("url", "")),
+            )
+            if identity in seen_sources:
+                continue
+            seen_sources.add(identity)
+            event_sources.append(source)
+    primary.metadata["event_sources"] = event_sources
+    primary.food.evidence_urls = sorted(
+        {
+            url
+            for candidate in ordered
+            if candidate.food is not None
+            for url in (
+                candidate.food.evidence_urls
+                + [str(candidate.url)]
+            )
+        }
+    )
+    primary.food.official_evidence_urls = sorted(
+        {
+            url
+            for candidate in ordered
+            if candidate.food is not None
+            for url in candidate.food.official_evidence_urls
+        }
+    )
+    if len(ordered) > 1:
+        primary.metadata["foodscope_semantic_duplicate_count"] = (
+            len(event_sources) - 1
+        )
+    return primary
+
+
+def _normalized_token(value: object) -> str:
+    text = html.unescape(str(value))
+    normalized = unicodedata.normalize("NFKC", text).casefold()
+    return "".join(character for character in normalized if character.isalnum())
+
+
+def _normalized_tags(values: list[str]) -> set[str]:
+    return {
+        normalized
+        for value in values
+        if (normalized := _normalized_token(value))
+    }
+
+
+def _similar_food_event(
+    left: ContentItem, right: ContentItem
+) -> bool:
+    if left.food is None or right.food is None:
+        return False
+    if abs(left.published_at - right.published_at) > timedelta(hours=48):
+        return False
+    left_markets = {market.upper() for market in left.food.markets}
+    right_markets = {market.upper() for market in right.food.markets}
+    if not left_markets.intersection(right_markets):
+        return False
+    left_companies = _normalized_tags(left.food.company_tags)
+    right_companies = _normalized_tags(right.food.company_tags)
+    if not left_companies.intersection(right_companies):
+        return False
+    left_subjects = _normalized_tags(
+        left.food.product_tags
+        + left.food.ingredient_tags
+        + left.food.technology_tags
+    )
+    right_subjects = _normalized_tags(
+        right.food.product_tags
+        + right.food.ingredient_tags
+        + right.food.technology_tags
+    )
+    if not left_subjects.intersection(right_subjects):
+        return False
+    left_title = _normalized_token(
+        left.metadata.get("title_zh") or left.title
+    )
+    right_title = _normalized_token(
+        right.metadata.get("title_zh") or right.title
+    )
+    return (
+        SequenceMatcher(None, left_title, right_title).ratio()
+        >= 0.4
+    )
+
+
+def merge_similar_food_events(
+    items: list[ContentItem],
+) -> list[ContentItem]:
+    """Merge semantically matching events after structured AI analysis."""
+
+    parents = list(range(len(items)))
+
+    def find(index: int) -> int:
+        while parents[index] != index:
+            parents[index] = parents[parents[index]]
+            index = parents[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        left_root = find(left)
+        right_root = find(right)
+        if left_root != right_root:
+            parents[right_root] = left_root
+
+    for left in range(len(items)):
+        for right in range(left + 1, len(items)):
+            if _similar_food_event(items[left], items[right]):
+                union(left, right)
+
+    groups: dict[int, list[ContentItem]] = defaultdict(list)
+    for index, item in enumerate(items):
+        groups[find(index)].append(item)
+    return [
+        _merge_event_group(group)
+        if all(item.food is not None for item in group)
+        else group[0]
+        for group in groups.values()
+    ]
 
 
 class FoodEventFingerprintStore:
