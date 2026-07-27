@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from scripts.build_foodscope_source_packs import (
     EXPECTED_KEEP,
@@ -79,10 +80,16 @@ def test_generated_media_contracts_are_safe_and_runnable():
         for source in sources
         if source.adapter == "html_list"
     )
-    assert all(
-        "/rss" in source.url
+    rss_urls = [
+        urlsplit(source.url)
         for source in sources
         if source.adapter == "rss"
+    ]
+    assert all(
+        parsed.scheme == "https"
+        and parsed.hostname
+        and parsed.path not in {"", "/"}
+        for parsed in rss_urls
     )
     assert all(source.categories for source in sources)
     assert "reddit" not in json.dumps(

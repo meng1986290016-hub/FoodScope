@@ -6,14 +6,14 @@
 |---|---|---|---|---|---|
 | M001 | [FoodNavigator](https://www.foodnavigator.com/) | 全球行业、新品 | William Reed 卡片解析、推广过滤、详情正文 | 已解决 | 2026-07-27 探测168小时得11篇；[样例](https://www.foodnavigator.com/Article/2026/07/24/eggcelerator-lab-and-founder-cohort-helps-egg-businesses-grow/)，标题/时间/正文通过 |
 | M002 | [Food Business News](https://www.foodbusinessnews.net/) | 全球行业、新品 | 改用官方 [FBN Best News RSS](https://www.foodbusinessnews.net/rss/2) | 已解决 | 2026-07-27 探测168小时得7篇；[样例](https://www.foodbusinessnews.net/articles/30721-the-vita-coco-co-acquires-copra-inc)，标题/时间/摘要通过 |
-| M003 | [FoodBev Media](https://www.foodbev.com/blog) | 全球行业、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M004 | [Food Dive](https://www.fooddive.com/) | 全球行业、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
+| M003 | [FoodBev Media](https://www.foodbev.com/blog) | 全球行业、新品 | 改用官方 [Blog RSS](https://www.foodbev.com/blog-feed.xml) | 已解决 | 2026-07-27 探测168小时得20篇；[样例](https://www.foodbev.com/post301/beyond-the-barcode-why-smart-packaging-is-reshaping-the-uk-food-and-beverage-industry)，标题/时间/摘要通过 |
+| M004 | [Food Dive](https://www.fooddive.com/) | 全球行业、新品 | 改用官方 [News RSS](https://www.fooddive.com/feeds/news/) | 已解决 | 2026-07-27 探测168小时得10篇；[样例](https://www.fooddive.com/news/nestle-sells-half-water-premium-beverage-business-Peranel/826150/)，标题/时间/摘要通过 |
 | M005 | [Just Food](https://www.just-food.com/) | 全球行业 | 尚未核查稳定入口与访问限制 | 待核查 | — |
-| M006 | [New Food](https://www.newfoodmagazine.com/news/) | 全球行业 | 最近运行0候选；待核查RSS和页面结构 | 待核查 | — |
-| M007 | [Food Manufacture](https://www.foodmanufacture.co.uk/) | 全球行业 | 能解析日期但窗口内0候选；待核查新闻入口 | 待核查 | — |
+| M006 | [New Food](https://www.newfoodmagazine.com/news/) | 全球行业 | 新闻页触发 JavaScript 验证；`/news/feed/`、`/feed/` 和公开 WordPress API 均返回 HTTP 202 空正文 | 访问受限 | 2026-07-27 真实请求复核；当前无可稳定直读的公开入口，保留待后续重试 |
+| M007 | [Food Manufacture](https://www.foodmanufacture.co.uk/) | 全球行业 | 公开列表 + 详情页 JSON-LD 精确时间和 `articleBody`；增加URL去重 | 已解决 | 2026-07-27 探测168小时得8篇且8个唯一URL；[样例](https://www.foodmanufacture.co.uk/Article/2026/07/24/dairy-firm-withdraws-milk-due-to-possible-presence-of-antibiotics/)，精确时间与正文通过 |
 | M009 | [Food Manufacturing](https://www.foodmanufacturing.com/) | 全球行业 | 最近运行HTTP失败 | 待核查 | — |
 | M011 | [Prepared Foods](https://www.preparedfoods.com/) | 全球行业 | 最近运行HTTP失败 | 待核查 | — |
-| M012 | [IFT Food Technology](https://www.ift.org/foodtechnology/) | 全球行业 | 尚未核查稳定入口与日期字段 | 待核查 | — |
+| M012 | [IFT Food Technology](https://www.ift.org/food-technology-magazine) | 全球行业 | 更新到现行杂志列表；详情页 JSON-LD 精确时间和正文 | 已解决 | 2026-07-27 探测168小时得4篇，12/12候选日期解析成功；[样例](https://www.ift.org/food-technology-magazine/ashwagandha-gains-traction-as-interest-in-adaptogens-grows)，精确时间与正文通过 |
 | M017 | [Food & Drink Technology](https://www.foodanddrinktechnology.com/) | 全球行业 | 新闻卡片、`posted` 日期、详情 JSON-LD 时间及正文 | 已解决 | 2026-07-27 探测168小时得12篇；[样例](https://www.foodanddrinktechnology.com/news/68922/process-complexity-holding-back-innovation/)，精确时间与正文通过 |
 | M019 | [BeverageDaily](https://www.beveragedaily.com/) | 原料研发、新品 | William Reed 卡片解析、推广过滤、详情正文 | 已解决 | 2026-07-27 探测168小时得7篇；[样例](https://www.beveragedaily.com/Article/2026/07/23/shandy-shack-unveils-brand-refresh-to-drive-growth-in-fruit-beer-category/)，标题/时间/正文通过 |
 | M020 | [NutraIngredients](https://www.nutraingredients.com/) | 原料研发 | 尚未核查；可能复用 William Reed 站群解析 | 待核查 | — |
@@ -69,3 +69,13 @@
 | M019 | 公开首页 | 通过 | 7篇 | 通过 | 通过 | 已解决 |
 | M030 | 官方RSS | 通过 | 30篇 | 通过 | RSS摘要 | 已解决 |
 | M035 | 公开新闻页 | 通过 | 10篇 | 通过 | 通过 | 已解决 |
+
+## 第二批验收记录
+
+| ID | 入口验证 | 自动化测试 | 真实近期文章 | 日期正确 | 正文可读 | 最终状态 |
+|---|---|---|---|---|---|---|
+| M003 | 官方RSS | 通过 | 20篇 | 20/20 | RSS摘要 | 已解决 |
+| M004 | 官方RSS | 通过 | 10篇 | 10/10 | RSS摘要 | 已解决 |
+| M006 | 新闻页、RSS、WordPress API | 不适用 | 0篇 | 不适用 | HTTP 202空正文或JS验证 | 访问受限 |
+| M007 | 公开列表+详情JSON-LD | 通过 | 8篇，8个唯一URL | 11/11候选 | 通过 | 已解决 |
+| M012 | 现行杂志列表+详情JSON-LD | 通过 | 4篇 | 12/12候选 | 通过 | 已解决 |

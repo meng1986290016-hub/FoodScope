@@ -37,13 +37,19 @@ class HTMLListAdapter(BaseFoodAdapter):
         self._detail_content_fetches = 0
         self._detail_page_cache: dict[str, BeautifulSoup | None] = {}
         items: list[ContentItem] = []
+        seen_urls: set[str] = set()
         for index, element in enumerate(soup.select(item_selector)):
             self.raw_candidate_count += 1
             parsed = await self._parse_element(
                 source, element, since, until, index
             )
-            if parsed is not None:
-                items.append(parsed)
+            if parsed is None:
+                continue
+            canonical_url = str(parsed.url).rstrip("/")
+            if canonical_url in seen_urls:
+                continue
+            seen_urls.add(canonical_url)
+            items.append(parsed)
         return items
 
     async def _parse_element(
@@ -118,7 +124,9 @@ class HTMLListAdapter(BaseFoodAdapter):
             ),
             source,
         )
-        if source.options.get("detail_content_selector"):
+        if source.options.get(
+            "detail_content_selector"
+        ) or source.options.get("detail_content_jsonld_field"):
             detail_content = await self._detail_page_content(
                 source, url
             )
@@ -205,6 +213,8 @@ class HTMLListAdapter(BaseFoodAdapter):
     def _jsonld_date(
         cls, soup: BeautifulSoup, field: str
     ) -> datetime | None:
+        best: datetime | None = None
+        best_precision = -1
         for script in soup.select("script[type='application/ld+json']"):
             try:
                 payload = json.loads(script.get_text())
@@ -212,9 +222,19 @@ class HTMLListAdapter(BaseFoodAdapter):
                 continue
             for value in cls._nested_field_values(payload, field):
                 parsed = cls.parse_date(value)
-                if parsed is not None:
-                    return parsed
-        return None
+                if parsed is None:
+                    continue
+                raw = str(value)
+                precision = int(
+                    re.search(
+                        r"(?:T|\s)\d{1,2}:\d{2}", raw
+                    )
+                    is not None
+                )
+                if precision > best_precision:
+                    best = parsed
+                    best_precision = precision
+        return best
 
     @classmethod
     def _nested_field_values(
@@ -240,7 +260,14 @@ class HTMLListAdapter(BaseFoodAdapter):
         self, source: FoodSourceSpec, url: str
     ) -> str | None:
         selector = source.options.get("detail_content_selector")
-        if not isinstance(selector, str) or not selector:
+        jsonld_field = source.options.get(
+            "detail_content_jsonld_field"
+        )
+        has_selector = isinstance(selector, str) and bool(selector)
+        has_jsonld_field = (
+            isinstance(jsonld_field, str) and bool(jsonld_field)
+        )
+        if not has_selector and not has_jsonld_field:
             return None
         max_fetches = int(
             source.options.get("max_detail_content_fetches", 0)
@@ -254,12 +281,31 @@ class HTMLListAdapter(BaseFoodAdapter):
         soup = await self._detail_page_soup(url)
         if soup is None:
             return None
-        node = soup.select_one(selector)
-        if node is None:
-            return None
-        return self.bounded_text(
-            node.get_text(" ", strip=True), source
-        )
+        if has_selector:
+            node = soup.select_one(str(selector))
+            if node is not None:
+                content = self.bounded_text(
+                    node.get_text(" ", strip=True), source
+                )
+                if content:
+                    return content
+        if has_jsonld_field:
+            for script in soup.select(
+                "script[type='application/ld+json']"
+            ):
+                try:
+                    payload = json.loads(script.get_text())
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                for value in self._nested_field_values(
+                    payload, str(jsonld_field)
+                ):
+                    if not isinstance(value, str):
+                        continue
+                    content = self.bounded_text(value, source)
+                    if content:
+                        return content
+        return None
 
     async def _detail_page_soup(
         self, url: str

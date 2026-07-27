@@ -70,6 +70,55 @@ _DIRECT_SOURCE_OVERRIDES: dict[str, dict[str, Any]] = {
         "options": {},
         "url": "https://www.foodbusinessnews.net/rss/2",
     },
+    "M003": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.foodbev.com/blog-feed.xml",
+    },
+    "M004": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.fooddive.com/feeds/news/",
+    },
+    "M007": {
+        "options": {
+            "date_selector": "time",
+            "detail_content_jsonld_field": "articleBody",
+            "detail_date_jsonld_field": "datePublished",
+            "item_selector": "article",
+            "link_selector": "a[href*='/Article/']",
+            "max_detail_content_fetches": 20,
+            "max_detail_date_fetches": 20,
+            "prefer_detail_date": True,
+            "require_content": True,
+            "title_selector": "h1, h2, h3",
+            "url_include_pattern": "/Article/",
+        }
+    },
+    "M012": {
+        "options": {
+            "date_selector": ".article-card-details span:last-of-type",
+            "detail_content_selector": (
+                ".article-main-content .rich-text.prose"
+            ),
+            "detail_date_jsonld_field": "datePublished",
+            "item_selector": "article.article-card",
+            "link_selector": "a.article-card-link",
+            "max_detail_content_fetches": 20,
+            "max_detail_date_fetches": 20,
+            "prefer_detail_date": True,
+            "require_content": True,
+            "title_selector": ".article-card-title",
+            "url_include_pattern": (
+                "/(?:food-technology-magazine|"
+                "publications/food-technology-magazine)/"
+            ),
+        },
+        "url": (
+            "https://www.ift.org/trends-and-learning/"
+            "research-and-publications/food-technology-magazine/"
+        ),
+    },
     "M017": {
         "options": {
             "date_selector": ".meta",

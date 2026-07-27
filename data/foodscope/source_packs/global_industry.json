@@ -70,7 +70,7 @@
       "url": "https://www.foodbusinessnews.net/rss/2"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "company_updates"
@@ -87,12 +87,7 @@
       ],
       "name": "FoodBev Media",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "新闻稿比例需实测",
         "trial_signals": "新品、品牌、企业交易"
@@ -100,10 +95,10 @@
       "packs": [
         "global_industry"
       ],
-      "url": "https://www.foodbev.com/blog"
+      "url": "https://www.foodbev.com/blog-feed.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "company_updates"
@@ -120,12 +115,7 @@
       ],
       "name": "Food Dive",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "独立编辑分析较强",
         "trial_signals": "企业战略、并购、品牌"
@@ -133,7 +123,7 @@
       "packs": [
         "global_industry"
       ],
-      "url": "https://www.fooddive.com/"
+      "url": "https://www.fooddive.com/feeds/news/"
     },
     {
       "adapter": "html_list",
@@ -221,15 +211,21 @@
       ],
       "name": "Food Manufacture",
       "options": {
-        "content_selector": "p",
         "date_selector": "time",
+        "detail_content_jsonld_field": "articleBody",
+        "detail_date_jsonld_field": "datePublished",
         "item_selector": "article",
-        "link_selector": "a[href]",
+        "link_selector": "a[href*='/Article/']",
         "max_content_chars": 1200,
+        "max_detail_content_fetches": 20,
+        "max_detail_date_fetches": 20,
+        "prefer_detail_date": true,
+        "require_content": true,
         "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "英国信号突出",
-        "trial_signals": "制造、法规、劳动力、企业"
+        "trial_signals": "制造、法规、劳动力、企业",
+        "url_include_pattern": "/Article/"
       },
       "packs": [
         "global_industry"
@@ -322,20 +318,26 @@
       ],
       "name": "IFT Food Technology",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "date_selector": ".article-card-details span:last-of-type",
+        "detail_content_selector": ".article-main-content .rich-text.prose",
+        "detail_date_jsonld_field": "datePublished",
+        "item_selector": "article.article-card",
+        "link_selector": "a.article-card-link",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "max_detail_date_fetches": 20,
+        "prefer_detail_date": true,
+        "require_content": true,
+        "title_selector": ".article-card-title",
         "trial_initial_grade": "A",
         "trial_note": "学会媒体，专业性强",
-        "trial_signals": "食品科学、研发、法规"
+        "trial_signals": "食品科学、研发、法规",
+        "url_include_pattern": "/(?:food-technology-magazine|publications/food-technology-magazine)/"
       },
       "packs": [
         "global_industry"
       ],
-      "url": "https://www.ift.org/foodtechnology/"
+      "url": "https://www.ift.org/trends-and-learning/research-and-publications/food-technology-magazine/"
     },
     {
       "adapter": "html_list",
