@@ -30,19 +30,6 @@ PRIMARY_PACKS = {
     "research_data",
 }
 VERIFIED_OFFICIAL_FEEDS = {
-    "M005": "https://www.just-food.com/feed/",
-    "M021": "https://resource-cns.cnsmedia.com/rss/fifnews.xml",
-    "M022": "https://resource-cns.cnsmedia.com/rss/ninews.xml",
-    "M026": "https://www.nutritionaloutlook.com/rss.xml",
-    "M034": "https://www.thepacker.com/index.rss",
-    "M039": "https://www.greenqueen.com.hk/feed/",
-    "M044": "https://resource-cns.cnsmedia.com/rss/pinews.xml",
-    "M050": "https://foodpackagingforum.org/news/feed/",
-    "M056": "https://www.esmmagazine.com/feed/",
-    "M060": "https://www.grocerygazette.co.uk/feed/",
-    "M061": "https://www.retail-insight-network.com/feed/",
-    "M063": "https://www.cspdailynews.com/feed/",
-    "M064": "https://www.cstoredive.com/feeds/news/",
     "M075": "https://news.nissyoku.co.jp/archives/news-cat/001/feed",
     "M076": "https://shokuhin.net/feed/",
     "M080": "https://diamond-rm.net/feed/",
@@ -54,10 +41,17 @@ VERIFIED_OFFICIAL_FEEDS = {
     "M092": "https://www.foodtoday.or.kr/data/rss/news.xml",
     "M093": "https://www.foodbank.co.kr/rss/allArticle.xml",
     "M094": "https://www.foodnews.news/data/rss/news.xml",
+    "M099": "https://foodbeverageasia.com/feed/",
     "M110": "https://nielseniq.com/global/en/insights/feed/",
     "M111": "https://www.mintel.com/insights/food-and-drink/feed/",
     "M105": "https://www.minimeinsights.com/feed/",
     "M115": "https://tastewise.io/blog/feed",
+}
+RETIRED_PENDING_IDS = {
+    "M005", "M009", "M011", "M020", "M021", "M022", "M024",
+    "M026", "M028", "M032", "M033", "M034", "M036", "M039",
+    "M040", "M042", "M044", "M050", "M055", "M056", "M058",
+    "M060", "M061", "M063", "M064", "M065", "M112", "M113",
 }
 VERIFIED_JAPAN_HTML_SOURCES = {
     "M079": (
@@ -84,7 +78,7 @@ def test_non_social_manifests_cover_exact_keep_set():
     assert found == EXPECTED_KEEP
 
 
-def test_retired_new_food_source_is_absent_from_generated_manifests(
+def test_retired_sources_are_absent_from_generated_manifests(
     tmp_path,
 ):
     build_packs(SOURCE, tmp_path)
@@ -97,7 +91,7 @@ def test_retired_new_food_source_is_absent_from_generated_manifests(
         ).sources
     }
 
-    assert "M006" not in found
+    assert not ({"M006"} | RETIRED_PENDING_IDS) & found
 
 
 def test_each_retained_source_has_one_primary_pack():

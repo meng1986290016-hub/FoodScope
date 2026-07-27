@@ -42,7 +42,7 @@
       "url": "https://www.foodnavigator.com/Regions/Asia-Pacific/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "ingredients_technology",
         "packaging_labeling",
@@ -60,12 +60,7 @@
       ],
       "name": "Food & Beverage Asia",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "B2B 商业信号较多",
         "trial_signals": "配料、设备、企业、包装"
@@ -73,7 +68,7 @@
       "packs": [
         "southeast_asia"
       ],
-      "url": "https://foodbeverageasia.com/"
+      "url": "https://foodbeverageasia.com/feed/"
     },
     {
       "adapter": "rss",

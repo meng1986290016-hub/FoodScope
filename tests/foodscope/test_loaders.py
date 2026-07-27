@@ -160,7 +160,7 @@ def test_all_william_reed_sources_use_verified_listing_contract():
         )
     }
 
-    for source_id in ("M001", "M019", "M020", "M035", "M036"):
+    for source_id in ("M001", "M019", "M035"):
         assert sources[source_id].options["item_selector"] == (
             "article.card"
         )

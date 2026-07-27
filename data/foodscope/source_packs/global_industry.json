@@ -126,34 +126,6 @@
       "url": "https://www.fooddive.com/feeds/news/"
     },
     {
-      "adapter": "rss",
-      "categories": [
-        "packaging_labeling",
-        "company_updates"
-      ],
-      "collection_tier": "extended",
-      "enabled": true,
-      "evidence_tier": 2,
-      "id": "M005",
-      "languages": [
-        "en"
-      ],
-      "markets": [
-        "GLOBAL"
-      ],
-      "name": "Just Food",
-      "options": {
-        "max_content_chars": 1200,
-        "trial_initial_grade": "A",
-        "trial_note": "部分内容付费",
-        "trial_signals": "公司、工厂、并购、供应链"
-      },
-      "packs": [
-        "global_industry"
-      ],
-      "url": "https://www.just-food.com/feed/"
-    },
-    {
       "adapter": "html_list",
       "categories": [
         "packaging_labeling",
@@ -192,74 +164,6 @@
         "global_industry"
       ],
       "url": "https://www.foodmanufacture.co.uk/"
-    },
-    {
-      "adapter": "html_list",
-      "categories": [
-        "packaging_labeling",
-        "food_safety_recalls",
-        "company_updates"
-      ],
-      "collection_tier": "extended",
-      "enabled": true,
-      "evidence_tier": 2,
-      "id": "M009",
-      "languages": [
-        "en"
-      ],
-      "markets": [
-        "US"
-      ],
-      "name": "Food Manufacturing",
-      "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
-        "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
-        "trial_initial_grade": "B",
-        "trial_note": "与 M008/M010 重叠",
-        "trial_signals": "制造、设备、供应链、安全"
-      },
-      "packs": [
-        "global_industry"
-      ],
-      "url": "https://www.foodmanufacturing.com/"
-    },
-    {
-      "adapter": "html_list",
-      "categories": [
-        "product_innovation",
-        "ingredients_technology",
-        "consumer_trends"
-      ],
-      "collection_tier": "extended",
-      "enabled": true,
-      "evidence_tier": 2,
-      "id": "M011",
-      "languages": [
-        "en"
-      ],
-      "markets": [
-        "US"
-      ],
-      "name": "Prepared Foods",
-      "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
-        "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
-        "trial_initial_grade": "A",
-        "trial_note": "适合研发和产品人员",
-        "trial_signals": "配方、新品、趋势、配料"
-      },
-      "packs": [
-        "global_industry"
-      ],
-      "url": "https://www.preparedfoods.com/"
     },
     {
       "adapter": "html_list",

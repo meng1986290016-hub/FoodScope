@@ -172,35 +172,6 @@
       "adapter": "rss",
       "categories": [
         "product_innovation",
-        "ingredients_technology"
-      ],
-      "collection_tier": "extended",
-      "enabled": true,
-      "evidence_tier": 2,
-      "id": "M021",
-      "languages": [
-        "en"
-      ],
-      "markets": [
-        "GLOBAL"
-      ],
-      "name": "Food Ingredients First",
-      "options": {
-        "max_content_chars": 1200,
-        "trial_initial_grade": "A",
-        "trial_note": "供应商消息较多，商业价值也高",
-        "trial_signals": "配料、配方、供应商创新"
-      },
-      "packs": [
-        "ingredients_rd",
-        "product_launches"
-      ],
-      "url": "https://resource-cns.cnsmedia.com/rss/fifnews.xml"
-    },
-    {
-      "adapter": "rss",
-      "categories": [
-        "product_innovation",
         "ingredients_technology",
         "company_updates"
       ],
@@ -265,42 +236,6 @@
         "product_launches"
       ],
       "url": "https://www.confectionerynews.com/News/"
-    },
-    {
-      "adapter": "html_list",
-      "categories": [
-        "product_innovation",
-        "consumer_trends",
-        "retail_foodservice",
-        "company_updates"
-      ],
-      "collection_tier": "extended",
-      "enabled": true,
-      "evidence_tier": 2,
-      "id": "M055",
-      "languages": [
-        "en"
-      ],
-      "markets": [
-        "GB"
-      ],
-      "name": "The Grocer",
-      "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
-        "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
-        "trial_initial_grade": "A",
-        "trial_note": "付费墙较重，可保留公开元数据",
-        "trial_signals": "零售、品牌、价格、新品"
-      },
-      "packs": [
-        "retail_foodservice",
-        "product_launches"
-      ],
-      "url": "https://www.thegrocer.co.uk/"
     },
     {
       "adapter": "rss",
