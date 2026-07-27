@@ -36,6 +36,11 @@ Common API key variable names:
 | Aliyun DashScope | `DASHSCOPE_API_KEY` |
 | Doubao | `DOUBAO_API_KEY` |
 | DeepSeek | `DEEPSEEK_API_KEY` |
+| Kimi | `KIMI_API_KEY` |
+| Zhipu GLM | `ZHIPU_API_KEY` |
+| Baidu Qianfan | `QIANFAN_API_KEY` |
+| Tencent Hunyuan | `HUNYUAN_API_KEY` |
+| SiliconFlow | `SILICONFLOW_API_KEY` |
 
 **Anthropic Claude**:
 
@@ -150,6 +155,36 @@ request:
 ```
 
 Use the [DashScope compatible-mode](https://help.aliyun.com/zh/dashscope/developer-reference/use-dashscope-by-calling-openai-api) endpoint. Set `DASHSCOPE_API_KEY` in your `.env`. Optional: set `base_url` to override the default `https://dashscope.aliyuncs.com/compatible-mode/v1`.
+
+**China-hosted OpenAI-compatible providers**:
+
+The following providers use the same `OpenAIClient` integration. The built-in
+defaults let you omit `base_url`; set it explicitly only for a private gateway
+or a provider-specific plan endpoint.
+
+| `provider` | Default model | Default base URL |
+| --- | --- | --- |
+| `zhipu` | `glm-5.2` | `https://open.bigmodel.cn/api/paas/v4` |
+| `qianfan` | `ernie-4.5-turbo-20260402` | `https://qianfan.baidubce.com/v2` |
+| `hunyuan` | `hunyuan-turbos-latest` | `https://api.hunyuan.cloud.tencent.com/v1` |
+| `siliconflow` | `Pro/zai-org/GLM-4.7` | `https://api.siliconflow.cn/v1` |
+
+Example:
+
+```json
+{
+  "ai": {
+    "provider": "zhipu",
+    "model": "glm-5.2",
+    "api_key_env": "ZHIPU_API_KEY",
+    "throttle_sec": 0
+  }
+}
+```
+
+Replace the provider, model, and key variable with another row as needed.
+Model availability can vary by account and region, so the configured `model`
+always takes precedence over the built-in default.
 
 **Ollama**:
 

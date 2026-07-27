@@ -45,6 +45,9 @@ data/mcp.secrets.json
 data/mcp-secrets.json
 data/mcp-runs/
 data/x_cookies_*.json
+data/runs/
+data/state/
+data/foodscope/event-fingerprints.json
 
 docs/_posts/*.md
 
