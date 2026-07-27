@@ -1,84 +1,244 @@
-# FoodScope Horizon — 食品行业情报雷达
+# FoodScope
 
-FoodScope 是基于 [Horizon](https://github.com/Thysrael/Horizon) 构建的**可自托管食品行业情报扩展**。它在保留 Horizon 通用信息聚合能力的同时，为食品、饮料、配料、包装和餐饮领域增加了一整套采集、分析、去重、证据校验和简报分发的工作流。
+An AI-powered, self-hosted intelligence radar for the food industry. FoodScope collects industry signals, removes duplicates, evaluates evidence, analyzes relevance, and produces structured briefings in Markdown and HTML.
 
-> **核心设计原则**：所有配置公开可审计，所有密钥只通过环境变量注入，仓库内的 JSON 文件绝不包含真实 secret。
+[简体中文](README_zh.md) · [Live briefing example](https://meng1986290016-hub.github.io/FoodScope/foodscope/example-brief.html) · [Configuration](docs/foodscope/configuration.md) · [Source packs](docs/foodscope/source-packs.md) · [Operations](docs/foodscope/operations.md)
 
-## 它能做什么
+> New to Python? Follow the Quick Start in order. It takes you from a fresh machine to your first local briefing without enabling email, Feishu, WeChat, or any other external delivery.
 
-- **定向抓取** — 从法规机构、行业媒体、新品数据库、科研机构和多语言新闻中抓取食品相关信号
-- **跨语言去重** — 把同一事件的中、英、日、韩等多语言报道合并为一条事实
-- **结构化分析** — 用两条独立 AI 路由分别完成评分分类和事实提炼，只生成“发生了什么”及原文明示的关键事实
-- **证据准入** — 法规、标准、召回、食品安全声称必须有官方证据；否则会被隔离并审计
-- **画像驱动** — 内置 `balanced`、`market`、`new_products`、`rd`、`compliance` 五个简报画像，一键切换信息偏向
-- **多频道分发** — 生成 Markdown/HTML 归档，并可投递到邮件、飞书/Lark、微信公众号草稿、通用 Webhook 和 MCP 客户端
-- **可恢复运行** — 每个阶段原子落盘，支持断点续跑和重发
+## What FoodScope does
 
-## 快速开始
+FoodScope helps teams monitor:
 
-需要 Python 3.11+ 和 [uv](https://docs.astral.sh/uv/)。
+- food and beverage launches, brands, and market activity;
+- ingredients, formulations, nutrition, and R&D;
+- food safety, regulation, recalls, and compliance;
+- packaging, processing, retail, and foodservice;
+- China, Southeast Asia, Japan, Korea, and global markets.
+
+Each run:
+
+1. Fetches content from the configured sources.
+2. Resolves original URLs and merges duplicate events across languages.
+3. Uses AI to evaluate food relevance, importance, and evidence quality.
+4. Selects findings for a market, product, R&D, compliance, or balanced profile.
+5. Writes an auditable run archive under `data/runs/<run-id>/`.
+6. Optionally delivers the briefing through Feishu/Lark, email, WeChat drafts, or a generic webhook.
+
+This screenshot comes from a real FoodScope run:
+
+[![Real FoodScope briefing](docs/assets/foodscope-brief-example.png)](https://meng1986290016-hub.github.io/FoodScope/foodscope/example-brief.html)
+
+Click the image to open the complete HTML briefing.
+
+## Quick Start
+
+The first run below is deliberately local-only: it creates an archive but sends nothing externally.
+
+### 1. Install the prerequisites
+
+You need:
+
+- Windows, macOS, or Linux with internet access;
+- Git;
+- Python 3.11 or later;
+- [uv](https://docs.astral.sh/uv/);
+- an API key for at least one supported AI provider.
+
+Check Git and Python:
 
 ```bash
-# 1. 安装依赖
-uv sync --extra dev
+git --version
+python3 --version
+```
 
-# 2. 复制配置模板
+Install uv on macOS or Linux:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Install uv in Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Open a new terminal and verify the installation:
+
+```bash
+uv --version
+```
+
+### 2. Download FoodScope
+
+```bash
+git clone https://github.com/meng1986290016-hub/FoodScope.git
+cd FoodScope
+```
+
+You can also use **Code → Download ZIP** on GitHub. Extract the archive, open a terminal in that directory, and make sure you can see `pyproject.toml` and the `data` directory.
+
+### 3. Install the project
+
+```bash
+uv sync
+```
+
+uv creates an isolated Python environment automatically. You do not need to activate a virtual environment or run `pip install`.
+
+### 4. Create local configuration
+
+macOS or Linux:
+
+```bash
 cp data/config.foodscope.example.json data/config.json
 cp .env.example .env
+```
 
-# 3. 在 .env 中至少填入一个 AI 密钥
-#    OPENAI_API_KEY=sk-...
+Windows PowerShell:
 
-# 4. 首次只生成归档，不向外分发
+```powershell
+Copy-Item data/config.foodscope.example.json data/config.json
+Copy-Item .env.example .env
+```
+
+The files have different roles:
+
+| File | Purpose | Commit to Git? |
+| --- | --- | --- |
+| `data/config.json` | Models, source packs, profile, schedule, and delivery settings | Review before committing |
+| `.env` | API keys, webhook URLs, and passwords | Never |
+
+### 5. Configure an AI provider
+
+DeepSeek is used here as a simple example. Add your key to `.env`:
+
+```dotenv
+DEEPSEEK_API_KEY=replace_with_your_key
+```
+
+In `data/config.json`, change the `provider`, `model`, and `api_key_env` fields under all three locations:
+
+- `ai`
+- `ai_routes.fast`
+- `ai_routes.analysis`
+
+Use:
+
+```json
+{
+  "provider": "deepseek",
+  "model": "deepseek-chat",
+  "api_key_env": "DEEPSEEK_API_KEY"
+}
+```
+
+Keep the surrounding fields such as `languages`, `concurrency`, and `timeout_seconds`; replace only the three fields shown above.
+
+Supported providers include:
+
+| Platform | `provider` | Starter model | Environment variable |
+| --- | --- | --- | --- |
+| OpenAI | `openai` | `gpt-4o-mini` | `OPENAI_API_KEY` |
+| Anthropic | `anthropic` | an available Claude model | `ANTHROPIC_API_KEY` |
+| Google Gemini | `gemini` | an available Gemini Flash model | `GOOGLE_API_KEY` |
+| DeepSeek | `deepseek` | `deepseek-chat` | `DEEPSEEK_API_KEY` |
+| Moonshot Kimi | `kimi` | `kimi-k2.6` | `KIMI_API_KEY` |
+| Alibaba DashScope | `ali` | `qwen-plus` | `DASHSCOPE_API_KEY` |
+| ByteDance Doubao | `doubao` | your Ark endpoint ID | `DOUBAO_API_KEY` |
+| MiniMax | `minimax` | `MiniMax-M3` | `MINIMAX_API_KEY` |
+| Zhipu GLM | `zhipu` | `glm-5.2` | `ZHIPU_API_KEY` |
+| Baidu Qianfan | `qianfan` | `ernie-4.5-turbo-20260402` | `QIANFAN_API_KEY` |
+| Tencent Hunyuan | `hunyuan` | `hunyuan-turbos-latest` | `HUNYUAN_API_KEY` |
+| SiliconFlow | `siliconflow` | `Pro/zai-org/GLM-4.7` | `SILICONFLOW_API_KEY` |
+| Azure OpenAI | `azure` | your deployment name | `AZURE_OPENAI_API_KEY` |
+| Ollama | `ollama` | your local model | no key required |
+
+Model availability changes over time and may vary by account. If a provider reports that a model does not exist or is unavailable, copy an accessible model ID from that provider's console into `model`.
+
+> `api_key_env` contains the name of an environment variable, not the secret itself. Real keys belong only in `.env`.
+
+### 6. Run FoodScope
+
+```bash
 uv run python -m src.main --no-deliver
 ```
 
-运行完成后检查 `data/runs/<run_id>/brief.md` 和 `brief.html`。确认内容符合预期后，再移除 `--no-deliver` 启用正式分发。
+`--no-deliver` generates and archives the briefing without sending messages or email.
 
-## 核心概念
+The first run may take several minutes depending on source count, network conditions, and model speed. The run is complete when the terminal returns to the prompt without a `Fatal error`.
 
-### 简报画像（Profiles）
+### 7. Open the result
 
-画像决定同一批事实如何排序和取舍，不改变原始抓取结果。内置画像位于 `data/foodscope/profiles/`：
+Every run has its own directory:
 
-| 画像 | 适合谁 | 主要倾向 |
-| --- | --- | --- |
-| `balanced` | 管理层、综合情报读者 | 八类主题平衡，商业信息占比 ≥ 70% |
-| `market` | 市场、品牌、战略团队 | 消费趋势、零售餐饮、公司动态 |
-| `new_products` | 新品、品牌、创新团队 | 新品上市、产品创新、包装与消费信号 |
-| `rd` | 研发、配方、技术团队 | 原料技术、加工包装、科研 |
-| `compliance` | 法规、质量、合规团队 | 法规标准、召回与风险预警 |
+```text
+data/runs/<run-id>/
+├── manifest.json
+├── raw.json
+├── normalized.json
+├── scored.json
+├── filtered.json
+├── enriched.json
+├── facts.json
+├── brief.md
+└── brief.html
+```
 
-切换画像：
+Open `brief.html` from the newest directory in a browser, or open `brief.md` in a text editor. You now have a working local FoodScope installation.
+
+## Common commands
+
+```bash
+# Safe local run
+uv run python -m src.main --no-deliver
+
+# Analyze the last 48 hours
+uv run python -m src.main --hours 48 --no-deliver
+
+# Run and use enabled delivery channels
+uv run python -m src.main
+
+# Run continuously using the configured cron schedule
+uv run python -m src.main --daemon
+
+# Validate configuration and scheduled-run freshness
+uv run python -m src.main --healthcheck
+
+# Resume the latest incomplete run
+uv run python -m src.main --resume latest --no-deliver
+
+# Show every CLI option
+uv run python -m src.main --help
+```
+
+## Briefing profiles
+
+Set the active profile in `data/config.json`:
 
 ```json
 {
   "foodscope": {
-    "profile": "new_products"
+    "enabled": true,
+    "profile": "balanced"
   }
 }
 ```
 
-也可以复制内置画像后自行调整权重，或使用 `foodscope.profile_path` 指向自定义文件。
+| Profile | Intended audience | Emphasis |
+| --- | --- | --- |
+| `balanced` | Leaders and general intelligence teams | Balanced market, product, R&D, and compliance coverage |
+| `market` | Strategy, brand, and market teams | Companies, channels, consumers, and market change |
+| `new_products` | Product and innovation teams | Launches, flavors, categories, and brand activity |
+| `rd` | R&D, ingredient, and formulation teams | Ingredients, processing, nutrition, and research |
+| `compliance` | Regulatory, quality, and safety teams | Regulation, recalls, risk, and official evidence |
 
-### 来源包（Source Packs）
+See [Briefing profiles](docs/foodscope/profiles.md) for details.
 
-来源包是经过筛选的来源集合，位于 `data/foodscope/source_packs/`：
+## Source packs
 
-| 来源包 | 侧重点 |
-| --- | --- |
-| `official_evidence` | 法规、标准、食品安全与召回的一手证据 |
-| `global_industry` | 全球食品行业媒体和企业动态 |
-| `product_launches` | 新品、配方、品牌与上市信息 |
-| `ingredients_rd` | 原料、科研与食品技术 |
-| `packaging_processing` | 包装、标签、加工和制造 |
-| `retail_foodservice` | 零售、餐饮和渠道 |
-| `research_data` | 研究机构、市场与消费数据 |
-| `japan` / `korea` / `southeast_asia` | 区域市场包 |
-| `discovery_queries` | 多语言发现查询 |
-| `x_watch` | 经筛选的 X 观察名单，默认全部关闭 |
-
-配置示例：
+Source packs group curated sources by topic or market:
 
 ```json
 {
@@ -86,226 +246,225 @@ uv run python -m src.main --no-deliver
     "source_packs": [
       "official_evidence",
       "global_industry",
-      "product_launches"
+      "product_launches",
+      "discovery_queries"
     ]
   }
 }
 ```
 
-同一来源若出现在多个包中会自动按 ID 合并。使用 `source_overrides` 可以关闭或覆盖单个来源，而不必复制整个来源包。
+| Source pack | Coverage |
+| --- | --- |
+| `official_evidence` | Regulators, official announcements, and primary evidence |
+| `global_industry` | Global food industry publications |
+| `product_launches` | Food and beverage launches |
+| `ingredients_rd` | Ingredients, nutrition, and R&D |
+| `packaging_processing` | Packaging and processing |
+| `retail_foodservice` | Retail and foodservice |
+| `research_data` | Research and industry data |
+| `southeast_asia` | Southeast Asian markets |
+| `japan` | Japan |
+| `korea` | Korea |
+| `discovery_queries` | Multilingual discovery queries |
+| `x_watch` | Curated official X/Twitter accounts |
 
-### 证据等级与采集层级
+Start with the example configuration, verify a stable run, and add packs gradually. See [Source packs](docs/foodscope/source-packs.md) for the full catalog.
 
-- **证据等级**：`primary`（一手官方） > `industry`（行业媒体） > `discovery`（发现查询） > `weak_signal`
-- **采集层级**：`core` 每次运行，`extended` 默认两天轮换，`discovery` 默认三天轮换
+## Docker
 
-法规、召回、食品安全类内容若证据等级不足，会被拒绝入选并记录到隔离审计。
-
-## 配置说明
-
-`data/config.json` 是唯一权威非密钥配置。关键字段：
-
-| 路径 | 作用 | 默认值 |
-| --- | --- | --- |
-| `foodscope.enabled` | 启用 FoodScope 工作流 | `false` |
-| `foodscope.profile` | 当前画像 ID | `balanced` |
-| `foodscope.source_packs` | 加载的来源包 | 见示例 |
-| `ai_routes.fast` | 候选内容快速分析 | — |
-| `ai_routes.analysis` | 入选内容深度分析 | — |
-| `schedule.timezone` | IANA 时区 | `Asia/Shanghai` |
-| `schedule.cron` | 五段 cron | `30 6 * * *` |
-| `collection.lookback_hours` | 回看时长 | `30` |
-| `collection.adaptive_lookback_hours` | 候选不足时自动扩展窗口 | `[72, 168]` |
-| `collection.minimum_sources_per_run` | 当日来源目标数 | `20` |
-| `evidence.mode` | 商业发现资讯准入模式 | `loose` |
-| `delivery.target_minutes` | 目标完成时长 | `60` |
-| `delivery.wechat.enabled` | 微信公众号草稿 | `false` |
-
-两条 AI 路由都支持独立设置 `provider`、`model`、`temperature`、`extra_body`、`concurrency`、`timeout_seconds`、`max_attempts` 和价格。未配置价格时仍会统计 token，但成本显示为 `unknown`。
-
-默认 `evidence.mode="loose"`：新品、市场、原料技术、包装、零售餐饮和企业
-动态允许单一、可识别媒体来源进入简报。改为 `"strict"` 可恢复原始出处或
-两个独立来源要求。法规、标准、召回和食品安全在两种模式下都必须有官方证据。
-
-详细说明见：
-
-- [`docs/foodscope/configuration.md`](docs/foodscope/configuration.md)
-- [`docs/foodscope/source-packs.md`](docs/foodscope/source-packs.md)
-- [`docs/foodscope/profiles.md`](docs/foodscope/profiles.md)
-- [`docs/foodscope/operations.md`](docs/foodscope/operations.md)
-
-## 使用 Kimi（Moonshot）
-
-FoodScope 已把 Kimi 列为原生 provider。在 `.env` 中写入：
+### Prepare configuration
 
 ```bash
-KIMI_API_KEY=sk-your-kimi-key
+cp data/config.foodscope.example.json data/config.json
+cp .env.example .env
 ```
 
-然后在 `data/config.json` 中使用：
+Configure `.env` and all three AI locations as described above.
+
+### Build and test
+
+```bash
+docker compose build
+docker compose run --rm foodscope uv run python -m src.main --no-deliver
+```
+
+### Start scheduled operation
+
+```bash
+docker compose up -d
+```
+
+View logs:
+
+```bash
+docker compose logs -f foodscope
+```
+
+Stop the service:
+
+```bash
+docker compose down
+```
+
+The host `data` directory is mounted into the container, so recreating the container does not remove run archives.
+
+## Scheduling
+
+Configure the timezone and five-field cron expression:
 
 ```json
 {
-  "ai_routes": {
-    "fast": {
-      "provider": "kimi",
-      "model": "kimi-k2.6",
-      "api_key_env": "KIMI_API_KEY",
-      "temperature": 0.6,
-      "extra_body": {
-        "thinking": {
-          "type": "disabled"
-        }
-      },
-      "languages": ["zh"]
-    },
-    "analysis": {
-      "provider": "kimi",
-      "model": "kimi-k2.6",
-      "api_key_env": "KIMI_API_KEY",
-      "temperature": 0.6,
-      "extra_body": {
-        "thinking": {
-          "type": "disabled"
-        }
-      },
-      "languages": ["zh"]
-    }
+  "schedule": {
+    "timezone": "Asia/Shanghai",
+    "cron": "30 6 * * *"
   }
 }
 ```
 
-Kimi 复用 OpenAI 兼容客户端，因此也支持自定义 `base_url`、温度回退、`extra_body` 和 token 统计。当前默认使用 `kimi-k2.6` 并关闭 thinking，适合每日简报这类稳定结构化分析；部分旧账号仍可能看到 `moonshot-v1-*`，但新账号或新版 endpoint 通常应优先使用 `kimi-k2.6` / `kimi-k3`。
+This example runs every day at 06:30 in Shanghai time.
 
-## 运行方式
+Run locally:
 
 ```bash
-# 手动运行，只归档不投递
-uv run python -m src.main --no-deliver
-
-# 临时回看过去 12 小时
-uv run python -m src.main --hours 12 --no-deliver
-
-# 精确时间窗（可重复回放）
-uv run python -m src.main \
-  --since 2026-07-23T00:00:00+08:00 \
-  --until 2026-07-24T06:00:00+08:00 \
-  --no-deliver
-
-# 按配置持续调度
 uv run python -m src.main --daemon
-
-# 校验配置并检查最近一次运行是否逾期
-uv run python -m src.main --healthcheck
-
-# 手动运行但标记为 scheduled（用于健康检查验收）
-uv run python -m src.main --scheduled --no-deliver
-
-# 恢复最近一次未完成运行
-uv run python -m src.main --resume latest
-
-# 恢复并重新分发
-uv run python -m src.main --resume RUN_ID --redeliver
 ```
 
-守护进程使用非阻塞文件锁，重复启动会以退出码 75 结束，避免并发运行。
+For long-running deployments, Docker is usually simpler:
 
-## 运行产物
+```bash
+docker compose up -d
+```
 
-每次运行保存在 `data/runs/<run_id>/`：
+## Delivery
 
-| 文件 | 含义 |
+Keep delivery disabled during setup and validate the output with `--no-deliver` first. After reviewing the generated briefing, enable channels one at a time:
+
+- Feishu/Lark and generic webhooks: [FoodScope configuration](docs/foodscope/configuration.md)
+- Email: [General configuration](docs/configuration.md)
+- WeChat Official Account drafts: [Operations](docs/foodscope/operations.md)
+
+Store webhook URLs, API keys, and email passwords in `.env`, never directly in `data/config.json`.
+
+## Troubleshooting
+
+### `uv: command not found`
+
+Open a new terminal after installing uv. If it is still missing, follow the uv installation guide to add the installation directory to `PATH`.
+
+### `data/config.json` is missing
+
+Run from the repository root:
+
+```bash
+cp data/config.foodscope.example.json data/config.json
+```
+
+### `Missing API key`
+
+Check that:
+
+1. `.env` exists in the repository root;
+2. the correct key is present in `.env`;
+3. every `api_key_env` exactly matches the variable name in `.env`;
+4. you did not put the secret value itself inside `api_key_env`.
+
+### The model does not exist or access is denied
+
+Open the provider console and copy an available model ID into the corresponding `model` field in `data/config.json`.
+
+### The run succeeds but selects no findings
+
+This can be a valid result. The time window may contain too little new material, or candidates may fail relevance and evidence checks.
+
+Try a longer lookback:
+
+```bash
+uv run python -m src.main --hours 72 --no-deliver
+```
+
+Also inspect `manifest.json` and `raw.json` in the newest run directory, and verify that `evidence.mode` is set to `loose` while you are evaluating the system.
+
+### Some sources are unavailable
+
+FoodScope isolates individual source failures and continues the run. Temporarily remove consistently inaccessible source packs, then use [Operations](docs/foodscope/operations.md) for deeper diagnostics.
+
+### Docker keeps restarting
+
+```bash
+docker compose logs --tail=200 foodscope
+```
+
+Check `.env`, `data/config.json`, API credentials, and JSON syntax first.
+
+## Project layout
+
+```text
+.
+├── src/foodscope/                 # Food intelligence workflow
+├── data/
+│   ├── config.foodscope.example.json
+│   ├── foodscope/source_packs/    # Curated source packs
+│   ├── foodscope/profiles/        # Briefing profiles
+│   └── runs/                      # Local run archives
+├── docs/foodscope/                # FoodScope documentation
+├── tests/                         # Automated tests
+├── .env.example
+├── docker-compose.yml
+└── pyproject.toml
+```
+
+## Advanced capabilities
+
+- independent fast and analysis model routes;
+- provider fallback chains;
+- resumable runs and safe redelivery;
+- source health and fetch reports;
+- Feishu, email, WeChat draft, and webhook delivery;
+- MCP integration;
+- configurable evidence admission;
+- custom source packs and briefing profiles.
+
+Documentation:
+
+| Document | Covers |
 | --- | --- |
-| `raw.json` | 原始候选 |
-| `normalized.json` | 统一食品行业字段 |
-| `scored.json` | AI 分类与评分 |
-| `filtered.json` | 证据准入、去重和画像筛选 |
-| `enriched.json` | 事件说明、关键事实与隔离审计 |
-| `facts.json` | 不可变事实快照 |
-| `brief.md` / `brief.html` | 从同一事实快照渲染的成品 |
-| `manifest.json` | 阶段、计数、来源指标、分发状态和哈希 |
+| [FoodScope configuration](docs/foodscope/configuration.md) | AI routes, scheduling, evidence, and delivery |
+| [Source packs](docs/foodscope/source-packs.md) | Source coverage and customization |
+| [Profiles](docs/foodscope/profiles.md) | Market, product, R&D, and compliance profiles |
+| [Operations](docs/foodscope/operations.md) | Scheduling, recovery, redelivery, and troubleshooting |
+| [Contributing to FoodScope](docs/foodscope/contributing.md) | Adding sources and contributing code |
+| [General configuration](docs/configuration.md) | Base Horizon capabilities and providers |
+| [MCP tools](src/mcp/README.md) | Accessing the pipeline through MCP |
 
-简报按综合基础分分为“今日必读”（大于等于 6 分）和“今日新闻”
-（小于 6 分）。每条展示可点击的原始来源名称及北京时间发布日期。
-
-## 交付渠道
-
-- **本地归档**：`brief.md` / `brief.html`
-- **邮件**：自托管 SMTP/IMAP newsletter
-- **飞书/Lark**：Card JSON 2.0，长内容自动拆卡
-- **微信公众号**：只创建草稿，不自动群发
-- **通用 Webhook**：Slack、Discord、DingTalk 等
-- **MCP**：通过 MCP resources 读取运行状态和简报
-
-各渠道相互隔离，一个渠道失败不会阻断其余渠道。已经成功发送且事实哈希相同的渠道会标记为 `skipped`，防止重复发送。
-
-## 开发与测试
+## Development
 
 ```bash
-# 运行全部测试
+uv sync --extra dev
 uv run pytest
-
-# 类型检查
-uv run mypy src/foodscope
-
-# 代码风格检查
-uv run ruff check src/foodscope tests/foodscope
+uv run ruff check .
 ```
 
-当前测试套件包含 598 个用例，覆盖配置模型、来源适配器、情报流水线、去重、证据校验、画像选择、运行存储、恢复、分发和 MCP。
-
-## 项目结构
-
-```
-src/
-  foodscope/          # FoodScope 核心包
-    models.py         # 食品情报数据模型
-    config.py         # FoodScope 配置模型
-    loaders.py        # 画像与来源包加载
-    normalizer.py     # 内容标准化
-    event_dedup.py    # 跨语言事件去重
-    analyzer.py       # AI 快速分析
-    enricher.py       # AI 深度 enrichment
-    evidence.py       # 证据策略
-    selector.py       # 画像选择与排序
-    run_store.py      # 阶段化运行存储
-    scheduler.py      # 时间窗口与调度
-    orchestrator.py   # 主控流程
-    rendering.py      # Markdown/HTML 渲染
-    delivery.py       # 分发管理
-    sources/          # 来源适配器
-    templates/        # 简报模板
-  ...                 # Horizon 原始模块
-data/
-  foodscope/
-    profiles/         # 内置画像
-    source_packs/     # 内置来源包
-docs/
-  foodscope/          # FoodScope 文档
-tests/
-  foodscope/          # FoodScope 测试
-```
-
-## 14 天运营验收
-
-发布到生产前，建议至少连续计划运行 14 天，覆盖五个画像、多个市场、来源故障、AI 无效返回和渠道故障。只有真实运行周期完成后，才能确认来源稳定性和成本边界。
-
-周期结束后生成每源汇总：
+Optional integrations:
 
 ```bash
-uv run python scripts/foodscope_source_report.py \
-  --runs data/runs \
-  --output data/trials
+# OpenBB financial news
+uv sync --extra openbb
+
+# Browser-based X/Twitter collection
+uv sync --extra twitter
+
+# Enhanced full-text extraction
+uv sync --extra trafilatura
 ```
 
-## 许可证
+## Contributing
 
-FoodScope 保留上游 Horizon 的 MIT 许可证和版权声明。Horizon 相关代码版权归原作者所有；FoodScope 特有的画像、来源包、提示词、schema 和模板位于 `src/foodscope/` 和 `data/foodscope/` 下，同样遵循 MIT 许可证。
+Issues, pull requests, reliable sources, and new food-industry source packs are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [FoodScope contribution guide](docs/foodscope/contributing.md) before submitting changes.
 
-## 相关链接
+## Upstream
 
-- [Horizon 上游](https://github.com/Thysrael/Horizon)
-- [FoodScope 配置指南](docs/foodscope/configuration.md)
-- [FoodScope 来源包](docs/foodscope/source-packs.md)
-- [FoodScope 画像](docs/foodscope/profiles.md)
-- [FoodScope 运维](docs/foodscope/operations.md)
+FoodScope extends [Horizon](https://github.com/Thysrael/Horizon). See [UPSTREAM.md](UPSTREAM.md) for the upstream relationship and synchronization policy.
+
+## License
+
+[MIT](LICENSE)

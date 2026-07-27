@@ -87,6 +87,10 @@ class AIProvider(str, Enum):
     MINIMAX = "minimax"
     DEEPSEEK = "deepseek"
     KIMI = "kimi"
+    ZHIPU = "zhipu"
+    QIANFAN = "qianfan"
+    HUNYUAN = "hunyuan"
+    SILICONFLOW = "siliconflow"
     OLLAMA = "ollama"
 
 
@@ -140,6 +144,26 @@ AI_PROVIDER_DEFAULTS: Dict[AIProvider, Dict[str, Any]] = {
         "base_url": "https://api.moonshot.cn/v1",
         "temperature": 0.6,
         "extra_body": {"thinking": {"type": "disabled"}},
+    },
+    AIProvider.ZHIPU: {
+        "model": "glm-5.2",
+        "api_key_env": "ZHIPU_API_KEY",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    },
+    AIProvider.QIANFAN: {
+        "model": "ernie-4.5-turbo-20260402",
+        "api_key_env": "QIANFAN_API_KEY",
+        "base_url": "https://qianfan.baidubce.com/v2",
+    },
+    AIProvider.HUNYUAN: {
+        "model": "hunyuan-turbos-latest",
+        "api_key_env": "HUNYUAN_API_KEY",
+        "base_url": "https://api.hunyuan.cloud.tencent.com/v1",
+    },
+    AIProvider.SILICONFLOW: {
+        "model": "Pro/zai-org/GLM-4.7",
+        "api_key_env": "SILICONFLOW_API_KEY",
+        "base_url": "https://api.siliconflow.cn/v1",
     },
     AIProvider.OLLAMA: {
         "model": "llama3.1",

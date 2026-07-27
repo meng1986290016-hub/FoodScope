@@ -34,6 +34,10 @@ _DEFAULT_API_KEY_ENVS = {
     AIProvider.MINIMAX: "MINIMAX_API_KEY",
     AIProvider.DEEPSEEK: "DEEPSEEK_API_KEY",
     AIProvider.KIMI: "KIMI_API_KEY",
+    AIProvider.ZHIPU: "ZHIPU_API_KEY",
+    AIProvider.QIANFAN: "QIANFAN_API_KEY",
+    AIProvider.HUNYUAN: "HUNYUAN_API_KEY",
+    AIProvider.SILICONFLOW: "SILICONFLOW_API_KEY",
 }
 
 
@@ -576,6 +580,10 @@ def _create_single_client(config: AIConfig) -> AIClient:
         AIProvider.MINIMAX,
         AIProvider.DEEPSEEK,
         AIProvider.KIMI,
+        AIProvider.ZHIPU,
+        AIProvider.QIANFAN,
+        AIProvider.HUNYUAN,
+        AIProvider.SILICONFLOW,
         AIProvider.OLLAMA,
     }:
         return OpenAIClient(config)
