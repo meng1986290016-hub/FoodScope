@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 import hashlib
+import re
 from typing import Any
 from urllib.parse import urljoin
 
@@ -66,8 +67,21 @@ class BaseFoodAdapter(ABC):
             return None
         if isinstance(value, datetime):
             return cls.ensure_utc(value)
+        raw = str(value)
+        japanese_date = re.search(
+            r"(\d{4})年(\d{1,2})月(\d{1,2})"
+            r"(?:[.．]\d{1,2})?日"
+            r"(?:\s*(\d{1,2})時(\d{1,2})分)?",
+            raw,
+        )
+        if japanese_date is not None:
+            year, month, day, hour, minute = japanese_date.groups()
+            raw = (
+                f"{year}-{month}-{day} "
+                f"{hour or '00'}:{minute or '00'}"
+            )
         try:
-            parsed = date_parser.parse(str(value))
+            parsed = date_parser.parse(raw)
         except (TypeError, ValueError, OverflowError):
             return None
         return cls.ensure_utc(parsed)

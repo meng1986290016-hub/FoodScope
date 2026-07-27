@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from src.foodscope.sources.documents import DocumentIndexAdapter
+from src.foodscope.sources.base import BaseFoodAdapter
 from src.foodscope.sources.html_list import HTMLListAdapter
 from src.foodscope.sources.json_api import JSONAPIAdapter
 from src.foodscope.sources.rss import RSSFoodAdapter
@@ -16,6 +17,61 @@ from tests.foodscope.source_factories import rss_source, source
 
 FIXTURES = Path(__file__).parents[2] / "fixtures" / "foodscope" / "sources"
 SINCE = datetime(2026, 7, 24, tzinfo=timezone.utc)
+
+
+def test_base_adapter_parses_japanese_publication_dates():
+    assert BaseFoodAdapter.parse_date(
+        "2026年07月27日 10時00分"
+    ) == datetime(2026, 7, 27, 10, 0, tzinfo=timezone.utc)
+    assert BaseFoodAdapter.parse_date(
+        "2026年7月23.30日"
+    ) == datetime(2026, 7, 23, tzinfo=timezone.utc)
+
+
+def test_html_list_can_replace_generic_listing_title_from_detail():
+    html_source = source(
+        "japan_issue",
+        "html_list",
+        url="https://93.184.216.34/list.html",
+        options={
+            "item_selector": "article",
+            "title_selector": "a",
+            "link_selector": "a",
+            "date_selector": "time",
+            "detail_title_selector": "h1",
+            "max_detail_title_fetches": 2,
+        },
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/list.html":
+            return httpx.Response(
+                200,
+                text=(
+                    "<article><a href='/issue.html'>Details</a>"
+                    "<time datetime='2026-07-25'></time></article>"
+                ),
+            )
+        if request.url.path == "/issue.html":
+            return httpx.Response(
+                200,
+                text="<h1>Food Chemical News issue 3129</h1>",
+            )
+        raise AssertionError(f"unexpected path {request.url.path}")
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+        ) as client:
+            return await HTMLListAdapter(client).fetch(
+                html_source, SINCE
+            )
+
+    items = asyncio.run(run())
+
+    assert [item.title for item in items] == [
+        "Food Chemical News issue 3129"
+    ]
 
 
 def _client(path: str, content: bytes, content_type: str):
@@ -55,6 +111,45 @@ def test_rss_honors_window_and_emits_food_source_contract():
     assert items[0].content == "A concise launch description."
     assert items[0].published_at.tzinfo == timezone.utc
     assert items[0].metadata["food_source_id"] == "rss_fixture"
+
+
+def test_rss_unwraps_escaped_cdata_in_title_and_description():
+    payload = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Nutritional Outlook</title>
+        <item>
+          <title>&lt;![CDATA[Clean-label ingredient launches]]&gt;</title>
+          <link>https://example.com/view/clean-label-launch</link>
+          <description>
+            &lt;![CDATA[A manufacturer introduced a soluble ingredient.]]&gt;
+          </description>
+          <pubDate>Fri, 24 Jul 2026 22:10:01 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    async def run():
+        async with _client(
+            "/rss.xml",
+            payload,
+            "application/rss+xml",
+        ) as client:
+            return await RSSFoodAdapter(client).fetch(
+                rss_source(
+                    "escaped_cdata",
+                    url="https://93.184.216.34/rss.xml",
+                ),
+                SINCE,
+            )
+
+    items = asyncio.run(run())
+
+    assert items[0].title == "Clean-label ingredient launches"
+    assert items[0].content == (
+        "A manufacturer introduced a soluble ingredient."
+    )
 
 
 def test_json_api_uses_configured_paths_and_fields():

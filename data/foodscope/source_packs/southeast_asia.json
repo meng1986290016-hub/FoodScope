@@ -22,20 +22,24 @@
       ],
       "name": "FoodNavigator Asia",
       "options": {
-        "content_selector": "p",
+        "content_selector": ".story-item-text-subheadline",
         "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "detail_content_selector": ".b-article-body",
+        "item_selector": "article.story-item",
+        "link_selector": ".story-item-text-headline-link",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "require_content": true,
+        "title_selector": ".story-item-text-headline-link",
         "trial_initial_grade": "A",
         "trial_note": "区域综合性最强之一",
-        "trial_signals": "新品、配料、市场、法规"
+        "trial_signals": "新品、配料、市场、法规",
+        "url_include_pattern": "/Article/"
       },
       "packs": [
         "southeast_asia"
       ],
-      "url": "https://www.foodnavigator-asia.com/"
+      "url": "https://www.foodnavigator.com/Regions/Asia-Pacific/"
     },
     {
       "adapter": "html_list",
@@ -72,7 +76,7 @@
       "url": "https://foodbeverageasia.com/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "packaging_labeling",
@@ -90,12 +94,7 @@
       ],
       "name": "Mini Me Insights",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "规模小但区域新品独特性高",
         "trial_signals": "新品观察、包装、消费趋势"
@@ -103,7 +102,7 @@
       "packs": [
         "southeast_asia"
       ],
-      "url": "https://www.minimeinsights.com/"
+      "url": "https://www.minimeinsights.com/feed/"
     }
   ]
 }

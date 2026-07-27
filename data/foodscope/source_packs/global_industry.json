@@ -126,7 +126,7 @@
       "url": "https://www.fooddive.com/feeds/news/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "packaging_labeling",
         "company_updates"
@@ -143,12 +143,7 @@
       ],
       "name": "Just Food",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "部分内容付费",
         "trial_signals": "公司、工厂、并购、供应链"
@@ -156,41 +151,7 @@
       "packs": [
         "global_industry"
       ],
-      "url": "https://www.just-food.com/"
-    },
-    {
-      "adapter": "html_list",
-      "categories": [
-        "ingredients_technology",
-        "packaging_labeling",
-        "food_safety_recalls"
-      ],
-      "collection_tier": "extended",
-      "enabled": true,
-      "evidence_tier": 2,
-      "id": "M006",
-      "languages": [
-        "en"
-      ],
-      "markets": [
-        "EU"
-      ],
-      "name": "New Food",
-      "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
-        "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
-        "trial_initial_grade": "B",
-        "trial_note": "兼有供应商内容",
-        "trial_signals": "加工、质量、安全、技术"
-      },
-      "packs": [
-        "global_industry"
-      ],
-      "url": "https://www.newfoodmagazine.com/news/"
+      "url": "https://www.just-food.com/feed/"
     },
     {
       "adapter": "html_list",

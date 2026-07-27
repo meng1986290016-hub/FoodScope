@@ -35,6 +35,7 @@ class HTMLListAdapter(BaseFoodAdapter):
         )
         self._detail_date_fetches = 0
         self._detail_content_fetches = 0
+        self._detail_title_fetches = 0
         self._detail_page_cache: dict[str, BeautifulSoup | None] = {}
         items: list[ContentItem] = []
         seen_urls: set[str] = set()
@@ -94,6 +95,10 @@ class HTMLListAdapter(BaseFoodAdapter):
             and re.search(include_pattern, url) is None
         ):
             return None
+        title = title_node.get_text(" ", strip=True)
+        detail_title = await self._detail_page_title(source, url)
+        if detail_title is not None:
+            title = detail_title
         published = self._node_date(date_node, source)
         if (
             published is None
@@ -136,7 +141,7 @@ class HTMLListAdapter(BaseFoodAdapter):
             return None
         return self.make_item(
             source,
-            title=title_node.get_text(" ", strip=True),
+            title=title,
             url=url,
             published_at=published,
             content=content,
@@ -150,6 +155,29 @@ class HTMLListAdapter(BaseFoodAdapter):
                 ),
             },
         )
+
+    async def _detail_page_title(
+        self, source: FoodSourceSpec, url: str
+    ) -> str | None:
+        selector = source.options.get("detail_title_selector")
+        if not isinstance(selector, str) or not selector:
+            return None
+        max_fetches = int(
+            source.options.get("max_detail_title_fetches", 0)
+        )
+        if (
+            max_fetches <= 0
+            or self._detail_title_fetches >= max_fetches
+        ):
+            return None
+        self._detail_title_fetches += 1
+        soup = await self._detail_page_soup(url)
+        if soup is None:
+            return None
+        node = soup.select_one(selector)
+        if node is None:
+            return None
+        return self.bounded_text(node.get_text(" ", strip=True), source)
 
     def _node_date(
         self, node: Tag | None, source: FoodSourceSpec

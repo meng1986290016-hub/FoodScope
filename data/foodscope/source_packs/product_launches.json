@@ -169,7 +169,7 @@
       "url": "https://www.beveragedaily.com/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "ingredients_technology"
@@ -186,12 +186,7 @@
       ],
       "name": "Food Ingredients First",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "供应商消息较多，商业价值也高",
         "trial_signals": "配料、配方、供应商创新"
@@ -200,7 +195,7 @@
         "ingredients_rd",
         "product_launches"
       ],
-      "url": "https://www.foodingredientsfirst.com/"
+      "url": "https://resource-cns.cnsmedia.com/rss/fifnews.xml"
     },
     {
       "adapter": "rss",
@@ -308,7 +303,7 @@
       "url": "https://www.thegrocer.co.uk/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "retail_foodservice",
@@ -326,12 +321,7 @@
       ],
       "name": "日本食糧新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "部分内容付费，但覆盖最完整",
         "trial_signals": "食品全产业、企业、新品、流通"
@@ -340,10 +330,10 @@
         "japan",
         "product_launches"
       ],
-      "url": "https://news.nissyoku.co.jp/"
+      "url": "https://news.nissyoku.co.jp/archives/news-cat/001/feed"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends",
@@ -361,12 +351,7 @@
       ],
       "name": "食品新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "新闻稿需识别",
         "trial_signals": "新品、品牌、企业、品类"
@@ -375,10 +360,10 @@
         "japan",
         "product_launches"
       ],
-      "url": "https://shokuhin.net/"
+      "url": "https://shokuhin.net/feed/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends",
@@ -396,12 +381,7 @@
       ],
       "name": "식품저널 foodnews",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "综合覆盖强",
         "trial_signals": "食品产业、新品、政策、市场"
@@ -410,10 +390,10 @@
         "korea",
         "product_launches"
       ],
-      "url": "https://www.foodnews.co.kr/"
+      "url": "https://www.foodnews.co.kr/rss/allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "ingredients_technology",
@@ -432,12 +412,7 @@
       ],
       "name": "식품음료신문",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "综合行业源",
         "trial_signals": "食品饮料、原料、企业、法规"
@@ -446,10 +421,10 @@
         "korea",
         "product_launches"
       ],
-      "url": "https://www.thinkfood.co.kr/"
+      "url": "https://cdn.thinkfood.co.kr/rss/gn_rss_allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "ingredients_technology",
@@ -468,12 +443,7 @@
       ],
       "name": "푸드아이콘 FOODICON",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "独立专业媒体定位清晰",
         "trial_signals": "食品企业、技术、新品、政策"
@@ -482,10 +452,10 @@
         "korea",
         "product_launches"
       ],
-      "url": "https://www.foodicon.co.kr/"
+      "url": "https://foodicon.co.kr/rss/allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "regulations_standards",
@@ -503,12 +473,7 @@
       ],
       "name": "푸드투데이",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "地方和公共议题内容需过滤",
         "trial_signals": "食品产业、政策、安全、新品"
@@ -517,7 +482,7 @@
         "korea",
         "product_launches"
       ],
-      "url": "https://www.foodtoday.or.kr/"
+      "url": "https://www.foodtoday.or.kr/data/rss/news.xml"
     },
     {
       "adapter": "html_list",
@@ -539,24 +504,28 @@
       ],
       "name": "FoodNavigator Asia",
       "options": {
-        "content_selector": "p",
+        "content_selector": ".story-item-text-subheadline",
         "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "detail_content_selector": ".b-article-body",
+        "item_selector": "article.story-item",
+        "link_selector": ".story-item-text-headline-link",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "require_content": true,
+        "title_selector": ".story-item-text-headline-link",
         "trial_initial_grade": "A",
         "trial_note": "区域综合性最强之一",
-        "trial_signals": "新品、配料、市场、法规"
+        "trial_signals": "新品、配料、市场、法规",
+        "url_include_pattern": "/Article/"
       },
       "packs": [
         "southeast_asia",
         "product_launches"
       ],
-      "url": "https://www.foodnavigator-asia.com/"
+      "url": "https://www.foodnavigator.com/Regions/Asia-Pacific/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "packaging_labeling",
@@ -574,12 +543,7 @@
       ],
       "name": "Mini Me Insights",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "规模小但区域新品独特性高",
         "trial_signals": "新品观察、包装、消费趋势"
@@ -588,7 +552,7 @@
         "southeast_asia",
         "product_launches"
       ],
-      "url": "https://www.minimeinsights.com/"
+      "url": "https://www.minimeinsights.com/feed/"
     }
   ]
 }

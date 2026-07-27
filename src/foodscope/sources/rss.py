@@ -5,6 +5,7 @@ from __future__ import annotations
 import calendar
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+import re
 
 from bs4 import BeautifulSoup
 import feedparser
@@ -28,7 +29,14 @@ class RSSFoodAdapter(BaseFoodAdapter):
             self.client, "GET", str(source.url)
         )
         response.raise_for_status()
-        feed = feedparser.parse(response.content)
+        feed = feedparser.parse(
+            re.sub(
+                rb"&lt;!\[CDATA\[(.*?)\]\]&gt;",
+                rb"<![CDATA[\1]]>",
+                response.content,
+                flags=re.DOTALL,
+            )
+        )
         items: list[ContentItem] = []
         for entry in feed.entries:
             self.raw_candidate_count += 1
@@ -54,15 +62,15 @@ class RSSFoodAdapter(BaseFoodAdapter):
             content = None
             if raw_content:
                 content = self.bounded_text(
-                    BeautifulSoup(
-                        str(raw_content), "html.parser"
-                    ).get_text(" ", strip=True),
+                    self._clean_entry_text(raw_content),
                     source,
                 )
             items.append(
                 self.make_item(
                     source,
-                    title=entry.get("title", "Untitled"),
+                    title=self._clean_entry_text(
+                        entry.get("title", "Untitled")
+                    ),
                     url=url,
                     content=content,
                     author=entry.get("author") or source.name,
@@ -81,6 +89,15 @@ class RSSFoodAdapter(BaseFoodAdapter):
                 )
             )
         return items
+
+    @staticmethod
+    def _clean_entry_text(value: object) -> str:
+        text = str(value).strip()
+        if text.startswith("<![CDATA[") and text.endswith("]]>"):
+            text = text[9:-3]
+        return BeautifulSoup(text, "html.parser").get_text(
+            " ", strip=True
+        )
 
     @classmethod
     def _entry_date(cls, entry) -> datetime | None:

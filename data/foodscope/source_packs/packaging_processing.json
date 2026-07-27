@@ -3,7 +3,7 @@
   "name": "包装、加工与供应链",
   "sources": [
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "ingredients_technology",
         "company_updates"
@@ -20,12 +20,7 @@
       ],
       "name": "Green Queen",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "议题立场鲜明，需交叉验证",
         "trial_signals": "替代蛋白、气候食品、投资"
@@ -33,7 +28,7 @@
       "packs": [
         "packaging_processing"
       ],
-      "url": "https://www.greenqueen.com.hk/"
+      "url": "https://www.greenqueen.com.hk/feed/"
     },
     {
       "adapter": "html_list",
@@ -102,7 +97,7 @@
       "url": "https://packagingeurope.com/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "packaging_labeling",
         "company_updates"
@@ -119,12 +114,7 @@
       ],
       "name": "Packaging Insights",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "与配料媒体集团有关联",
         "trial_signals": "包装创新、材料、品牌"
@@ -132,10 +122,10 @@
       "packs": [
         "packaging_processing"
       ],
-      "url": "https://www.packaginginsights.com/"
+      "url": "https://resource-cns.cnsmedia.com/rss/pinews.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "ingredients_technology",
         "packaging_labeling",
@@ -153,12 +143,7 @@
       ],
       "name": "Food Packaging Forum",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "非传统媒体，适合技术证据补位",
         "trial_signals": "食品接触材料、科学、法规"
@@ -166,7 +151,7 @@
       "packs": [
         "packaging_processing"
       ],
-      "url": "https://www.foodpackagingforum.org/"
+      "url": "https://foodpackagingforum.org/news/feed/"
     }
   ]
 }

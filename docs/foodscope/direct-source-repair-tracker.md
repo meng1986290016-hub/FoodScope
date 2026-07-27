@@ -9,7 +9,7 @@
 | M003 | [FoodBev Media](https://www.foodbev.com/blog) | 全球行业、新品 | 改用官方 [Blog RSS](https://www.foodbev.com/blog-feed.xml) | 已解决 | 2026-07-27 探测168小时得20篇；[样例](https://www.foodbev.com/post301/beyond-the-barcode-why-smart-packaging-is-reshaping-the-uk-food-and-beverage-industry)，标题/时间/摘要通过 |
 | M004 | [Food Dive](https://www.fooddive.com/) | 全球行业、新品 | 改用官方 [News RSS](https://www.fooddive.com/feeds/news/) | 已解决 | 2026-07-27 探测168小时得10篇；[样例](https://www.fooddive.com/news/nestle-sells-half-water-premium-beverage-business-Peranel/826150/)，标题/时间/摘要通过 |
 | M005 | [Just Food](https://www.just-food.com/) | 全球行业 | 尚未核查稳定入口与访问限制 | 待核查 | — |
-| M006 | [New Food](https://www.newfoodmagazine.com/news/) | 全球行业 | 新闻页触发 JavaScript 验证；`/news/feed/`、`/feed/` 和公开 WordPress API 均返回 HTTP 202 空正文 | 访问受限 | 2026-07-27 真实请求复核；当前无可稳定直读的公开入口，保留待后续重试 |
+| M006 | [New Food](https://www.newfoodmagazine.com/news/) | 全球行业 | 新闻页触发 JavaScript 验证；`/news/feed/`、`/feed/` 和公开 WordPress API 均返回 HTTP 202 空正文 | 已移除 | 2026-07-27 按产品负责人要求从生成逻辑及来源包移除 |
 | M007 | [Food Manufacture](https://www.foodmanufacture.co.uk/) | 全球行业 | 公开列表 + 详情页 JSON-LD 精确时间和 `articleBody`；增加URL去重 | 已解决 | 2026-07-27 探测168小时得8篇且8个唯一URL；[样例](https://www.foodmanufacture.co.uk/Article/2026/07/24/dairy-firm-withdraws-milk-due-to-possible-presence-of-antibiotics/)，精确时间与正文通过 |
 | M009 | [Food Manufacturing](https://www.foodmanufacturing.com/) | 全球行业 | 最近运行HTTP失败 | 待核查 | — |
 | M011 | [Prepared Foods](https://www.preparedfoods.com/) | 全球行业 | 最近运行HTTP失败 | 待核查 | — |
@@ -41,20 +41,20 @@
 | M063 | [CSP Daily News](https://www.cspdailynews.com/) | 零售餐饮 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M064 | [C-Store Dive](https://www.cstoredive.com/) | 零售餐饮 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M065 | [Convenience Store News](https://csnews.com/) | 零售餐饮 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M075 | [日本食糧新聞](https://news.nissyoku.co.jp/) | 日本、新品 | 最近运行0候选；待核查付费内容与公开列表 | 待核查 | — |
-| M076 | [食品新聞](https://shokuhin.net/) | 日本、新品 | 最近运行0候选；待核查RSS和页面结构 | 待核查 | — |
-| M079 | [食品化学新聞](https://www.foodchemicalnews.co.jp/) | 日本 | 尚未核查稳定入口与访问限制 | 待核查 | — |
-| M080 | [ダイヤモンド・チェーンストア](https://diamond-rm.net/) | 日本 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M084 | [健康産業新聞](https://www.kenko-media.com/health_idst/) | 日本 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M085 | [健康産業速報Online](https://www.kenko-sokuho.co.jp/) | 日本 | 尚未核查稳定入口与访问限制 | 待核查 | — |
-| M086 | [激流オンライン](https://gekiryu-online.jp/) | 日本 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M087 | [健康産業流通新聞](https://www.him-news.com/) | 日本 | 尚未核查稳定入口与访问限制 | 待核查 | — |
-| M089 | [식품저널 foodnews](https://www.foodnews.co.kr/) | 韩国、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M090 | [식품음료신문](https://www.thinkfood.co.kr/) | 韩国、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M091 | [푸드아이콘 FOODICON](https://www.foodicon.co.kr/) | 韩国、新品 | 最近运行0候选；待核查页面结构 | 待核查 | — |
-| M092 | [푸드투데이](https://www.foodtoday.or.kr/) | 韩国、新品 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M093 | [식품외식경제](https://www.foodbank.co.kr/) | 韩国 | 尚未核查稳定入口与日期字段 | 待核查 | — |
-| M094 | [식품외식경영](https://www.foodnews.news/) | 韩国 | 尚未核查稳定入口与日期字段 | 待核查 | — |
+| M075 | [日本食糧新聞](https://news.nissyoku.co.jp/) | 日本、新品 | 改用官方[新闻 RSS](https://news.nissyoku.co.jp/archives/news-cat/001/feed) | 已解决 | 2026-07-27 探测336小时得10篇，标题、日期、摘要通过 |
+| M076 | [食品新聞](https://shokuhin.net/) | 日本、新品 | 改用官方 [RSS](https://shokuhin.net/feed/) | 已解决 | 2026-07-27 探测336小时得80篇，标题、日期、摘要通过 |
+| M079 | [食品化学新聞](https://www.foodchemicalnews.co.jp/) | 日本 | 改读[食品化学新聞期刊列表](https://www.foodchemicalnews.co.jp/article/fcnhjnewspaper/foodchemicalnewspaper)，详情页提取期号、日期和公开目录 | 已解决 | 2026-07-27 探测15天得2期；10/10候选日期通过，正文1066–1168字 |
+| M080 | [ダイヤモンド・チェーンストア](https://diamond-rm.net/) | 日本 | 改用官方 [RSS](https://diamond-rm.net/feed/) | 已解决 | 2026-07-27 探测336小时得10篇，标题、日期、摘要通过 |
+| M084 | [健康産業新聞](https://www.kenko-media.com/health_idst/) | 日本 | 改用官方[健康産業新聞 RSS](https://www.kenko-media.com/health_idst/feed) | 已解决 | 2026-07-27 探测336小时得9篇，标题、日期、摘要通过 |
+| M085 | [健康産業速報Online](https://www.kenko-sokuho.co.jp/) | 日本 | 放弃陈旧通用Feed，改读当前首页新闻卡片及详情公开正文 | 已解决 | 2026-07-27 探测15天得10篇；20/20日期通过，正文180–585字 |
+| M086 | [激流オンライン](https://gekiryu-online.jp/) | 日本 | 改用官方 [RSS](https://gekiryu-online.jp/feed) | 已解决 | 2026-07-27 探测336小时得36篇，标题、日期、摘要通过 |
+| M087 | [健康産業流通新聞](https://www.him-news.com/) | 日本 | 改读[最新号列表](https://www.him-news.com/kiji.html)，按期提取主文链接、出版日和详情公开摘要 | 已解决 | 2026-07-27 探测15天得1期；10/10候选日期通过，公开正文375字 |
+| M089 | [식품저널 foodnews](https://www.foodnews.co.kr/) | 韩国、新品 | 改用官方 [RSS](https://www.foodnews.co.kr/rss/allArticle.xml) | 已解决 | 2026-07-27 探测336小时得38篇，标题、日期、摘要通过 |
+| M090 | [식품음료신문](https://www.thinkfood.co.kr/) | 韩国、新品 | 改用官方 [RSS](https://cdn.thinkfood.co.kr/rss/gn_rss_allArticle.xml) | 已解决 | 2026-07-27 探测336小时得50篇，标题、日期、摘要通过 |
+| M091 | [푸드아이콘 FOODICON](https://www.foodicon.co.kr/) | 韩国、新品 | 改用官方 [RSS](https://foodicon.co.kr/rss/allArticle.xml) | 已解决 | 2026-07-27 探测336小时得37篇，标题、日期、摘要通过 |
+| M092 | [푸드투데이](https://www.foodtoday.or.kr/) | 韩国、新品 | 改用官方 [RSS](https://www.foodtoday.or.kr/data/rss/news.xml) | 已解决 | 2026-07-27 探测336小时得29篇，标题、日期、摘要通过 |
+| M093 | [식품외식경제](https://www.foodbank.co.kr/) | 韩国 | 改用官方 [RSS](https://www.foodbank.co.kr/rss/allArticle.xml) | 已解决 | 2026-07-27 探测336小时得46篇，标题、日期、摘要通过 |
+| M094 | [식품외식경영](https://www.foodnews.news/) | 韩国 | 改用官方 [RSS](https://www.foodnews.news/data/rss/news.xml) | 已解决 | 2026-07-27 探测336小时得39篇，标题、日期、摘要通过 |
 | M098 | [FoodNavigator Asia](https://www.foodnavigator-asia.com/) | 东南亚、新品 | 尚未核查；可能复用 William Reed 站群解析 | 待核查 | — |
 | M099 | [Food & Beverage Asia](https://foodbeverageasia.com/) | 东南亚 | 尚未核查稳定入口与日期字段 | 待核查 | — |
 | M105 | [Mini Me Insights](https://www.minimeinsights.com/) | 东南亚、新品 | 最近运行0候选；待核查WordPress Feed与页面结构 | 待核查 | — |
@@ -76,6 +76,14 @@
 |---|---|---|---|---|---|---|
 | M003 | 官方RSS | 通过 | 20篇 | 20/20 | RSS摘要 | 已解决 |
 | M004 | 官方RSS | 通过 | 10篇 | 10/10 | RSS摘要 | 已解决 |
-| M006 | 新闻页、RSS、WordPress API | 不适用 | 0篇 | 不适用 | HTTP 202空正文或JS验证 | 访问受限 |
+| M006 | 新闻页、RSS、WordPress API | 不适用 | 0篇 | 不适用 | HTTP 202空正文或JS验证 | 已移除 |
 | M007 | 公开列表+详情JSON-LD | 通过 | 8篇，8个唯一URL | 11/11候选 | 通过 | 已解决 |
 | M012 | 现行杂志列表+详情JSON-LD | 通过 | 4篇 | 12/12候选 | 通过 | 已解决 |
+
+## 第三批验收记录：日韩来源
+
+| 地区 | 来源 | 入口验证 | 自动化测试 | 真实近期内容 | 最终状态 |
+|---|---:|---|---|---:|---|
+| 日本 | M075、M076、M080、M084、M086 | 官方RSS | 通过 | 145篇/336小时 | 5个已解决 |
+| 日本 | M079、M085、M087 | 当前列表+详情公开内容 | 通过 | 13篇或期/15天 | 3个已解决 |
+| 韩国 | M089–M094 | 官方RSS | 通过 | 239篇/336小时 | 6个已解决 |

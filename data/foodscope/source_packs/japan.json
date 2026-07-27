@@ -3,7 +3,7 @@
   "name": "日本食品产业",
   "sources": [
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "retail_foodservice",
@@ -21,12 +21,7 @@
       ],
       "name": "日本食糧新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "部分内容付费，但覆盖最完整",
         "trial_signals": "食品全产业、企业、新品、流通"
@@ -34,10 +29,10 @@
       "packs": [
         "japan"
       ],
-      "url": "https://news.nissyoku.co.jp/"
+      "url": "https://news.nissyoku.co.jp/archives/news-cat/001/feed"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends",
@@ -55,12 +50,7 @@
       ],
       "name": "食品新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "新闻稿需识别",
         "trial_signals": "新品、品牌、企业、品类"
@@ -68,7 +58,7 @@
       "packs": [
         "japan"
       ],
-      "url": "https://shokuhin.net/"
+      "url": "https://shokuhin.net/feed/"
     },
     {
       "adapter": "html_list",
@@ -88,23 +78,28 @@
       ],
       "name": "食品化学新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "date_selector": "#pragraph5core",
+        "detail_content_selector": "#html4core",
+        "detail_title_selector": "#head1core h2",
+        "item_selector": ".search-result-cell",
+        "link_selector": "a[href*='/article/foodchemicalnewspaper/item_']",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "max_detail_title_fetches": 20,
+        "require_content": true,
+        "title_selector": "a[href*='/article/foodchemicalnewspaper/item_']",
         "trial_initial_grade": "A",
         "trial_note": "专业性强，部分内容为刊物入口",
-        "trial_signals": "添加剂、功能原料、法规"
+        "trial_signals": "添加剂、功能原料、法规",
+        "url_include_pattern": "/article/foodchemicalnewspaper/item_"
       },
       "packs": [
         "japan"
       ],
-      "url": "https://www.foodchemicalnews.co.jp/"
+      "url": "https://www.foodchemicalnews.co.jp/article/fcnhjnewspaper/foodchemicalnewspaper"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "consumer_trends",
         "retail_foodservice"
@@ -121,12 +116,7 @@
       ],
       "name": "ダイヤモンド・チェーンストア",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "零售商业价值高",
         "trial_signals": "商超、便利店、消费、渠道"
@@ -134,10 +124,10 @@
       "packs": [
         "japan"
       ],
-      "url": "https://diamond-rm.net/"
+      "url": "https://diamond-rm.net/feed/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "ingredients_technology",
         "regulations_standards"
@@ -154,12 +144,7 @@
       ],
       "name": "健康産業新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "功能食品价值高",
         "trial_signals": "健康食品、原料、法规"
@@ -167,7 +152,7 @@
       "packs": [
         "japan"
       ],
-      "url": "https://www.kenko-media.com/health_idst/"
+      "url": "https://www.kenko-media.com/health_idst/feed"
     },
     {
       "adapter": "html_list",
@@ -187,15 +172,21 @@
       ],
       "name": "健康産業速報Online",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "date_selector": ".published",
+        "detail_content_selector": ".entry-body",
+        "detail_date_jsonld_field": "datePublished",
+        "item_selector": ".vk_post.postListText, .vk_post.card",
+        "link_selector": ".postListText_title a, .vk_post_title a",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 30,
+        "max_detail_date_fetches": 30,
+        "prefer_detail_date": true,
+        "require_content": true,
+        "title_selector": ".postListText_title a, .vk_post_title a",
         "trial_initial_grade": "B",
         "trial_note": "订阅内容较多",
-        "trial_signals": "健康食品、政策、企业"
+        "trial_signals": "健康食品、政策、企业",
+        "url_include_pattern": "/(?:breaking-news(?:-pickup)?|administrative-news|industry-news|international-news|functional-foods)/\\d+/"
       },
       "packs": [
         "japan"
@@ -203,7 +194,7 @@
       "url": "https://www.kenko-sokuho.co.jp/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "retail_foodservice",
         "company_updates"
@@ -220,12 +211,7 @@
       ],
       "name": "激流オンライン",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "付费墙和更新量需实测",
         "trial_signals": "食品流通、零售、企业"
@@ -233,7 +219,7 @@
       "packs": [
         "japan"
       ],
-      "url": "https://gekiryu-online.jp/"
+      "url": "https://gekiryu-online.jp/feed"
     },
     {
       "adapter": "html_list",
@@ -253,20 +239,24 @@
       ],
       "name": "健康産業流通新聞",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
+        "content_selector": ".w525",
+        "date_selector": "h3",
+        "detail_content_selector": "#contents_left .mb25",
+        "item_selector": ".divbox02",
+        "link_selector": "a[href*='/news/view/']",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
+        "max_detail_content_fetches": 20,
+        "require_content": true,
+        "title_selector": "a[href*='/news/view/']",
         "trial_initial_grade": "B",
         "trial_note": "与 M084/M085 重叠",
-        "trial_signals": "健康食品、渠道、原料"
+        "trial_signals": "健康食品、渠道、原料",
+        "url_include_pattern": "/news/view/\\d+"
       },
       "packs": [
         "japan"
       ],
-      "url": "https://www.him-news.com/"
+      "url": "https://www.him-news.com/kiji.html"
     }
   ]
 }

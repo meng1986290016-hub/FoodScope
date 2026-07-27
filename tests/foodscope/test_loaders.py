@@ -144,6 +144,45 @@ def test_first_direct_source_batch_uses_verified_entries_and_selectors():
     assert sources["M017"].options["detail_content_selector"] == (
         ".articleContent"
     )
+
+
+def test_all_william_reed_sources_use_verified_listing_contract():
+    sources = {
+        source.id: source
+        for source in load_source_packs(
+            FoodScopeConfig(
+                source_packs=[
+                    "global_industry",
+                    "ingredients_rd",
+                    "southeast_asia",
+                ]
+            )
+        )
+    }
+
+    for source_id in ("M001", "M019", "M020", "M035", "M036"):
+        assert sources[source_id].options["item_selector"] == (
+            "article.card"
+        )
+        assert sources[source_id].options["detail_content_selector"] == (
+            ".b-article-body"
+        )
+        assert sources[source_id].options["exclude_text_pattern"] == (
+            "(?i)Paid for by"
+        )
+
+    assert sources["M098"].url == (
+        "https://www.foodnavigator.com/Regions/Asia-Pacific/"
+    )
+    assert sources["M098"].options["item_selector"] == (
+        "article.story-item"
+    )
+    assert sources["M098"].options["title_selector"] == (
+        ".story-item-text-headline-link"
+    )
+    assert sources["M098"].options["content_selector"] == (
+        ".story-item-text-subheadline"
+    )
     assert sources["M017"].options["prefer_detail_date"] is True
     assert sources["M017"].options["detail_date_jsonld_field"] == (
         "datePublished"

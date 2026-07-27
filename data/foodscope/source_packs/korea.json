@@ -3,7 +3,7 @@
   "name": "韩国食品产业",
   "sources": [
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends",
@@ -21,12 +21,7 @@
       ],
       "name": "식품저널 foodnews",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "综合覆盖强",
         "trial_signals": "食品产业、新品、政策、市场"
@@ -34,10 +29,10 @@
       "packs": [
         "korea"
       ],
-      "url": "https://www.foodnews.co.kr/"
+      "url": "https://www.foodnews.co.kr/rss/allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "ingredients_technology",
@@ -56,12 +51,7 @@
       ],
       "name": "식품음료신문",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "综合行业源",
         "trial_signals": "食品饮料、原料、企业、法规"
@@ -69,10 +59,10 @@
       "packs": [
         "korea"
       ],
-      "url": "https://www.thinkfood.co.kr/"
+      "url": "https://cdn.thinkfood.co.kr/rss/gn_rss_allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "ingredients_technology",
@@ -91,12 +81,7 @@
       ],
       "name": "푸드아이콘 FOODICON",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "独立专业媒体定位清晰",
         "trial_signals": "食品企业、技术、新品、政策"
@@ -104,10 +89,10 @@
       "packs": [
         "korea"
       ],
-      "url": "https://www.foodicon.co.kr/"
+      "url": "https://foodicon.co.kr/rss/allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "regulations_standards",
@@ -125,12 +110,7 @@
       ],
       "name": "푸드투데이",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "地方和公共议题内容需过滤",
         "trial_signals": "食品产业、政策、安全、新品"
@@ -138,10 +118,10 @@
       "packs": [
         "korea"
       ],
-      "url": "https://www.foodtoday.or.kr/"
+      "url": "https://www.foodtoday.or.kr/data/rss/news.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "retail_foodservice",
         "company_updates"
@@ -158,12 +138,7 @@
       ],
       "name": "식품외식경제",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "A",
         "trial_note": "餐饮商业信号较强",
         "trial_signals": "食品、餐饮、经营、企业"
@@ -171,10 +146,10 @@
       "packs": [
         "korea"
       ],
-      "url": "https://www.foodbank.co.kr/"
+      "url": "https://www.foodbank.co.kr/rss/allArticle.xml"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "retail_foodservice",
         "company_updates"
@@ -191,12 +166,7 @@
       ],
       "name": "식품외식경영",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "B",
         "trial_note": "与 M093 名称相近，需区分实体",
         "trial_signals": "食品餐饮、品牌、经营"
@@ -204,7 +174,7 @@
       "packs": [
         "korea"
       ],
-      "url": "https://www.foodnews.news/"
+      "url": "https://www.foodnews.news/data/rss/news.xml"
     }
   ]
 }

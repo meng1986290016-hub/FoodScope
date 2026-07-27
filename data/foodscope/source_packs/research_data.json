@@ -3,7 +3,7 @@
   "name": "数据、研究与商业信号",
   "sources": [
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "consumer_trends",
         "retail_foodservice"
@@ -20,12 +20,7 @@
       ],
       "name": "NIQ",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "C",
         "trial_note": "只使用公开洞察并保留方法",
         "trial_signals": "快消、渠道、消费者"
@@ -33,10 +28,10 @@
       "packs": [
         "research_data"
       ],
-      "url": "https://nielseniq.com/global/en/insights/"
+      "url": "https://nielseniq.com/global/en/insights/feed/"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends"
@@ -53,12 +48,7 @@
       ],
       "name": "Mintel",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "C",
         "trial_note": "报告付费；公开文章可作线索",
         "trial_signals": "新品、消费、品类趋势"
@@ -66,7 +56,7 @@
       "packs": [
         "research_data"
       ],
-      "url": "https://www.mintel.com/insights/food-and-drink/"
+      "url": "https://www.mintel.com/insights/food-and-drink/feed/"
     },
     {
       "adapter": "html_list",
@@ -136,7 +126,7 @@
       "url": "https://www.euromonitor.com/insights"
     },
     {
-      "adapter": "html_list",
+      "adapter": "rss",
       "categories": [
         "product_innovation",
         "consumer_trends",
@@ -154,12 +144,7 @@
       ],
       "name": "Tastewise",
       "options": {
-        "content_selector": "p",
-        "date_selector": "time",
-        "item_selector": "article",
-        "link_selector": "a[href]",
         "max_content_chars": 1200,
-        "title_selector": "h1, h2, h3",
         "trial_initial_grade": "C",
         "trial_note": "供应商自有模型，方法需核验",
         "trial_signals": "菜单、社媒、风味趋势"
@@ -167,7 +152,7 @@
       "packs": [
         "research_data"
       ],
-      "url": "https://tastewise.io/blog"
+      "url": "https://tastewise.io/blog/feed"
     }
   ]
 }

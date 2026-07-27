@@ -11,7 +11,7 @@ from typing import Any
 
 
 EXPECTED_KEEP = {
-    "M001", "M002", "M003", "M004", "M005", "M006", "M007",
+    "M001", "M002", "M003", "M004", "M005", "M007",
     "M009", "M011", "M012", "M017", "M019", "M020", "M021",
     "M022", "M024", "M026", "M028", "M030", "M032", "M033",
     "M034", "M035", "M036", "M039", "M040", "M042", "M044",
@@ -80,6 +80,11 @@ _DIRECT_SOURCE_OVERRIDES: dict[str, dict[str, Any]] = {
         "options": {},
         "url": "https://www.fooddive.com/feeds/news/",
     },
+    "M005": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.just-food.com/feed/",
+    },
     "M007": {
         "options": {
             "date_selector": "time",
@@ -140,6 +145,22 @@ _DIRECT_SOURCE_OVERRIDES: dict[str, dict[str, Any]] = {
         }
     },
     "M019": {"options": _WILLIAM_REED_OPTIONS},
+    "M020": {"options": _WILLIAM_REED_OPTIONS},
+    "M021": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://resource-cns.cnsmedia.com/rss/fifnews.xml",
+    },
+    "M022": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://resource-cns.cnsmedia.com/rss/ninews.xml",
+    },
+    "M026": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.nutritionaloutlook.com/rss.xml",
+    },
     "M030": {
         "adapter": "rss",
         "options": {},
@@ -147,9 +168,220 @@ _DIRECT_SOURCE_OVERRIDES: dict[str, dict[str, Any]] = {
             "https://www.bakingbusiness.com/rss/topic/1227-news"
         ),
     },
+    "M034": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.thepacker.com/index.rss",
+    },
     "M035": {
         "options": _WILLIAM_REED_OPTIONS,
         "url": "https://www.confectionerynews.com/News/",
+    },
+    "M036": {"options": _WILLIAM_REED_OPTIONS},
+    "M039": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.greenqueen.com.hk/feed/",
+    },
+    "M044": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://resource-cns.cnsmedia.com/rss/pinews.xml",
+    },
+    "M050": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://foodpackagingforum.org/news/feed/",
+    },
+    "M056": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.esmmagazine.com/feed/",
+    },
+    "M060": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.grocerygazette.co.uk/feed/",
+    },
+    "M061": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.retail-insight-network.com/feed/",
+    },
+    "M063": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.cspdailynews.com/feed/",
+    },
+    "M064": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.cstoredive.com/feeds/news/",
+    },
+    "M075": {
+        "adapter": "rss",
+        "options": {},
+        "url": (
+            "https://news.nissyoku.co.jp/archives/"
+            "news-cat/001/feed"
+        ),
+    },
+    "M076": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://shokuhin.net/feed/",
+    },
+    "M079": {
+        "options": {
+            "date_selector": "#pragraph5core",
+            "detail_content_selector": "#html4core",
+            "detail_title_selector": "#head1core h2",
+            "item_selector": ".search-result-cell",
+            "link_selector": (
+                "a[href*='/article/foodchemicalnewspaper/item_']"
+            ),
+            "max_detail_content_fetches": 20,
+            "max_detail_title_fetches": 20,
+            "require_content": True,
+            "title_selector": (
+                "a[href*='/article/foodchemicalnewspaper/item_']"
+            ),
+            "url_include_pattern": (
+                "/article/foodchemicalnewspaper/item_"
+            ),
+        },
+        "url": (
+            "https://www.foodchemicalnews.co.jp/article/"
+            "fcnhjnewspaper/foodchemicalnewspaper"
+        ),
+    },
+    "M080": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://diamond-rm.net/feed/",
+    },
+    "M084": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.kenko-media.com/health_idst/feed",
+    },
+    "M085": {
+        "options": {
+            "date_selector": ".published",
+            "detail_content_selector": ".entry-body",
+            "detail_date_jsonld_field": "datePublished",
+            "item_selector": (
+                ".vk_post.postListText, .vk_post.card"
+            ),
+            "link_selector": (
+                ".postListText_title a, .vk_post_title a"
+            ),
+            "max_detail_content_fetches": 30,
+            "max_detail_date_fetches": 30,
+            "prefer_detail_date": True,
+            "require_content": True,
+            "title_selector": (
+                ".postListText_title a, .vk_post_title a"
+            ),
+            "url_include_pattern": (
+                "/(?:breaking-news(?:-pickup)?|"
+                "administrative-news|industry-news|"
+                "international-news|functional-foods)/\\d+/"
+            ),
+        },
+        "url": "https://www.kenko-sokuho.co.jp/",
+    },
+    "M086": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://gekiryu-online.jp/feed",
+    },
+    "M087": {
+        "options": {
+            "content_selector": ".w525",
+            "date_selector": "h3",
+            "detail_content_selector": "#contents_left .mb25",
+            "item_selector": ".divbox02",
+            "link_selector": "a[href*='/news/view/']",
+            "max_detail_content_fetches": 20,
+            "require_content": True,
+            "title_selector": "a[href*='/news/view/']",
+            "url_include_pattern": "/news/view/\\d+",
+        },
+        "url": "https://www.him-news.com/kiji.html",
+    },
+    "M089": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.foodnews.co.kr/rss/allArticle.xml",
+    },
+    "M090": {
+        "adapter": "rss",
+        "options": {},
+        "url": (
+            "https://cdn.thinkfood.co.kr/rss/"
+            "gn_rss_allArticle.xml"
+        ),
+    },
+    "M091": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://foodicon.co.kr/rss/allArticle.xml",
+    },
+    "M092": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.foodtoday.or.kr/data/rss/news.xml",
+    },
+    "M093": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.foodbank.co.kr/rss/allArticle.xml",
+    },
+    "M094": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.foodnews.news/data/rss/news.xml",
+    },
+    "M098": {
+        "options": {
+            "content_selector": ".story-item-text-subheadline",
+            "date_selector": "time",
+            "detail_content_selector": ".b-article-body",
+            "item_selector": "article.story-item",
+            "link_selector": ".story-item-text-headline-link",
+            "max_detail_content_fetches": 20,
+            "require_content": True,
+            "title_selector": ".story-item-text-headline-link",
+            "url_include_pattern": "/Article/",
+        },
+        "url": (
+            "https://www.foodnavigator.com/"
+            "Regions/Asia-Pacific/"
+        ),
+    },
+    "M105": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://www.minimeinsights.com/feed/",
+    },
+    "M110": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://nielseniq.com/global/en/insights/feed/",
+    },
+    "M111": {
+        "adapter": "rss",
+        "options": {},
+        "url": (
+            "https://www.mintel.com/insights/"
+            "food-and-drink/feed/"
+        ),
+    },
+    "M115": {
+        "adapter": "rss",
+        "options": {},
+        "url": "https://tastewise.io/blog/feed",
     },
 }
 
