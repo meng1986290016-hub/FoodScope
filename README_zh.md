@@ -2,7 +2,7 @@
 
 面向食品行业的 AI 情报雷达：自动收集行业信息、去重、分析、筛选，并生成中文简报。
 
-[English](README.md) · [完整配置](docs/foodscope/configuration.md) · [来源包](docs/foodscope/source-packs.md) · [运行与恢复](docs/foodscope/operations.md)
+[English](README.md) · [在线简报示例](https://meng1986290016-hub.github.io/FoodScope/foodscope/example-brief.html) · [完整配置](docs/foodscope/configuration.md) · [来源包](docs/foodscope/source-packs.md) · [运行与恢复](docs/foodscope/operations.md)
 
 > 没有 Python 基础也可以部署。第一次使用建议严格按照下方“零基础快速开始”操作，先在本机生成一份简报，再考虑定时运行和消息推送。
 
@@ -25,7 +25,11 @@ FoodScope 可以帮助你持续关注：
 5. 在 `data/runs/<运行编号>/` 中生成 Markdown 和 HTML 简报。
 6. 根据配置选择性发送到飞书、邮件或微信公众号草稿箱。
 
-![FoodScope 简报示例](docs/assets/overview_zh.png)
+这是项目实际运行生成的简报，不是设计稿：
+
+[![FoodScope 真实简报示例](docs/assets/foodscope-brief-example.png)](https://meng1986290016-hub.github.io/FoodScope/foodscope/example-brief.html)
+
+点击图片可以查看完整 HTML 简报。
 
 ## 零基础快速开始
 
@@ -69,21 +73,12 @@ uv --version
 
 ### 第 2 步：下载项目
 
-在当前仓库页面点击 **Code → HTTPS**，复制显示的仓库地址，然后执行：
-
 ```bash
-git clone 复制到的仓库地址 FoodScope
+git clone https://github.com/meng1986290016-hub/FoodScope.git
 cd FoodScope
 ```
 
-例如，复制到的地址如果是 `https://github.com/your-name/foodscope.git`，完整命令就是：
-
-```bash
-git clone https://github.com/your-name/foodscope.git FoodScope
-cd FoodScope
-```
-
-也可以在仓库页面选择 **Download ZIP**，解压后在终端进入解压目录。后续命令都要在项目根目录执行，也就是能看到 `pyproject.toml` 和 `data` 文件夹的位置。
+也可以在仓库页面选择 **Code → Download ZIP**，解压后在终端进入解压目录。后续命令都要在项目根目录执行，也就是能看到 `pyproject.toml` 和 `data` 文件夹的位置。
 
 ### 第 3 步：安装依赖
 
