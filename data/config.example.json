@@ -40,7 +40,14 @@
     "source_packs": [
       "official_evidence",
       "global_industry",
-      "product_launches"
+      "ingredients_rd",
+      "japan",
+      "korea",
+      "southeast_asia",
+      "research_data",
+      "product_launches",
+      "discovery_queries",
+      "x_watch"
     ]
   },
   "schedule": {

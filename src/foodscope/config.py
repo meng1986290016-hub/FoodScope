@@ -149,8 +149,14 @@ class FoodScopeConfig(BaseModel):
         default_factory=lambda: [
             "official_evidence",
             "global_industry",
+            "ingredients_rd",
+            "japan",
+            "korea",
+            "southeast_asia",
+            "research_data",
             "product_launches",
             "discovery_queries",
+            "x_watch",
         ]
     )
     source_pack_dir: Path = Path("data/foodscope/source_packs")

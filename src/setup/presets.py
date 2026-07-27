@@ -36,7 +36,14 @@ def build_foodscope_preset(selected_ai_config: Dict) -> Dict:
             "source_packs": [
                 "official_evidence",
                 "global_industry",
+                "ingredients_rd",
+                "japan",
+                "korea",
+                "southeast_asia",
+                "research_data",
                 "product_launches",
+                "discovery_queries",
+                "x_watch",
             ],
         },
         "schedule": {

@@ -43,7 +43,18 @@ def test_foodscope_defaults_to_balanced_profile():
     assert config.evidence.mode == "loose"
     assert config.evidence.resolve_original_urls is True
     assert config.evidence.allow_aggregator_fallback is True
-    assert "discovery_queries" in config.foodscope.source_packs
+    assert config.foodscope.source_packs == [
+        "official_evidence",
+        "global_industry",
+        "ingredients_rd",
+        "japan",
+        "korea",
+        "southeast_asia",
+        "research_data",
+        "product_launches",
+        "discovery_queries",
+        "x_watch",
+    ]
 
 
 def test_foodscope_rejects_unknown_evidence_mode():
