@@ -135,6 +135,32 @@ def test_admitted_low_score_item_keeps_structured_brief_scores():
     assert item.metadata["foodscope_final_score"] == 6.6
 
 
+def test_base_rank_prioritizes_importance_over_evidence_quality():
+    important = scored_item(
+        "important",
+        importance=10,
+        relevance=0,
+        opportunity=0,
+        evidence=0,
+    )
+    well_evidenced = scored_item(
+        "well-evidenced",
+        importance=0,
+        relevance=0,
+        opportunity=0,
+        evidence=10,
+    )
+
+    result = FoodProfileSelector().select(
+        [well_evidenced, important],
+        profile("balanced", exploration_slots=0),
+    )
+
+    assert important.metadata["foodscope_base_score"] == 4.5
+    assert well_evidenced.metadata["foodscope_base_score"] == 1.0
+    assert result.items == [important, well_evidenced]
+
+
 def test_source_cap_and_tie_breakers_are_deterministic():
     items = [
         scored_item(
