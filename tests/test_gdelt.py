@@ -125,13 +125,48 @@ def test_disabled_config_returns_empty() -> None:
     assert asyncio.run(scraper.fetch(SINCE)) == []
 
 
-def test_http_error_returns_empty() -> None:
+def test_http_error_returns_empty(monkeypatch) -> None:
     client = AsyncMock()
     client.get.side_effect = httpx.HTTPError("boom")
+    sleep = AsyncMock()
+    monkeypatch.setattr("src.scrapers.gdelt.asyncio.sleep", sleep)
     config = GDELTConfig(enabled=True, query="ai")
     scraper = GDELTScraper(config, client)
 
     assert asyncio.run(scraper.fetch(SINCE)) == []
+    assert client.get.await_count == 3
+    assert sleep.await_count == 2
+
+
+def test_429_retries_then_returns_articles(monkeypatch) -> None:
+    request = httpx.Request("GET", GDELTScraper.BASE_URL)
+    limited_response = httpx.Response(
+        429,
+        request=request,
+        headers={"Retry-After": "4"},
+    )
+    limited = MagicMock()
+    limited.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "limited",
+        request=request,
+        response=limited_response,
+    )
+    success = MagicMock()
+    success.raise_for_status.return_value = None
+    success.json.return_value = _articles_payload()
+    client = AsyncMock()
+    client.get.side_effect = [limited, success]
+    sleep = AsyncMock()
+    monkeypatch.setattr("src.scrapers.gdelt.asyncio.sleep", sleep)
+    scraper = GDELTScraper(
+        GDELTConfig(enabled=True, query="ai"),
+        client,
+    )
+
+    items = asyncio.run(scraper.fetch(SINCE))
+
+    assert len(items) == 2
+    sleep.assert_awaited_once_with(4.0)
 
 
 def test_missing_articles_key_returns_empty() -> None:

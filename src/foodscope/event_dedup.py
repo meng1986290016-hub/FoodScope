@@ -157,6 +157,22 @@ def _normalized_tags(values: list[str]) -> set[str]:
     }
 
 
+def _tags_overlap(left: set[str], right: set[str]) -> bool:
+    """Match exact tags plus common cross-language alias expansions."""
+
+    if left.intersection(right):
+        return True
+    return any(
+        min(len(left_tag), len(right_tag)) >= 2
+        and (
+            left_tag in right_tag
+            or right_tag in left_tag
+        )
+        for left_tag in left
+        for right_tag in right
+    )
+
+
 def _similar_food_event(
     left: ContentItem, right: ContentItem
 ) -> bool:
@@ -164,14 +180,16 @@ def _similar_food_event(
         return False
     if abs(left.published_at - right.published_at) > timedelta(hours=48):
         return False
+    if canonical_url_event_key(str(left.url)) == canonical_url_event_key(
+        str(right.url)
+    ):
+        return True
     left_markets = {market.upper() for market in left.food.markets}
     right_markets = {market.upper() for market in right.food.markets}
-    if not left_markets.intersection(right_markets):
-        return False
+    market_match = bool(left_markets.intersection(right_markets))
     left_companies = _normalized_tags(left.food.company_tags)
     right_companies = _normalized_tags(right.food.company_tags)
-    if not left_companies.intersection(right_companies):
-        return False
+    company_match = _tags_overlap(left_companies, right_companies)
     left_subjects = _normalized_tags(
         left.food.product_tags
         + left.food.ingredient_tags
@@ -182,18 +200,69 @@ def _similar_food_event(
         + right.food.ingredient_tags
         + right.food.technology_tags
     )
-    if not left_subjects.intersection(right_subjects):
-        return False
-    left_title = _normalized_token(
+    subject_match = _tags_overlap(left_subjects, right_subjects)
+    left_titles = {
+        _normalized_token(left.title),
+        _normalized_token(left.metadata.get("title_zh") or ""),
+    }
+    right_titles = {
+        _normalized_token(right.title),
+        _normalized_token(right.metadata.get("title_zh") or ""),
+    }
+    left_titles.discard("")
+    right_titles.discard("")
+    title_similarity = max(
+        SequenceMatcher(None, left_title, right_title).ratio()
+        for left_title in left_titles
+        for right_title in right_titles
+    )
+    left_preferred_title = _normalized_token(
         left.metadata.get("title_zh") or left.title
     )
-    right_title = _normalized_token(
+    right_preferred_title = _normalized_token(
         right.metadata.get("title_zh") or right.title
     )
-    return (
-        SequenceMatcher(None, left_title, right_title).ratio()
-        >= 0.4
+    preferred_title_similarity = SequenceMatcher(
+        None, left_preferred_title, right_preferred_title
+    ).ratio()
+    left_key_parts = _normalized_tags(
+        (left.food.event_key or "").split("|")
     )
+    right_key_parts = _normalized_tags(
+        (right.food.event_key or "").split("|")
+    )
+    key_part_match = _tags_overlap(
+        left_key_parts, right_key_parts
+    )
+    # Exact/near-exact translated headlines are strong enough even when
+    # an analyzer omitted product tags (financial results are common).
+    if title_similarity >= 0.9:
+        return True
+    # Company + subject is the most reliable structured signature.  Do
+    # not require markets because discovery metadata occasionally assigns
+    # the publisher's market rather than the event's market.
+    if (
+        company_match
+        and subject_match
+        and preferred_title_similarity >= 0.4
+    ):
+        return True
+    if (
+        company_match
+        and subject_match
+        and key_part_match
+        and preferred_title_similarity >= 0.25
+    ):
+        return True
+    # Allow company aliases or translated brand variants when the market,
+    # subject and headline still agree.
+    if (
+        market_match
+        and subject_match
+        and preferred_title_similarity >= 0.45
+    ):
+        return True
+    return False
 
 
 def merge_similar_food_events(
@@ -244,13 +313,26 @@ class FoodEventFingerprintStore:
         """Return items not admitted within the active retention window."""
 
         active = self._load_active(now or datetime.now(timezone.utc))
-        return [
-            item
-            for item in items
-            if not item.food
-            or not item.food.event_key
-            or item.food.event_key not in active
+        remembered_items = [
+            remembered
+            for _, remembered in active.values()
+            if remembered is not None
         ]
+        fresh: list[ContentItem] = []
+        for item in items:
+            if (
+                item.food
+                and item.food.event_key
+                and item.food.event_key in active
+            ):
+                continue
+            if any(
+                _similar_food_event(item, remembered)
+                for remembered in remembered_items
+            ):
+                continue
+            fresh.append(item)
+        return fresh
 
     def remember(
         self, items: list[ContentItem], now: datetime | None = None
@@ -266,27 +348,53 @@ class FoodEventFingerprintStore:
                 and not item.metadata.get("foodscope_isolated")
                 and not item.metadata.get("foodscope_evidence_rejected")
             ):
-                active[item.food.event_key] = observed_at.isoformat()
+                active[item.food.event_key] = (observed_at, item)
 
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            event_key: {
+                "observed_at": timestamp.isoformat(),
+                "item": (
+                    remembered.model_dump(mode="json")
+                    if remembered is not None
+                    else None
+                ),
+            }
+            for event_key, (timestamp, remembered) in active.items()
+        }
         content = json.dumps(
-            active,
+            payload,
             ensure_ascii=False,
             sort_keys=True,
             indent=2,
         )
         _atomic_write_text(self.path, f"{content}\n")
 
-    def _load_active(self, now: datetime) -> dict[str, str]:
+    def _load_active(
+        self, now: datetime
+    ) -> dict[str, tuple[datetime, ContentItem | None]]:
         if not self.path.exists():
             return {}
         payload = json.loads(self.path.read_text(encoding="utf-8"))
         cutoff = now - self.retention
-        active: dict[str, str] = {}
-        for event_key, raw_timestamp in payload.items():
+        active: dict[
+            str, tuple[datetime, ContentItem | None]
+        ] = {}
+        for event_key, raw_record in payload.items():
+            if isinstance(raw_record, str):
+                raw_timestamp = raw_record
+                raw_item = None
+            else:
+                raw_timestamp = raw_record["observed_at"]
+                raw_item = raw_record.get("item")
             timestamp = datetime.fromisoformat(raw_timestamp)
             if timestamp.tzinfo is None:
                 timestamp = timestamp.replace(tzinfo=timezone.utc)
             if timestamp >= cutoff:
-                active[event_key] = timestamp.isoformat()
+                remembered = (
+                    ContentItem.model_validate(raw_item)
+                    if raw_item is not None
+                    else None
+                )
+                active[event_key] = (timestamp, remembered)
         return active

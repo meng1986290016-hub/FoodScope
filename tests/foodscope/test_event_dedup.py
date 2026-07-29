@@ -160,6 +160,74 @@ def test_distinct_same_day_company_product_events_stay_separate():
     assert len(merged) == 2
 
 
+def test_same_event_merges_when_market_metadata_is_inconsistent():
+    france = analyzed_item("fr", "original fr", "M001")
+    sweden = analyzed_item("se", "original se", "M002")
+    assert france.food is not None
+    assert sweden.food is not None
+    france.metadata["title_zh"] = (
+        "清洁标签趋势推动Dry4Good获投资扩产"
+    )
+    sweden.metadata["title_zh"] = (
+        "Dry4Good天然原料产能扩张十倍"
+    )
+    france.food.markets = ["FR"]
+    sweden.food.markets = ["SE"]
+    for candidate in (france, sweden):
+        assert candidate.food is not None
+        candidate.food.company_tags = ["Dry4Good"]
+        candidate.food.product_tags = ["天然原料", "清洁标签"]
+    france.food.event_key = "dry4good|funding"
+    sweden.food.event_key = "dry4good|capacity"
+
+    assert len(merge_similar_food_events([france, sweden])) == 1
+
+
+def test_same_event_merges_with_company_alias_and_shared_subject():
+    full_brand = analyzed_item("one", "original one", "M001")
+    short_brand = analyzed_item("two", "original two", "M002")
+    assert full_brand.food is not None
+    assert short_brand.food is not None
+    full_brand.metadata["title_zh"] = (
+        "大象清净园推出三款阿洛酮糖新品"
+    )
+    short_brand.metadata["title_zh"] = (
+        "大青园推出低糖阿洛酮糖糖浆系列新品"
+    )
+    full_brand.food.markets = ["KR"]
+    short_brand.food.markets = ["KR"]
+    full_brand.food.company_tags = ["대상 청정원"]
+    short_brand.food.company_tags = ["대상", "Cheongjungwon"]
+    full_brand.food.ingredient_tags = ["阿洛酮糖"]
+    short_brand.food.ingredient_tags = ["阿洛酮糖"]
+    full_brand.food.event_key = "allulose|one"
+    short_brand.food.event_key = "allulose|two"
+
+    assert len(
+        merge_similar_food_events([full_brand, short_brand])
+    ) == 1
+
+
+def test_same_financial_event_merges_without_subject_tags():
+    first = analyzed_item("one", "original one", "M001")
+    second = analyzed_item("two", "original two", "M002")
+    assert first.food is not None
+    assert second.food is not None
+    for candidate in (first, second):
+        assert candidate.food is not None
+        candidate.metadata["title_zh"] = (
+            "可口可乐2026年Q2业绩超预期并上调全年指引"
+        )
+        candidate.food.company_tags = ["The Coca-Cola Company"]
+        candidate.food.product_tags = []
+        candidate.food.ingredient_tags = []
+        candidate.food.technology_tags = []
+    first.food.event_key = "coke|q2|one"
+    second.food.event_key = "coke|q2|two"
+
+    assert len(merge_similar_food_events([first, second])) == 1
+
+
 def test_event_fingerprint_expires_after_seven_days(tmp_path):
     store = FoodEventFingerprintStore(
         tmp_path / "event-fingerprints.json"
@@ -176,3 +244,35 @@ def test_event_fingerprint_expires_after_seven_days(tmp_path):
     assert store.filter_new(
         [prior], now=datetime(2026, 8, 1, tzinfo=timezone.utc)
     ) == [prior]
+
+
+def test_event_fingerprint_filters_semantic_cross_day_duplicate(
+    tmp_path,
+):
+    store = FoodEventFingerprintStore(
+        tmp_path / "event-fingerprints.json"
+    )
+    prior = analyzed_item(
+        "prior", "original prior", "M001"
+    )
+    current = analyzed_item(
+        "current", "original current", "M002"
+    )
+    assert prior.food is not None
+    assert current.food is not None
+    for candidate in (prior, current):
+        assert candidate.food is not None
+        candidate.food.markets = ["US"]
+        candidate.food.company_tags = ["Rootsii"]
+        candidate.food.product_tags = ["红薯奶"]
+    prior.metadata["title_zh"] = "美国红薯奶项目获资助"
+    current.metadata["title_zh"] = "Rootsii红薯奶获得项目资金"
+    prior.food.event_key = "rootsii|grant|one"
+    current.food.event_key = "rootsii|funding|two"
+    remembered_at = datetime(2026, 7, 28, tzinfo=timezone.utc)
+    store.remember([prior], now=remembered_at)
+
+    assert store.filter_new(
+        [current],
+        now=datetime(2026, 7, 29, tzinfo=timezone.utc),
+    ) == []

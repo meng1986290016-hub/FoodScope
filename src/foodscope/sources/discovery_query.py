@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
+from time import monotonic
 
 from src.foodscope.config import FoodSourceSpec
 from src.models import ContentItem
@@ -21,6 +22,8 @@ _PROVIDER_CONCURRENCY_LIMITS = {"gdelt": 1}
 _PROVIDER_SEMAPHORES: dict[
     tuple[str, int], asyncio.Semaphore
 ] = {}
+_PROVIDER_LAST_REQUEST: dict[tuple[str, int], float] = {}
+_PROVIDER_MIN_INTERVAL_SECONDS = {"gdelt": 2.0}
 
 
 def _provider_semaphore(name: str) -> asyncio.Semaphore | None:
@@ -113,4 +116,13 @@ class DiscoveryQueryAdapter(BaseFoodAdapter):
         if semaphore is None:
             return await adapter.fetch(source, since, until)
         async with semaphore:
+            loop = asyncio.get_running_loop()
+            key = (name, id(loop))
+            interval = _PROVIDER_MIN_INTERVAL_SECONDS.get(name, 0.0)
+            elapsed = monotonic() - _PROVIDER_LAST_REQUEST.get(
+                key, 0.0
+            )
+            if elapsed < interval:
+                await asyncio.sleep(interval - elapsed)
+            _PROVIDER_LAST_REQUEST[key] = monotonic()
             return await adapter.fetch(source, since, until)

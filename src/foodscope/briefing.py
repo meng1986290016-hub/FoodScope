@@ -113,10 +113,10 @@ def _base_score(item: ContentItem) -> float:
     if item.food is None:
         return 0.0
     default = (
-        0.35 * item.food.importance_score
+        0.45 * item.food.importance_score
         + 0.25 * item.food.profile_relevance_score
         + 0.20 * item.food.opportunity_score
-        + 0.20 * item.food.evidence_quality_score
+        + 0.10 * item.food.evidence_quality_score
     )
     return _numeric_metadata(
         item, "foodscope_base_score", default

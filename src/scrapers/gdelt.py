@@ -22,6 +22,7 @@ Design notes:
 from __future__ import annotations
 
 import logging
+import asyncio
 from datetime import datetime, timezone
 from pydantic import HttpUrl
 from typing import Any, List, Optional
@@ -39,6 +40,7 @@ class GDELTScraper(BaseScraper):
 
     SOURCE_TYPE = SourceType.GDELT
     BASE_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+    MAX_ATTEMPTS = 3
 
     def __init__(self, config: GDELTConfig, http_client: httpx.AsyncClient):
         """Initialize the scraper.
@@ -103,10 +105,43 @@ class GDELTScraper(BaseScraper):
             params["enddatetime"] = end_utc.strftime("%Y%m%d%H%M%S")
 
         try:
-            response = await self.client.get(
-                self.BASE_URL, params=params, follow_redirects=True
-            )
-            response.raise_for_status()
+            response = None
+            for attempt in range(self.MAX_ATTEMPTS):
+                try:
+                    response = await self.client.get(
+                        self.BASE_URL,
+                        params=params,
+                        follow_redirects=True,
+                    )
+                    response.raise_for_status()
+                    break
+                except httpx.HTTPError as exc:
+                    if attempt + 1 >= self.MAX_ATTEMPTS:
+                        raise
+                    retry_after = 0.0
+                    if isinstance(exc, httpx.HTTPStatusError):
+                        if exc.response.status_code not in {
+                            429, 500, 502, 503, 504
+                        }:
+                            raise
+                        raw_retry_after = exc.response.headers.get(
+                            "Retry-After"
+                        )
+                        if raw_retry_after:
+                            try:
+                                retry_after = float(raw_retry_after)
+                            except ValueError:
+                                retry_after = 0.0
+                    delay = max(retry_after, float(2 ** attempt))
+                    logger.info(
+                        "Retrying GDELT after transient error "
+                        "(attempt %s/%s, delay %.1fs)",
+                        attempt + 2,
+                        self.MAX_ATTEMPTS,
+                        delay,
+                    )
+                    await asyncio.sleep(delay)
+            assert response is not None
 
             try:
                 payload = response.json()

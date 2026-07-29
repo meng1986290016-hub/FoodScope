@@ -127,10 +127,10 @@ class FoodProfileSelector:
         food = item.food
         assert food is not None
         base_rank = (
-            0.35 * food.importance_score
+            0.45 * food.importance_score
             + 0.25 * food.profile_relevance_score
             + 0.20 * food.opportunity_score
-            + 0.20 * food.evidence_quality_score
+            + 0.10 * food.evidence_quality_score
         )
         topic_multiplier = 1.0 + profile.topic_weights[food.category]
         market_multiplier = 1.0 + max(
