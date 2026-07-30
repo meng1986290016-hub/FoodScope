@@ -135,6 +135,33 @@ def test_admitted_low_score_item_keeps_structured_brief_scores():
     assert item.metadata["foodscope_final_score"] == 6.6
 
 
+def test_market_penalty_targets_market_focused_items():
+    india = scored_item("india", importance=8)
+    global_with_india = scored_item("global-with-india", importance=8)
+    neutral = scored_item("neutral", importance=8)
+    assert india.food is not None
+    assert global_with_india.food is not None
+    assert neutral.food is not None
+    india.food.markets = ["IN"]
+    global_with_india.food.markets = [
+        "US",
+        "CN",
+        "JP",
+        "KR",
+        "IN",
+    ]
+    neutral.food.markets = ["US"]
+
+    FoodProfileSelector().select(
+        [india, global_with_india, neutral],
+        profile("balanced", exploration_slots=0),
+    )
+
+    assert india.metadata["foodscope_final_score"] == 4.8
+    assert global_with_india.metadata["foodscope_final_score"] == 8.64
+    assert neutral.metadata["foodscope_final_score"] == 9.6
+
+
 def test_base_rank_prioritizes_importance_over_evidence_quality():
     important = scored_item(
         "important",

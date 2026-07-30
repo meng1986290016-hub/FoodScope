@@ -101,6 +101,7 @@ class BriefProfile(BaseModel):
     risk_override_min: RiskLevel = RiskLevel.HIGH
     topic_weights: dict[FoodCategory, float]
     market_weights: dict[str, float] = Field(default_factory=dict)
+    market_penalties: dict[str, float] = Field(default_factory=dict)
 
     @field_validator("topic_weights")
     @classmethod
@@ -137,6 +138,22 @@ class BriefProfile(BaseModel):
         ):
             raise ValueError(
                 "market_weights must be finite and between 0 and 1"
+            )
+        return value
+
+    @field_validator("market_penalties")
+    @classmethod
+    def market_penalties_are_bounded(
+        cls, value: dict[str, float]
+    ) -> dict[str, float]:
+        if any(
+            not math.isfinite(penalty)
+            or penalty < 0
+            or penalty > 1
+            for penalty in value.values()
+        ):
+            raise ValueError(
+                "market_penalties must be finite and between 0 and 1"
             )
         return value
 

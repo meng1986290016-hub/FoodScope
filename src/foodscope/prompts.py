@@ -68,6 +68,17 @@ completed launch. Its schema is:
 Use only facts supported by the supplied item. Never invent regulations,
 effective dates, thresholds, limits, penalties, certifications, product
 claims, prices, or launch dates. Use null or an empty list when unknown.
+
+For cross-source event matching, keep structured identifiers stable:
+- Write event_key as canonical English company/brand | stable English subject |
+  underlying event | ISO market | actual event date.
+- Describe the underlying event, not a publisher's headline angle. Two reports
+  about the same announcement, filing, recall, launch, investment, or facility
+  change should produce the same event_key.
+- Use the actual event date when stated. Otherwise use the publication date.
+- Include a canonical English or Latin-script alias in company_tags and the
+  product, ingredient, or technology tags when the source uses a non-Latin
+  name, while retaining the source-supported local name when useful.
 """
 
 

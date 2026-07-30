@@ -24,6 +24,7 @@ def test_balanced_profile_preserves_commercial_target():
 
     assert profile.commercial_min_ratio == 0.70
     assert profile.topic_weights[FoodCategory.PRODUCT_INNOVATION] == 0.20
+    assert profile.market_penalties == {"IN": 0.5}
 
 
 def test_profile_requires_all_categories_and_bounded_weights():
@@ -61,6 +62,21 @@ def test_profile_market_weights_must_be_bounded(weight):
 
     with pytest.raises(
         ValueError, match="market_weights"
+    ):
+        BriefProfile.model_validate(payload)
+
+
+@pytest.mark.parametrize("penalty", [-0.1, 1.01])
+def test_profile_market_penalties_must_be_bounded(penalty):
+    payload = json.loads(
+        Path("data/foodscope/profiles/balanced.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload["market_penalties"] = {"IN": penalty}
+
+    with pytest.raises(
+        ValueError, match="market_penalties"
     ):
         BriefProfile.model_validate(payload)
 

@@ -133,12 +133,25 @@ class FoodProfileSelector:
             + 0.10 * food.evidence_quality_score
         )
         topic_multiplier = 1.0 + profile.topic_weights[food.category]
-        market_multiplier = 1.0 + max(
+        market_boost = max(
             (
                 profile.market_weights.get(market, 0.0)
                 for market in food.markets
             ),
             default=0.0,
+        )
+        unique_markets = set(food.markets)
+        market_penalty = (
+            sum(
+                profile.market_penalties.get(market, 0.0)
+                for market in unique_markets
+            )
+            / len(unique_markets)
+            if unique_markets
+            else 0.0
+        )
+        market_multiplier = (1.0 + market_boost) * (
+            1.0 - market_penalty
         )
         return _RankedItem(
             item=item,

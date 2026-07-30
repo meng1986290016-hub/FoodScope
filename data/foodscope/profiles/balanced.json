@@ -17,5 +17,8 @@
     "retail_foodservice": 0.1,
     "company_updates": 0.1
   },
-  "market_weights": {}
+  "market_weights": {},
+  "market_penalties": {
+    "IN": 0.5
+  }
 }

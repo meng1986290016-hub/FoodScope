@@ -7,6 +7,7 @@ from hashlib import sha256
 import html
 import json
 from pathlib import Path
+import re
 import unicodedata
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -21,6 +22,114 @@ _TRACKING_QUERY_KEYS = {
     "mc_cid",
     "mc_eid",
     "msclkid",
+}
+
+_DEFAULT_SEMANTIC_WINDOW = timedelta(hours=48)
+_COMPANY_STOP_WORDS = {
+    "and",
+    "co",
+    "company",
+    "corp",
+    "corporation",
+    "group",
+    "holdings",
+    "inc",
+    "limited",
+    "ltd",
+    "of",
+    "plc",
+    "the",
+}
+_METRIC_PATTERN = re.compile(
+    r"(?<![\d.])"
+    r"(?P<number>\d+(?:\.\d+)?)"
+    r"\s*"
+    r"(?P<unit>%|％|亿|万|千|trillion|billion|million|bn|mn)",
+    re.IGNORECASE,
+)
+_METRIC_UNIT_ALIASES = {
+    "％": "%",
+    "bn": "billion",
+    "mn": "million",
+}
+_EVENT_KIND_KEYWORDS = {
+    "acquisition": (
+        "收购",
+        "出售",
+        "并购",
+        "acquisition",
+        "acquire",
+        "divest",
+        "sale",
+    ),
+    "capacity": (
+        "产能",
+        "产线",
+        "生产线",
+        "工厂",
+        "投产",
+        "扩产",
+        "扩建",
+        "capacity",
+        "facility",
+        "factory",
+        "productionline",
+    ),
+    "financial_performance": (
+        "业绩",
+        "财报",
+        "季度",
+        "销量",
+        "销售额",
+        "收入",
+        "利润",
+        "指引",
+        "earnings",
+        "guidance",
+        "profit",
+        "revenue",
+        "sales",
+        "volume",
+    ),
+    "investment": (
+        "融资",
+        "投资",
+        "funding",
+        "investment",
+    ),
+    "launch": (
+        "发布",
+        "推出",
+        "上市",
+        "launch",
+        "release",
+    ),
+    "pricing": (
+        "价格",
+        "提价",
+        "涨价",
+        "priceincrease",
+        "pricing",
+    ),
+    "recall": (
+        "召回",
+        "recall",
+    ),
+    "recycling": (
+        "回收",
+        "再生",
+        "recycling",
+        "recycled",
+    ),
+    "research": (
+        "专利",
+        "技术",
+        "研究",
+        "突破",
+        "patent",
+        "research",
+        "technology",
+    ),
 }
 
 
@@ -157,12 +266,42 @@ def _normalized_tags(values: list[str]) -> set[str]:
     }
 
 
-def _tags_overlap(left: set[str], right: set[str]) -> bool:
+def _normalized_company_tags(values: list[str]) -> set[str]:
+    """Add stable Latin-script cores and acronyms for company aliases."""
+
+    normalized = _normalized_tags(values)
+    for value in values:
+        ascii_words = re.findall(
+            r"[a-z0-9]+",
+            unicodedata.normalize("NFKC", value).casefold(),
+        )
+        core_words = [
+            word
+            for word in ascii_words
+            if word not in _COMPANY_STOP_WORDS
+        ]
+        if core_words:
+            core = "".join(core_words)
+            if len(core) >= 4:
+                normalized.add(core)
+        if len(core_words) >= 2:
+            acronym = "".join(word[0] for word in core_words)
+            if 3 <= len(acronym) <= 8:
+                normalized.add(acronym)
+    return normalized
+
+
+def _tags_overlap(
+    left: set[str],
+    right: set[str],
+    *,
+    fuzzy_threshold: float | None = None,
+) -> bool:
     """Match exact tags plus common cross-language alias expansions."""
 
     if left.intersection(right):
         return True
-    return any(
+    if any(
         min(len(left_tag), len(right_tag)) >= 2
         and (
             left_tag in right_tag
@@ -170,37 +309,165 @@ def _tags_overlap(left: set[str], right: set[str]) -> bool:
         )
         for left_tag in left
         for right_tag in right
+    ):
+        return True
+    if fuzzy_threshold is None:
+        return False
+    return any(
+        min(len(left_tag), len(right_tag)) >= 4
+        and SequenceMatcher(None, left_tag, right_tag).ratio()
+        >= fuzzy_threshold
+        for left_tag in left
+        for right_tag in right
     )
 
 
+def _metric_contexts(item: ContentItem) -> dict[str, set[str]]:
+    """Return normalized context windows for explicit numeric metrics."""
+
+    text = " ".join(
+        value
+        for value in (
+            item.title,
+            str(item.metadata.get("title_zh") or ""),
+            item.ai_summary or "",
+        )
+        if value
+    )
+    contexts: dict[str, set[str]] = defaultdict(set)
+    for match in _METRIC_PATTERN.finditer(text):
+        number = match.group("number")
+        if "." in number:
+            number = number.rstrip("0").rstrip(".")
+        unit = match.group("unit").casefold()
+        unit = _METRIC_UNIT_ALIASES.get(unit, unit)
+        signature = f"{number}{unit}"
+        start = max(0, match.start() - 18)
+        end = min(len(text), match.end() + 18)
+        contexts[signature].add(_normalized_token(text[start:end]))
+    return contexts
+
+
+def _event_kinds(item: ContentItem) -> set[str]:
+    text = _normalized_token(
+        " ".join(
+            value
+            for value in (
+                item.title,
+                str(item.metadata.get("title_zh") or ""),
+                item.ai_summary or "",
+                item.food.event_key if item.food is not None else "",
+            )
+            if value
+        )
+    )
+    return {
+        kind
+        for kind, keywords in _EVENT_KIND_KEYWORDS.items()
+        if any(_normalized_token(keyword) in text for keyword in keywords)
+    }
+
+
+def _shared_metric_context_similarity(
+    left: ContentItem,
+    right: ContentItem,
+) -> float:
+    left_contexts = _metric_contexts(left)
+    right_contexts = _metric_contexts(right)
+    shared = left_contexts.keys() & right_contexts.keys()
+    if not shared:
+        return 0.0
+    return max(
+        SequenceMatcher(None, left_context, right_context).ratio()
+        for signature in shared
+        for left_context in left_contexts[signature]
+        for right_context in right_contexts[signature]
+    )
+
+
+def _text_similarity(left: object, right: object) -> float:
+    if not left or not right:
+        return 0.0
+    left_text = _normalized_token(left)
+    right_text = _normalized_token(right)
+    if not left_text or not right_text:
+        return 0.0
+    return SequenceMatcher(None, left_text, right_text).ratio()
+
+
+def _meaningful_event_key_parts(item: ContentItem) -> set[str]:
+    if item.food is None or not item.food.event_key:
+        return set()
+    company_terms = _normalized_company_tags(
+        item.food.company_tags
+    )
+    market_terms = {
+        _normalized_token(market) for market in item.food.markets
+    }
+    meaningful: set[str] = set()
+    for raw_part in item.food.event_key.split("|"):
+        part = _normalized_token(raw_part)
+        if not part or len(part) <= 2:
+            continue
+        if part in market_terms or part in {"global", "worldwide"}:
+            continue
+        if re.fullmatch(r"20\d{2}(?:\d{2}){0,2}", part):
+            continue
+        if _tags_overlap({part}, company_terms):
+            continue
+        meaningful.add(part)
+    return meaningful
+
+
 def _similar_food_event(
-    left: ContentItem, right: ContentItem
+    left: ContentItem,
+    right: ContentItem,
+    *,
+    max_age: timedelta = _DEFAULT_SEMANTIC_WINDOW,
 ) -> bool:
     if left.food is None or right.food is None:
-        return False
-    if abs(left.published_at - right.published_at) > timedelta(hours=48):
         return False
     if canonical_url_event_key(str(left.url)) == canonical_url_event_key(
         str(right.url)
     ):
         return True
+    event_age = abs(left.published_at - right.published_at)
+    if event_age > max_age:
+        return False
     left_markets = {market.upper() for market in left.food.markets}
     right_markets = {market.upper() for market in right.food.markets}
     market_match = bool(left_markets.intersection(right_markets))
-    left_companies = _normalized_tags(left.food.company_tags)
-    right_companies = _normalized_tags(right.food.company_tags)
+    category_match = left.food.category == right.food.category
+    left_companies = _normalized_company_tags(
+        left.food.company_tags
+    )
+    right_companies = _normalized_company_tags(
+        right.food.company_tags
+    )
     company_match = _tags_overlap(left_companies, right_companies)
-    left_subjects = _normalized_tags(
-        left.food.product_tags
-        + left.food.ingredient_tags
-        + left.food.technology_tags
+    subject_groups = (
+        (
+            _normalized_tags(left.food.product_tags),
+            _normalized_tags(right.food.product_tags),
+        ),
+        (
+            _normalized_tags(left.food.ingredient_tags),
+            _normalized_tags(right.food.ingredient_tags),
+        ),
+        (
+            _normalized_tags(left.food.technology_tags),
+            _normalized_tags(right.food.technology_tags),
+        ),
     )
-    right_subjects = _normalized_tags(
-        right.food.product_tags
-        + right.food.ingredient_tags
-        + right.food.technology_tags
+    subject_match = any(
+        _tags_overlap(
+            left_subjects,
+            right_subjects,
+            fuzzy_threshold=0.65,
+        )
+        for left_subjects, right_subjects in subject_groups
+        if left_subjects and right_subjects
     )
-    subject_match = _tags_overlap(left_subjects, right_subjects)
     left_titles = {
         _normalized_token(left.title),
         _normalized_token(left.metadata.get("title_zh") or ""),
@@ -225,14 +492,26 @@ def _similar_food_event(
     preferred_title_similarity = SequenceMatcher(
         None, left_preferred_title, right_preferred_title
     ).ratio()
-    left_key_parts = _normalized_tags(
-        (left.food.event_key or "").split("|")
+    summary_similarity = _text_similarity(
+        left.ai_summary, right.ai_summary
     )
-    right_key_parts = _normalized_tags(
-        (right.food.event_key or "").split("|")
-    )
+    left_key_parts = _meaningful_event_key_parts(left)
+    right_key_parts = _meaningful_event_key_parts(right)
     key_part_match = _tags_overlap(
         left_key_parts, right_key_parts
+    )
+    metric_context_similarity = (
+        _shared_metric_context_similarity(left, right)
+    )
+    left_event_kinds = _event_kinds(left)
+    right_event_kinds = _event_kinds(right)
+    event_kind_match = bool(
+        left_event_kinds.intersection(right_event_kinds)
+    )
+    event_kinds_compatible = (
+        not left_event_kinds
+        or not right_event_kinds
+        or event_kind_match
     )
     # Exact/near-exact translated headlines are strong enough even when
     # an analyzer omitted product tags (financial results are common).
@@ -244,6 +523,7 @@ def _similar_food_event(
     if (
         company_match
         and subject_match
+        and event_kinds_compatible
         and preferred_title_similarity >= 0.4
     ):
         return True
@@ -251,7 +531,38 @@ def _similar_food_event(
         company_match
         and subject_match
         and key_part_match
+        and event_kinds_compatible
         and preferred_title_similarity >= 0.25
+    ):
+        return True
+    # Different-language coverage can use incompatible subject tags.
+    # Matching company, market, category and a distinctive metric in
+    # similar context is a conservative bridge for those reports.
+    metric_title_threshold = (
+        0.2
+        if event_age <= _DEFAULT_SEMANTIC_WINDOW
+        else 0.45
+    )
+    if (
+        company_match
+        and market_match
+        and category_match
+        and event_kind_match
+        and metric_context_similarity >= 0.2
+        and (
+            subject_match
+            or metric_context_similarity >= 0.45
+        )
+        and preferred_title_similarity >= metric_title_threshold
+    ):
+        return True
+    if (
+        company_match
+        and market_match
+        and category_match
+        and event_kinds_compatible
+        and summary_similarity >= 0.6
+        and preferred_title_similarity >= 0.35
     ):
         return True
     # Allow company aliases or translated brand variants when the market,
@@ -259,6 +570,7 @@ def _similar_food_event(
     if (
         market_match
         and subject_match
+        and event_kinds_compatible
         and preferred_title_similarity >= 0.45
     ):
         return True
@@ -327,7 +639,11 @@ class FoodEventFingerprintStore:
             ):
                 continue
             if any(
-                _similar_food_event(item, remembered)
+                _similar_food_event(
+                    item,
+                    remembered,
+                    max_age=self.retention,
+                )
                 for remembered in remembered_items
             ):
                 continue
